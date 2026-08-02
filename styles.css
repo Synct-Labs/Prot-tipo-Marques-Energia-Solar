@@ -438,13 +438,22 @@ input, select{ font-family: inherit; }
 
 @media (min-width: 960px){
   .hero{ padding: 90px 0 80px; }
-  .hero-inner{ flex-direction: row; justify-content: space-between; text-align: left; align-items: center; }
+  /* gap fixo (em vez de space-between) evita tanto um vão vazio enorme em
+     telas muito largas quanto a sobreposição dos badges flutuantes com o
+     texto em telas de notebook (ex: 1366px), que é o que causava a
+     "formatação bugada" só no desktop. */
+  .hero-inner{ flex-direction: row; justify-content: flex-start; gap: 64px; text-align: left; align-items: center; }
+  .hero-text{ flex: 0 1 520px; }
   .hero-text h1{ font-size: 3.4rem; }
   .hero-art{ flex-shrink: 0; }
-  .hero-badge-1{ right: -10%; }
-  .hero-badge-2{ left: -12%; }
-  .hero-badge-3{ left: -16%; }
-  .hero-badge-4{ right: -4%; }
+  .hero-badge-1{ right: -4%; }
+  .hero-badge-2{ left: -6%; }
+  .hero-badge-3{ left: -8%; }
+  .hero-badge-4{ right: 0%; }
+}
+
+@media (min-width: 1400px){
+  .hero-inner{ gap: 90px; }
 }
 
 /* ===================== STATS BAND ===================== */
