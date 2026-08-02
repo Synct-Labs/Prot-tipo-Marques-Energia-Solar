@@ -138,9 +138,12 @@ const PRODUCTS = [
 const state = {
   currentCategory: "paineis",
   sort: "relevancia",
+  searchTerm: "",
   cart: [],              // [{ id, qty }]
   compareSelection: {},  // { [categoria]: [ids] }
 };
+
+const FEATURED_IDS = ["pn1", "iv2", "cb1", "es1"];
 
 /* ---------------------- HELPERS ---------------------- */
 function formatBRL(value){
@@ -195,13 +198,14 @@ function navigate(){
   if(hash === "carrinho") renderCart();
   if(hash === "checkout") renderCheckout();
 
+  updateMobileCartBar();
   window.scrollTo({ top: 0, behavior: "auto" });
   initScrollReveal();
 }
 window.addEventListener("hashchange", navigate);
 
 /* ======================================================================
-   SCROLL REVEAL
+   SCROLL REVEAL + CONTADORES ANIMADOS
    ====================================================================== */
 let revealObserver;
 function initScrollReveal(){
@@ -210,12 +214,30 @@ function initScrollReveal(){
       entries.forEach(entry => {
         if(entry.isIntersecting){
           entry.target.classList.add("in-view");
+          const counter = entry.target.querySelector(".stat-number");
+          if(counter) animateCounter(counter);
           revealObserver.unobserve(entry.target);
         }
       });
     }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
   }
   $all(".reveal:not(.in-view)").forEach(el => revealObserver.observe(el));
+}
+
+function animateCounter(el){
+  if(el.dataset.done) return;
+  el.dataset.done = "1";
+  const target = parseInt(el.dataset.target, 10) || 0;
+  const suffix = el.dataset.suffix || "";
+  const duration = 1200;
+  const start = performance.now();
+  function step(now){
+    const progress = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(eased * target) + suffix;
+    if(progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 
 /* ======================================================================
@@ -236,11 +258,25 @@ function renderCatalog(){
   const grid = $("#productGrid");
   let items = PRODUCTS.filter(p => p.cat === state.currentCategory);
 
+  if(state.searchTerm){
+    items = items.filter(p =>
+      p.name.toLowerCase().includes(state.searchTerm) ||
+      p.brand.toLowerCase().includes(state.searchTerm));
+  }
+
   if(state.sort === "menor-preco") items = [...items].sort((a,b) => a.price - b.price);
   if(state.sort === "maior-preco") items = [...items].sort((a,b) => b.price - a.price);
 
-  grid.innerHTML = items.map(p => renderProductCard(p)).join("");
+  grid.innerHTML = items.length
+    ? items.map(p => renderProductCard(p)).join("")
+    : `<div class="empty-compare" style="grid-column:1/-1;">Nenhum produto encontrado para essa busca.</div>`;
   renderCompareBar();
+}
+
+function renderFeatured(){
+  const grid = $("#featuredGrid");
+  if(!grid) return;
+  grid.innerHTML = FEATURED_IDS.map(id => renderProductCard(getProduct(id))).join("");
 }
 
 function renderProductCard(p){
@@ -288,20 +324,30 @@ $("#sortSelect").addEventListener("change", (e) => {
   renderCatalog();
 });
 
+// Busca
+$("#searchInput").addEventListener("input", (e) => {
+  state.searchTerm = e.target.value.trim().toLowerCase();
+  renderCatalog();
+});
+
 // Delegação de eventos do grid (adicionar carrinho, comparar, detalhes)
-$("#productGrid").addEventListener("click", (e) => {
+// Reaproveitada tanto no grid do catálogo quanto no grid de destaques da home.
+function handleProductGridClick(e){
   const addBtn = e.target.closest(".btn-add-cart");
   if(addBtn){ addToCart(addBtn.dataset.id); return; }
 
   const detailsBtn = e.target.closest(".btn-details");
   if(detailsBtn){ openProductModal(detailsBtn.dataset.id); return; }
-});
-
-$("#productGrid").addEventListener("change", (e) => {
+}
+function handleProductGridChange(e){
   if(e.target.classList.contains("compare-checkbox")){
     toggleCompare(e.target.dataset.id, e.target.dataset.cat, e.target);
   }
-});
+}
+
+$("#productGrid").addEventListener("click", handleProductGridClick);
+$("#productGrid").addEventListener("change", handleProductGridChange);
+$("#featuredGrid").addEventListener("click", handleProductGridClick);
 
 /* ======================================================================
    COMPARAÇÃO
@@ -463,6 +509,26 @@ function updateCartCount(bump){
     void el.offsetWidth; // reinicia animação
     el.classList.add("bump");
   }
+  updateMobileCartBar();
+}
+
+/* ---------------------- BARRA FIXA DE CARRINHO (mobile) ---------------------- */
+function updateMobileCartBar(){
+  const bar = $("#mobileCartBar");
+  if(!bar) return;
+  const hash = location.hash.replace("#","") || "home";
+  const showOn = ["home","comparar"];
+  const count = state.cart.reduce((sum,i) => sum + i.qty, 0);
+
+  if(count > 0 && showOn.includes(hash)){
+    bar.classList.add("visible");
+    document.body.classList.add("mobile-cart-visible");
+    $("#mobileCartCount").textContent = count === 1 ? "1 item" : `${count} itens`;
+    $("#mobileCartTotal").textContent = formatBRL(cartTotalValue());
+  } else {
+    bar.classList.remove("visible");
+    document.body.classList.remove("mobile-cart-visible");
+  }
 }
 
 function cartTotalValue(){
@@ -572,6 +638,30 @@ $("#checkoutForm").addEventListener("submit", (e) => {
 });
 
 /* ======================================================================
+   FAQ (accordion)
+   ====================================================================== */
+const faqList = $("#faqList");
+if(faqList){
+  faqList.addEventListener("click", (e) => {
+    const btn = e.target.closest(".faq-question");
+    if(!btn) return;
+    const item = btn.closest(".faq-item");
+    const answer = item.querySelector(".faq-answer");
+    const isOpen = item.classList.contains("open");
+
+    $all(".faq-item.open", faqList).forEach(other => {
+      if(other !== item){
+        other.classList.remove("open");
+        other.querySelector(".faq-answer").style.maxHeight = null;
+      }
+    });
+
+    item.classList.toggle("open", !isOpen);
+    answer.style.maxHeight = !isOpen ? answer.scrollHeight + "px" : null;
+  });
+}
+
+/* ======================================================================
    MENU MOBILE
    ====================================================================== */
 function closeMobileMenu(){
@@ -588,5 +678,6 @@ $("#hamburgerBtn").addEventListener("click", () => {
    INICIALIZAÇÃO
    ====================================================================== */
 renderTabs();
+renderFeatured();
 navigate();
 updateCartCount();
