@@ -24,6 +24,7 @@
     <nav class="main-nav" id="mainNav">
       <a href="#home" class="nav-link">Início</a>
       <a href="#catalogo" class="nav-link">Catálogo</a>
+      <a href="#configurador" class="nav-link">Monte seu Kit</a>
       <a href="#carrinho" class="nav-link">Carrinho</a>
       <a href="https://wa.me/5565996591300" target="_blank" rel="noopener" class="nav-link nav-whatsapp">
         <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
@@ -169,6 +170,23 @@
     </div>
   </section>
 
+  <section class="configurator-teaser">
+    <div class="container configurator-teaser-inner reveal">
+      <div class="configurator-teaser-icon">
+        <svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 1 0-5.4 5.4L2 19l3 3 7.3-7.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2-2 2.8-2.8z"/></svg>
+      </div>
+      <div class="configurator-teaser-text">
+        <span class="section-kicker" style="text-align:left; margin-bottom:6px;">Novidade</span>
+        <h2>Não sabe por onde começar? Monte seu projeto passo a passo.</h2>
+        <p>Escolha painel, inversor, cabos e estrutura em um fluxo guiado e adicione o kit completo ao carrinho de uma vez.</p>
+      </div>
+      <a href="#configurador" class="btn btn-primary btn-lg">
+        Montar meu Kit
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+  </section>
+
   <section class="how-it-works">
     <div class="container">
       <span class="section-kicker reveal">Simples assim</span>
@@ -283,9 +301,9 @@
 <!-- ===================== CATÁLOGO ===================== -->
 <section id="catalogo" class="view">
   <div class="container">
-    <span class="page-kicker">Catálogo</span>
+    <nav class="breadcrumb" id="catalogBreadcrumb" aria-label="Navegação estrutural"></nav>
     <h1 class="page-title">Equipamentos para seu projeto solar</h1>
-    <p class="page-sub">Selecione uma categoria e monte seu kit de energia solar.</p>
+    <p class="page-sub">Filtre por marca e especificações para montar seu kit.</p>
 
     <div class="tabs" id="categoryTabs" role="tablist">
       <button class="tab active" data-cat="paineis" role="tab"></button>
@@ -294,27 +312,48 @@
       <button class="tab" data-cat="estrutura" role="tab"></button>
     </div>
 
-    <div class="search-box">
-      <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchInput" placeholder="Buscar por nome ou marca...">
-    </div>
+    <button class="filters-toggle-btn" id="filtersToggleBtn" type="button">
+      <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      Filtros
+    </button>
 
-    <div class="catalog-toolbar">
-      <label class="sort-label">
-        Ordenar por:
-        <select id="sortSelect">
-          <option value="relevancia">Relevância</option>
-          <option value="menor-preco">Menor preço</option>
-          <option value="maior-preco">Maior preço</option>
-        </select>
-      </label>
-      <span class="compare-hint">
-        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        Marque até 3 itens da mesma categoria para comparar
-      </span>
-    </div>
+    <div class="catalog-layout">
+      <aside class="filters-sidebar" id="filtersSidebar">
+        <div class="filter-group">
+          <h3>Marca</h3>
+          <ul class="filter-list" id="brandFilterList"></ul>
+        </div>
+        <div class="filter-group">
+          <h3 id="facetLabel">Potência</h3>
+          <ul class="filter-list" id="facetFilterList"></ul>
+        </div>
+        <button class="btn btn-ghost btn-block" id="clearFiltersBtn">Limpar filtros</button>
+      </aside>
 
-    <div class="product-grid" id="productGrid"></div>
+      <div class="catalog-main">
+        <div class="search-box">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="searchInput" placeholder="Buscar por nome ou marca...">
+        </div>
+
+        <div class="catalog-toolbar">
+          <label class="sort-label">
+            Ordenar por:
+            <select id="sortSelect">
+              <option value="relevancia">Relevância</option>
+              <option value="menor-preco">Menor preço</option>
+              <option value="maior-preco">Maior preço</option>
+            </select>
+          </label>
+          <span class="compare-hint">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Marque até 3 itens da mesma categoria para comparar
+          </span>
+        </div>
+
+        <div class="product-grid" id="productGrid"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Barra flutuante de comparação -->
@@ -324,6 +363,57 @@
       <div class="compare-actions">
         <button class="btn btn-ghost" id="clearCompareBtn">Limpar</button>
         <button class="btn btn-primary" id="goCompareBtn">Comparar</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== MONTE SEU PROJETO (CONFIGURADOR) ===================== -->
+<section id="configurador" class="view">
+  <div class="container">
+    <span class="page-kicker">Monte seu Projeto</span>
+    <h1 class="page-title">Personalize seu Gerador Fotovoltaico</h1>
+    <p class="page-sub">Monte seu próprio kit solar sob medida, escolhendo cada equipamento do seu projeto.</p>
+
+    <div class="methods-grid" id="methodsGrid">
+      <article class="method-card">
+        <div class="method-card-image">
+          <svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 1 0-5.4 5.4L2 19l3 3 7.3-7.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2-2 2.8-2.8z"/></svg>
+          <span class="method-card-title">Convencional</span>
+        </div>
+        <div class="method-card-body">
+          <p>Ideal para você personalizar o seu gerador pelo <strong>método tradicional</strong>.</p>
+          <ul class="method-bullets">
+            <li>
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+              Monte e personalize o projeto de maneira prática e rápida
+            </li>
+            <li>
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+              Escolha em nosso mix de produtos o que melhor se adequa ao projeto
+            </li>
+          </ul>
+          <button class="btn btn-primary btn-block" id="startWizardBtn" type="button">ESCOLHER</button>
+        </div>
+      </article>
+    </div>
+    <p class="methods-note">Em breve, novas opções de montagem estarão disponíveis para você.</p>
+
+    <!-- Wizard passo a passo -->
+    <div class="wizard" id="wizard" hidden>
+      <button class="wizard-cancel" id="wizardCancelBtn" type="button">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Cancelar e voltar
+      </button>
+
+      <div class="wizard-stepper" id="wizardStepper"></div>
+      <p class="wizard-progress-text" id="wizardProgressText"></p>
+
+      <div class="wizard-content" id="wizardContent"></div>
+
+      <div class="wizard-nav">
+        <button class="btn btn-ghost" id="wizardBackBtn" type="button">Voltar</button>
+        <button class="btn btn-primary" id="wizardNextBtn" type="button">Avançar</button>
       </div>
     </div>
   </div>
@@ -339,6 +429,57 @@
     <span class="page-kicker">Comparação</span>
     <h1 class="page-title">Compare os produtos selecionados</h1>
     <div id="compareTableWrap" class="compare-table-wrap"></div>
+  </div>
+</section>
+
+<!-- ===================== PÁGINA DE PRODUTO ===================== -->
+<section id="produto" class="view">
+  <div class="container">
+    <nav class="breadcrumb" id="productBreadcrumb" aria-label="Navegação estrutural"></nav>
+
+    <div class="product-page-layout">
+      <div class="product-gallery">
+        <div class="gallery-main" id="galleryMain"></div>
+        <div class="gallery-thumbs" id="galleryThumbs"></div>
+      </div>
+
+      <div class="product-page-info">
+        <div class="product-page-tags">
+          <span class="brand-chip" id="productBrandChip"></span>
+          <span class="launch-tag" id="productLaunchTag">Lançamento</span>
+        </div>
+        <h1 class="product-page-title" id="productTitle"></h1>
+        <div class="product-meta" id="productMeta"></div>
+        <div class="product-page-price" id="productPagePrice"></div>
+        <div class="product-page-actions">
+          <button class="btn btn-primary btn-lg" id="productAddCartBtn">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adicionar ao Carrinho
+          </button>
+          <button class="btn btn-outline btn-lg" id="datasheetBtn" type="button">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="11" x2="12" y2="11"/></svg>
+            Baixar Datasheet
+          </button>
+        </div>
+        <div class="specs-highlight-grid" id="specsHighlight"></div>
+      </div>
+    </div>
+
+    <div class="product-page-extra">
+      <div class="features-block">
+        <h2>Diferenciais</h2>
+        <ul class="features-list" id="featuresList"></ul>
+      </div>
+      <div class="warranty-block">
+        <h2>Garantia do Fabricante</h2>
+        <p id="warrantyText"></p>
+      </div>
+    </div>
+
+    <a href="#catalogo" class="back-link">
+      <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Voltar ao catálogo
+    </a>
   </div>
 </section>
 
@@ -501,15 +642,10 @@
   <a href="#carrinho" class="btn btn-primary">Ver Carrinho</a>
 </div>
 
-<!-- ===================== MODAL DETALHES DO PRODUTO ===================== -->
-<div class="modal-overlay" id="productModalOverlay">
-  <div class="modal" id="productModal" role="dialog" aria-modal="true">
-    <button class="modal-close" id="modalCloseBtn" aria-label="Fechar">
-      <svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-    <div id="modalContent"></div>
-  </div>
-</div>
+<!-- ===================== BOTÃO FLUTUANTE DE WHATSAPP ===================== -->
+<a href="https://wa.me/5565996591300" target="_blank" rel="noopener" class="whatsapp-fab" id="whatsappFab" aria-label="Falar no WhatsApp">
+  <svg class="icon" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+</a>
 
 <!-- ===================== FOOTER ===================== -->
 <footer class="site-footer">
@@ -546,7 +682,7 @@
     </div>
     <div class="footer-note">
       <p>&copy; 2026 Marques Energia Solar — Mato Grosso.</p>
-      <span class="prototype-tag">Protótipo de site — não processa pagamentos reais. Catálogo, números e depoimentos são dados de exemplo.</span>
+      <span class="prototype-tag">Protótipo de site — não processa pagamentos reais. Catálogo, números, marcas e depoimentos são dados de exemplo.</span>
     </div>
   </div>
 </footer>
