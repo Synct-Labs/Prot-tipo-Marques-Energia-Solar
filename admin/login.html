@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Login do Administrador — Marques Energia Solar</title>
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<div class="admin-login-wrap">
+  <div class="admin-login-card">
+    <div class="admin-login-logo">
+      <img src="../logo-mark-128.png" alt="Marques Energia Solar">
+      <h1>Painel de Administrador</h1>
+      <p>Marques Energia Solar</p>
+    </div>
+
+    <div class="admin-error" id="loginError"></div>
+
+    <form id="loginForm">
+      <div class="admin-field">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" name="email" required autocomplete="username" placeholder="admin@marquesenergiasolar.com.br">
+      </div>
+      <div class="admin-field">
+        <label for="password">Senha</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <button type="submit" class="admin-btn" id="loginBtn">Entrar</button>
+    </form>
+
+    <p class="admin-note">Acesso restrito à equipe da Marques Energia Solar.</p>
+  </div>
+</div>
+
+<script src="admin.js"></script>
+<script>
+(async function(){
+  // Se já existir sessão válida, pula direto para o dashboard.
+  const me = await MES.apiGet("/api/auth/me").catch(() => null);
+  if(me && me.ok) window.location.href = "dashboard.html";
+})();
+
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("loginError");
+  const btn = document.getElementById("loginBtn");
+  errorBox.classList.remove("show");
+  btn.disabled = true;
+  btn.textContent = "Entrando...";
+
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  try {
+    const res = await MES.apiPost("/api/auth/login", { email, password });
+    if(!res.ok){
+      errorBox.textContent = res.error || "Não foi possível entrar.";
+      errorBox.classList.add("show");
+      return;
+    }
+    window.location.href = "dashboard.html";
+  } catch(err){
+    errorBox.textContent = "Erro de conexão com o servidor. Verifique se o backend está rodando.";
+    errorBox.classList.add("show");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Entrar";
+  }
+});
+</script>
+</body>
+</html>

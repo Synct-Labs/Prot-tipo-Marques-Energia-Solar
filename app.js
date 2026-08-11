@@ -130,6 +130,14 @@ const PRODUCTS = [
     name:"Cabo de Aterramento 10mm² (20m)", price:179.00,
     specs:{ bitola:"10 mm²", comprimento:"20m", isolacao:"Cobre nu",
       tensaoMax:"—", resistencia:"Uso em aterramento de estrutura" } },
+  { id:"cb6", cat:"cabos", brand:"Nexans", sku:"CB-SOL-4MM-35", embVenda:"1 kit (par de rolos)", subcategoria:"Cabo Solar", facetValue:"4 mm²",
+    name:"Kit Cabo Solar 4mm² Vermelho/Preto (35m + 35m) — padrão Monte seu Kit", price:299.00,
+    specs:{ bitola:"4 mm²", comprimento:"35m vermelho + 35m preto", isolacao:"XLPE",
+      tensaoMax:"1,8 kV DC", resistencia:"UV e intempéries, -40°C a 90°C" } },
+  { id:"cb7", cat:"cabos", brand:"Stäubli", sku:"CN-MC4-PAR", embVenda:"1 par", subcategoria:"Conectores", facetValue:"Conectores",
+    name:"Conector Fotovoltaico MC4 (par avulso)", price:19.90,
+    specs:{ bitola:"Compatível 2,5 a 6 mm²", comprimento:"—", isolacao:"Corpo em PC/PA, IP67",
+      tensaoMax:"1000 V DC / 30 A", resistencia:"Vedação IP67" } },
 
   // ---------- PARAFUSOS E ESTRUTURA DE FIXAÇÃO ----------
   { id:"es1", cat:"estrutura", brand:"Romagnole", sku:"ST-TC-6P", embVenda:"1 kit (6 painéis)", subcategoria:"Telhado", facetValue:"Telhado",
@@ -172,7 +180,8 @@ const state = {
     step: 0,
     paineis: { id: null, qty: 6 },
     inversor: { id: null },
-    cabos: { id: null },
+    cabo: { id: "cb6", qty: 1 },
+    conector: { id: "cb7", qty: 2 },
     estrutura: { id: null },
   },
 };
@@ -183,10 +192,18 @@ const FEATURED_IDS = ["pn1", "iv2", "cb1", "es1"];
 const WIZARD_STEPS = [
   { key:"paineis",   cat:"paineis",    label:"Painéis",    title:"Escolha o Painel Solar",       sub:"Selecione o modelo e a quantidade de painéis do seu projeto." },
   { key:"inversor",  cat:"inversores", label:"Inversor",   title:"Escolha o Inversor",            sub:"Selecione o inversor compatível com a potência do projeto." },
-  { key:"cabos",     cat:"cabos",      label:"Cabos",      title:"Escolha o Kit de Cabos",         sub:"Selecione o kit de cabos e conectores para a instalação." },
+  { key:"cabos",     label:"Cabos",      title:"Cabos e Conectores",              sub:"Já incluímos o padrão recomendado para a maioria das instalações — ajuste as quantidades se precisar de mais." },
   { key:"estrutura", cat:"estrutura",  label:"Estrutura",  title:"Escolha a Estrutura de Fixação", sub:"Selecione a estrutura conforme o tipo de telhado ou solo." },
   { key:"resumo",    label:"Resumo",   title:"Resumo do Projeto",              sub:"Confira os itens selecionados antes de adicionar ao carrinho." },
 ];
+
+/* ---------------------- DIMENSIONAMENTO (kWp) ---------------------- */
+// Fator médio de geração mensal (kWh) por kWp instalado no Brasil — usado
+// para estimar a potência recomendada a partir do consumo mensal.
+const KWH_PER_KWP_MONTH = 119;
+// Tarifa média usada apenas para converter valor da conta (R$) em kWh,
+// quando o usuário informa o valor da conta em vez do consumo em kWh.
+const TARIFA_MEDIA_KWH = 0.85;
 
 /* ---------------------- HELPERS ---------------------- */
 function formatBRL(value){
@@ -257,17 +274,17 @@ function getWarrantyText(p){
 /* ======================================================================
    ROTEAMENTO (SPA baseada em hash) — suporta #produto/<id>
    ====================================================================== */
-const VALID_VIEWS = ["home","catalogo","comparar","produto","configurador","carrinho","checkout","confirmacao"];
+const VALID_VIEWS = ["credito","home","catalogo","comparar","produto","configurador","carrinho","checkout","confirmacao"];
 
 function navigate(){
-  const rawHash = location.hash.replace("#","") || "home";
+  const rawHash = location.hash.replace("#","") || "credito";
   let hash = rawHash;
 
   if(rawHash.startsWith("produto/")){
     hash = "produto";
     state.currentProductId = decodeURIComponent(rawHash.split("/")[1] || "");
   }
-  if(!VALID_VIEWS.includes(hash)) hash = "home";
+  if(!VALID_VIEWS.includes(hash)) hash = "credito";
 
   $all(".view").forEach(v => v.classList.remove("active"));
   const target = document.getElementById(hash);
@@ -275,6 +292,7 @@ function navigate(){
 
   closeMobileMenu();
 
+  if(hash === "credito") renderCreditSimCard();
   if(hash === "catalogo") { renderSidebar(); renderCatalog(); }
   if(hash === "comparar") renderComparison();
   if(hash === "produto") renderProductPage();
@@ -732,7 +750,8 @@ function startWizard(){
   cfg.step = 0;
   if(!cfg.paineis.id) cfg.paineis.id = "pn1";
   if(!cfg.inversor.id) cfg.inversor.id = recommendInverterId();
-  if(!cfg.cabos.id) cfg.cabos.id = "cb4";
+  if(!cfg.cabo.id) cfg.cabo.id = "cb6";
+  if(!cfg.conector.id) cfg.conector.id = "cb7";
   if(!cfg.estrutura.id) cfg.estrutura.id = "es1";
   renderConfiguradorView();
   window.scrollTo({ top: 0, behavior: "auto" });
@@ -796,12 +815,59 @@ function renderWizardOptionsHTML(stepDef){
   `;
 }
 
+function renderWizardCabosHTML(){
+  const cfg = state.configurator;
+  const cabo = getProduct(cfg.cabo.id);
+  const conector = getProduct(cfg.conector.id);
+
+  return `
+    <h2 class="wizard-step-title">Cabos e Conectores</h2>
+    <p class="wizard-step-sub">Já incluímos o padrão recomendado para a maioria das instalações residenciais — ajuste as quantidades se o seu projeto precisar de mais.</p>
+
+    <div class="wizard-fixed-item">
+      ${productImageHTML(cabo, "wizard-option-image")}
+      <div class="wizard-fixed-item-body">
+        <span class="product-brand">${cabo.brand}</span>
+        <h4>${cabo.name}</h4>
+        <p class="wizard-fixed-item-note">Padrão: 35 metros de cabo vermelho + 35 metros de cabo preto (4mm²), suficiente para a maioria dos projetos residenciais.</p>
+        <span class="wizard-option-price">${formatBRL(cabo.price)} / kit</span>
+      </div>
+      <div class="qty-control">
+        <button type="button" id="caboQtyMinus">${ICON_MINUS}</button>
+        <span id="caboQtyValue">${cfg.cabo.qty}</span>
+        <button type="button" id="caboQtyPlus">${ICON_PLUS}</button>
+      </div>
+    </div>
+
+    <div class="wizard-fixed-item">
+      ${productImageHTML(conector, "wizard-option-image")}
+      <div class="wizard-fixed-item-body">
+        <span class="product-brand">${conector.brand}</span>
+        <h4>${conector.name}</h4>
+        <p class="wizard-fixed-item-note">Padrão: 2 pares de conector fotovoltaico MC4. Adicione mais pares se o seu projeto tiver mais conexões.</p>
+        <span class="wizard-option-price">${formatBRL(conector.price)} / par</span>
+      </div>
+      <div class="qty-control">
+        <button type="button" id="conectorQtyMinus">${ICON_MINUS}</button>
+        <span id="conectorQtyValue">${cfg.conector.qty}</span>
+        <button type="button" id="conectorQtyPlus">${ICON_PLUS}</button>
+      </div>
+    </div>
+
+    <p class="wizard-fixed-item-hint">Precisa de outra bitola de cabo ou mais conectores do que o padrão? Você também encontra essas opções avulsas no <a href="#catalogo">catálogo</a>.</p>
+  `;
+}
+
 function renderWizardSummaryHTML(){
   const cfg = state.configurator;
+  const painel = getProduct(cfg.paineis.id);
+  const totalKwp = (parseFloat(painel.specs.potencia) * cfg.paineis.qty) / 1000;
+
   const rows = [
-    { p: getProduct(cfg.paineis.id), qty: cfg.paineis.qty },
+    { p: painel, qty: cfg.paineis.qty },
     { p: getProduct(cfg.inversor.id), qty: 1 },
-    { p: getProduct(cfg.cabos.id), qty: 1 },
+    { p: getProduct(cfg.cabo.id), qty: cfg.cabo.qty },
+    { p: getProduct(cfg.conector.id), qty: cfg.conector.qty },
     { p: getProduct(cfg.estrutura.id), qty: 1 },
   ];
   const total = rows.reduce((sum, r) => sum + r.p.price * r.qty, 0);
@@ -819,6 +885,10 @@ function renderWizardSummaryHTML(){
   return `
     <h2 class="wizard-step-title">Resumo do Projeto</h2>
     <p class="wizard-step-sub">Confira os itens selecionados antes de adicionar ao carrinho.</p>
+    <div class="wizard-summary-kwp">
+      <span>Potência do sistema (kWp)</span>
+      <strong>${totalKwp.toFixed(2).replace(".", ",")} kWp</strong>
+    </div>
     <div class="wizard-summary-list">${rowsHTML}</div>
     <div class="wizard-summary-total"><span>Total do projeto</span><span>${formatBRL(total)}</span></div>
   `;
@@ -831,7 +901,9 @@ function renderWizardStep(){
 
   $("#wizardContent").innerHTML = stepDef.key === "resumo"
     ? renderWizardSummaryHTML()
-    : renderWizardOptionsHTML(stepDef);
+    : stepDef.key === "cabos"
+      ? renderWizardCabosHTML()
+      : renderWizardOptionsHTML(stepDef);
 
   $("#wizardBackBtn").textContent = state.configurator.step === 0 ? "Cancelar" : "Voltar";
   $("#wizardNextBtn").textContent = stepDef.key === "resumo" ? "Adicionar tudo ao carrinho" : "Avançar";
@@ -842,7 +914,8 @@ function addWizardToCart(){
   const items = [
     { id: cfg.paineis.id, qty: cfg.paineis.qty },
     { id: cfg.inversor.id, qty: 1 },
-    { id: cfg.cabos.id, qty: 1 },
+    { id: cfg.cabo.id, qty: cfg.cabo.qty },
+    { id: cfg.conector.id, qty: cfg.conector.qty },
     { id: cfg.estrutura.id, qty: 1 },
   ];
   items.forEach(({ id, qty }) => {
@@ -893,6 +966,26 @@ $("#wizardContent").addEventListener("click", (e) => {
   }
   if(e.target.closest("#wizardQtyMinus")){
     state.configurator.paineis.qty = Math.max(1, state.configurator.paineis.qty - 1);
+    renderWizardStep();
+    return;
+  }
+  if(e.target.closest("#caboQtyPlus")){
+    state.configurator.cabo.qty++;
+    renderWizardStep();
+    return;
+  }
+  if(e.target.closest("#caboQtyMinus")){
+    state.configurator.cabo.qty = Math.max(1, state.configurator.cabo.qty - 1);
+    renderWizardStep();
+    return;
+  }
+  if(e.target.closest("#conectorQtyPlus")){
+    state.configurator.conector.qty++;
+    renderWizardStep();
+    return;
+  }
+  if(e.target.closest("#conectorQtyMinus")){
+    state.configurator.conector.qty = Math.max(1, state.configurator.conector.qty - 1);
     renderWizardStep();
   }
 });
@@ -1023,26 +1116,73 @@ function renderCheckout(){
   $("#checkoutTotal").textContent = formatBRL(total);
 }
 
-$("#checkoutForm").addEventListener("submit", (e) => {
+$("#checkoutForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+
+  const submitBtn = $("#checkoutSubmitBtn");
+  const errorBox = $("#checkoutError");
+  errorBox.style.display = "none";
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Enviando pedido...";
+
+  const formData = new FormData(e.target);
+  const payload = {
+    nome: formData.get("nome"),
+    cpf: formData.get("cpf"),
+    email: formData.get("email"),
+    telefone: formData.get("telefone"),
+    cep: formData.get("cep"),
+    cidade: formData.get("cidade"),
+    estado: formData.get("estado"),
+    rua: formData.get("rua"),
+    numero: formData.get("numero"),
+    bairro: formData.get("bairro"),
+    complemento: formData.get("complemento") || "",
+    pagamento: formData.get("pagamento"),
+    itens: state.cart.map(item => {
+      const p = getProduct(item.id);
+      return { id: p.id, nome: p.name, marca: p.brand, preco: p.price, qty: item.qty };
+    }),
+    subtotal: cartTotalValue(),
+    total: cartTotalValue(),
+  };
 
   /* =====================================================================
      PONTO DE INTEGRAÇÃO DE PAGAMENTO (produção)
      ---------------------------------------------------------------------
-     Aqui, na versão de produção, os dados do formulário + itens do
-     carrinho seriam enviados para o backend, que criaria uma cobrança
-     no gateway escolhido (Mercado Pago / PagSeguro / Stripe) e
-     retornaria o link/token de pagamento (Pix, cartão ou boleto).
-     Este protótipo apenas simula a confirmação do pedido.
+     O pedido já é persistido de verdade no backend (ver backend/). Falta
+     apenas conectar aqui o gateway de pagamento escolhido pelo cliente
+     (Mercado Pago / PagSeguro / Stripe) para processar Pix, cartão ou
+     boleto antes de confirmar o pedido como pago.
      ===================================================================== */
 
-  const orderNumber = Math.floor(100000 + Math.random() * 900000);
-  $("#orderNumber").textContent = "#" + orderNumber;
+  try {
+    const res = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
 
-  state.cart = [];
-  updateCartCount();
+    if(!data.ok){
+      errorBox.textContent = data.error || "Não foi possível registrar o pedido. Tente novamente.";
+      errorBox.style.display = "block";
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Finalizar Pedido";
+      return;
+    }
 
-  location.hash = "#confirmacao";
+    $("#orderNumber").textContent = data.orderNumber;
+    state.cart = [];
+    updateCartCount();
+    location.hash = "#confirmacao";
+  } catch(err){
+    errorBox.textContent = "Não foi possível conectar ao servidor. Verifique se o backend está rodando (ver README) e tente novamente.";
+    errorBox.style.display = "block";
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Finalizar Pedido";
+  }
 });
 
 /* ======================================================================
@@ -1068,6 +1208,194 @@ if(faqList){
     answer.style.maxHeight = !isOpen ? answer.scrollHeight + "px" : null;
   });
 }
+
+/* ======================================================================
+   DIMENSIONAMENTO (calculadora de kWp)
+   ====================================================================== */
+function calcSizing(){
+  const billVal = parseFloat($("#sizingBillInput").value);
+  const kwhVal = parseFloat($("#sizingKwhInput").value);
+
+  let kwh = null;
+  if(!isNaN(kwhVal) && kwhVal > 0) kwh = kwhVal;
+  else if(!isNaN(billVal) && billVal > 0) kwh = billVal / TARIFA_MEDIA_KWH;
+
+  if(!kwh){
+    showToast("Informe o valor da conta de luz ou o consumo em kWh.");
+    return;
+  }
+
+  const kwp = kwh / KWH_PER_KWP_MONTH;
+  const painelReferencia = getProduct("pn1"); // 450 Wp — usado só como referência de cálculo
+  const potenciaPainelWp = parseFloat(painelReferencia.specs.potencia) || 450;
+  const qtdPaineis = Math.max(1, Math.ceil((kwp * 1000) / potenciaPainelWp));
+
+  $("#sizingResultKwp").textContent = kwp.toFixed(2).replace(".", ",") + " kWp";
+  $("#sizingResultPaineis").textContent = `${qtdPaineis} painéis`;
+  const resultBox = $("#sizingCalcResult");
+  resultBox.hidden = false;
+  resultBox.dataset.qtd = qtdPaineis;
+}
+
+$("#sizingCalcBtn")?.addEventListener("click", calcSizing);
+
+$("#sizingGoWizardBtn")?.addEventListener("click", () => {
+  const qtd = parseInt($("#sizingCalcResult").dataset.qtd, 10) || 6;
+  state.configurator.paineis.qty = qtd;
+  startWizard();
+  location.hash = "#configurador";
+});
+
+/* ======================================================================
+   SIMULAÇÃO DE CRÉDITO
+   ---------------------------------------------------------------------
+   Protótipo — simulações ilustrativas com taxas de exemplo, sem nenhuma
+   integração com instituição financeira real.
+   ====================================================================== */
+function pmt(pv, i, n){
+  if(i === 0) return pv / n;
+  return (pv * i) / (1 - Math.pow(1 + i, -n));
+}
+
+const CREDIT_MODES = {
+  clt: {
+    label: "Crédito CLT",
+    description: "Simulação de crédito pessoal/consignado para quem tem carteira assinada (CLT), com desconto facilitado em folha.",
+    fields: [
+      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000" },
+      { key:"parcelas", label:"Número de parcelas", type:"select", options:[12,24,36,48,60] },
+    ],
+    calc(values){
+      const valor = parseFloat(values.valor) || 0;
+      const parcelas = parseInt(values.parcelas, 10) || 12;
+      const taxaMensal = 0.021; // ilustrativa
+      const parcela = pmt(valor, taxaMensal, parcelas);
+      return [
+        { label:"Parcela estimada", value: `${formatBRL(parcela)} / mês` },
+        { label:"Total estimado ao final do prazo", value: formatBRL(parcela * parcelas) },
+      ];
+    },
+  },
+  fgts: {
+    label: "Saque FGTS",
+    description: "Use o saldo disponível no saque-aniversário do FGTS como entrada ou parte do pagamento do seu sistema solar.",
+    fields: [
+      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000" },
+      { key:"fgts", label:"Valor disponível no FGTS (R$)", type:"number", placeholder:"Ex: 3000" },
+    ],
+    calc(values){
+      const valor = parseFloat(values.valor) || 0;
+      const fgts = parseFloat(values.fgts) || 0;
+      const cobertoPeloFgts = Math.min(fgts, valor);
+      const restante = Math.max(0, valor - fgts);
+      return [
+        { label:"Valor coberto pelo FGTS", value: formatBRL(cobertoPeloFgts) },
+        { label:"Saldo restante a pagar ou financiar", value: formatBRL(restante) },
+      ];
+    },
+  },
+  consorcio: {
+    label: "Consórcio",
+    description: "Consórcio de energia solar: sem juros, com taxa de administração diluída nas parcelas. Ideal para quem pode aguardar a contemplação.",
+    fields: [
+      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000" },
+      { key:"parcelas", label:"Número de parcelas", type:"select", options:[60,72,80,100] },
+    ],
+    calc(values){
+      const valor = parseFloat(values.valor) || 0;
+      const parcelas = parseInt(values.parcelas, 10) || 60;
+      const taxaAdm = 0.17; // ilustrativa
+      const total = valor * (1 + taxaAdm);
+      const parcela = total / parcelas;
+      return [
+        { label:"Parcela estimada", value: `${formatBRL(parcela)} / mês` },
+        { label:"Total estimado (com taxa de administração)", value: formatBRL(total) },
+      ];
+    },
+  },
+  financiamento: {
+    label: "Financiamento Bancário",
+    description: "Linhas de financiamento bancário específicas para energia solar, com prazos mais longos.",
+    fields: [
+      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000" },
+      { key:"parcelas", label:"Número de parcelas", type:"select", options:[24,36,48,60,72,84,96] },
+    ],
+    calc(values){
+      const valor = parseFloat(values.valor) || 0;
+      const parcelas = parseInt(values.parcelas, 10) || 48;
+      const taxaMensal = 0.015; // ilustrativa
+      const parcela = pmt(valor, taxaMensal, parcelas);
+      return [
+        { label:"Parcela estimada", value: `${formatBRL(parcela)} / mês` },
+        { label:"Total estimado ao final do prazo", value: formatBRL(parcela * parcelas) },
+      ];
+    },
+  },
+};
+
+let currentCreditMode = "clt";
+
+function creditFieldHTML(f){
+  if(f.type === "select"){
+    const opts = f.options.map(o => `<option value="${o}">${o}x</option>`).join("");
+    return `<label>${f.label}<select name="${f.key}">${opts}</select></label>`;
+  }
+  return `<label>${f.label}<input type="number" min="0" name="${f.key}" placeholder="${f.placeholder || ""}"></label>`;
+}
+
+function renderCreditSimCard(){
+  const card = $("#creditSimCard");
+  if(!card) return;
+  const mode = CREDIT_MODES[currentCreditMode];
+
+  card.innerHTML = `
+    <h3>${mode.label}</h3>
+    <p>${mode.description}</p>
+    <div class="credit-sim-form" id="creditSimForm">${mode.fields.map(creditFieldHTML).join("")}</div>
+    <button class="btn btn-primary" id="creditSimSubmit" type="button">Simular</button>
+    <div class="credit-sim-result" id="creditSimResult"></div>
+    <p class="credit-sim-disclaimer">Simulação ilustrativa e sem compromisso — os valores reais dependem de análise de crédito, taxa contratada e instituição financeira. Fale com um especialista para uma proposta personalizada.</p>
+  `;
+}
+
+$("#creditTabs")?.addEventListener("click", (e) => {
+  const btn = e.target.closest(".credit-tab");
+  if(!btn) return;
+  currentCreditMode = btn.dataset.mode;
+  $all(".credit-tab").forEach(t => t.classList.remove("active"));
+  btn.classList.add("active");
+  renderCreditSimCard();
+});
+
+document.addEventListener("click", (e) => {
+  if(e.target.id !== "creditSimSubmit") return;
+  const form = $("#creditSimForm");
+  const values = {};
+  $all("input, select", form).forEach(el => { values[el.name] = el.value; });
+
+  const mode = CREDIT_MODES[currentCreditMode];
+  const results = mode.calc(values);
+  const resultBox = $("#creditSimResult");
+  resultBox.innerHTML = results.map(r => `
+    <div class="credit-sim-result-value">${r.value}</div>
+    <div class="credit-sim-result-label">${r.label}</div>
+  `).join("");
+  resultBox.classList.add("show");
+});
+
+/* Rolagem suave até a simulação de crédito, a partir de qualquer página */
+document.addEventListener("click", (e) => {
+  const trigger = e.target.closest(".js-scroll-simulacao");
+  if(!trigger) return;
+  e.preventDefault();
+  const go = () => $("#simulacao-credito")?.scrollIntoView({ behavior:"smooth", block:"start" });
+  if(location.hash.replace("#","") !== "credito"){
+    location.hash = "#credito";
+    setTimeout(go, 60);
+  } else {
+    go();
+  }
+});
 
 /* ======================================================================
    MENU MOBILE

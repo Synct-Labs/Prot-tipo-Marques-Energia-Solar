@@ -1,0 +1,13 @@
+{
+  "name": "marques-energia-solar-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend do protótipo Marques Energia Solar — login de administrador e persistência de pedidos. Zero dependências externas (usa apenas módulos nativos do Node).",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node src/server.js"
+  }
+}

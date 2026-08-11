@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Pedidos — Painel de Administrador — Marques Energia Solar</title>
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<header class="admin-topbar">
+  <div class="admin-brand">
+    <img src="../logo-mark-128.png" alt="Marques Energia Solar">
+    <span>Painel de Administrador</span>
+  </div>
+  <div class="admin-topbar-right">
+    <span class="admin-user" id="adminUserLabel"></span>
+    <button class="admin-btn admin-btn-ghost" id="logoutBtn">Sair</button>
+  </div>
+</header>
+
+<main class="admin-main">
+  <div class="admin-container">
+
+    <div class="admin-stats-grid" id="statsGrid"></div>
+
+    <div class="admin-toolbar">
+      <h2 style="font-size:1.15rem;">Pedidos</h2>
+      <div class="admin-toolbar-filters">
+        <input type="text" id="searchInput" placeholder="Buscar por nome, e-mail ou nº do pedido">
+        <select id="statusFilter">
+          <option value="">Todos os status</option>
+        </select>
+        <button class="admin-btn admin-btn-ghost" id="refreshBtn">Atualizar</button>
+      </div>
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Pedido</th>
+            <th>Cliente</th>
+            <th>Cidade/UF</th>
+            <th>Itens</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Data</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTableBody">
+          <tr><td colspan="7" class="admin-loading">Carregando pedidos...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</main>
+
+<script src="admin.js"></script>
+<script>
+let allOrders = [];
+
+function statOptionsHTML(){
+  return MES.STATUS_ORDER.map(s => `<option value="${s}">${MES.STATUS_LABELS[s]}</option>`).join("");
+}
+
+function renderStats(stats){
+  const grid = document.getElementById("statsGrid");
+  const total = Object.values(stats).reduce((a,b) => a+b, 0);
+  const cards = [["Total", total]].concat(
+    MES.STATUS_ORDER.map(s => [MES.STATUS_LABELS[s], stats[s] || 0])
+  );
+  grid.innerHTML = cards.map(([label, value]) => `
+    <div class="admin-stat-card">
+      <div class="admin-stat-value">${value}</div>
+      <div class="admin-stat-label">${label}</div>
+    </div>`).join("");
+}
+
+function orderDetailHTML(order){
+  const itemsHTML = order.itens.map(it => `
+    <div class="admin-detail-item-row">
+      <span>${it.qty}x ${it.nome}</span>
+      <span>${MES.formatBRL(it.preco * it.qty)}</span>
+    </div>`).join("");
+
+  const end = order.endereco;
+  const enderecoLinha = `${end.rua || ""}, ${end.numero || ""}${end.complemento ? " — " + end.complemento : ""}`;
+
+  return `
+    <div class="admin-detail-block">
+      <h4>Cliente</h4>
+      <p>${order.customer.nome}</p>
+      <p>${order.customer.cpf}</p>
+      <p>${order.customer.email}</p>
+      <p>${order.customer.telefone}</p>
+    </div>
+    <div class="admin-detail-block">
+      <h4>Endereço de entrega</h4>
+      <p>${enderecoLinha}</p>
+      <p>${end.bairro || ""}</p>
+      <p>${end.cidade || ""} — ${end.estado || ""}</p>
+      <p>CEP ${end.cep || ""}</p>
+    </div>
+    <div class="admin-detail-block">
+      <h4>Pagamento</h4>
+      <p>${order.pagamento ? order.pagamento.toUpperCase() : "—"}</p>
+      <h4 style="margin-top:14px;">Itens do pedido</h4>
+      <div class="admin-detail-items">${itemsHTML}</div>
+    </div>
+  `;
+}
+
+function renderOrders(list){
+  const tbody = document.getElementById("ordersTableBody");
+  if(list.length === 0){
+    tbody.innerHTML = `<tr><td colspan="7" class="admin-empty">Nenhum pedido encontrado.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(order => {
+    const itemsCount = order.itens.reduce((sum,i) => sum + i.qty, 0);
+    return `
+    <tr class="admin-order-row" data-id="${order.id}">
+      <td data-label="Pedido">${order.orderNumber}</td>
+      <td data-label="Cliente">${order.customer.nome}</td>
+      <td data-label="Cidade/UF">${order.endereco.cidade || "—"} / ${order.endereco.estado || "—"}</td>
+      <td data-label="Itens">${itemsCount}</td>
+      <td data-label="Total">${MES.formatBRL(order.total)}</td>
+      <td data-label="Status">${MES.statusSelectHTML(order.status, order.id)}</td>
+      <td data-label="Data">${MES.formatDate(order.createdAt)}</td>
+    </tr>
+    <tr class="admin-order-detail" data-detail-for="${order.id}">
+      <td colspan="7"><div class="admin-order-detail-inner">${orderDetailHTML(order)}</div></td>
+    </tr>`;
+  }).join("");
+}
+
+function applyFilters(){
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  const status = document.getElementById("statusFilter").value;
+  let list = allOrders;
+  if(status) list = list.filter(o => o.status === status);
+  if(q){
+    list = list.filter(o =>
+      o.orderNumber.toLowerCase().includes(q) ||
+      o.customer.nome.toLowerCase().includes(q) ||
+      o.customer.email.toLowerCase().includes(q)
+    );
+  }
+  renderOrders(list);
+}
+
+async function loadStats(){
+  const res = await MES.apiGet("/api/admin/stats");
+  if(res.ok) renderStats(res.stats);
+}
+
+async function loadOrders(){
+  document.getElementById("ordersTableBody").innerHTML =
+    `<tr><td colspan="7" class="admin-loading">Carregando pedidos...</td></tr>`;
+  const res = await MES.apiGet("/api/admin/orders");
+  if(!res.ok){
+    MES.showToast(res.error || "Erro ao carregar pedidos.");
+    return;
+  }
+  allOrders = res.orders;
+  applyFilters();
+}
+
+async function init(){
+  const admin = await MES.requireAuth();
+  if(!admin) return;
+  document.getElementById("adminUserLabel").textContent = admin.email;
+  document.getElementById("statusFilter").insertAdjacentHTML("beforeend", statOptionsHTML());
+
+  await Promise.all([loadStats(), loadOrders()]);
+}
+
+document.getElementById("logoutBtn").addEventListener("click", () => MES.logout());
+document.getElementById("refreshBtn").addEventListener("click", () => { loadStats(); loadOrders(); });
+document.getElementById("searchInput").addEventListener("input", applyFilters);
+document.getElementById("statusFilter").addEventListener("change", applyFilters);
+
+document.getElementById("ordersTableBody").addEventListener("click", (e) => {
+  // clique numa linha (fora do <select>) abre/fecha o detalhe
+  if(e.target.closest("select")) return;
+  const row = e.target.closest(".admin-order-row");
+  if(!row) return;
+  const id = row.dataset.id;
+  const detail = document.querySelector(`.admin-order-detail[data-detail-for="${id}"] .admin-order-detail-inner`);
+  if(detail) detail.classList.toggle("open");
+});
+
+document.getElementById("ordersTableBody").addEventListener("change", async (e) => {
+  const select = e.target.closest(".admin-status-select");
+  if(!select) return;
+  const id = select.dataset.orderId;
+  const newStatus = select.value;
+  const res = await MES.apiPatch(`/api/admin/orders/${id}`, { status: newStatus });
+  if(!res.ok){
+    MES.showToast(res.error || "Erro ao atualizar status.");
+    return;
+  }
+  MES.showToast("Status do pedido atualizado.");
+  const idx = allOrders.findIndex(o => String(o.id) === String(id));
+  if(idx > -1) allOrders[idx] = res.order;
+  loadStats();
+});
+
+init();
+</script>
+</body>
+</html>

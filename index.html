@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Marques Energia Solar — Loja de Equipamentos Fotovoltaicos</title>
-<meta name="description" content="Compare e compre painéis solares, inversores, cabos e estruturas de fixação. Energia inteligente para você.">
+<title>Marques Energia Solar — Crédito e Equipamentos Fotovoltaicos</title>
+<meta name="description" content="Simule seu crédito para energia solar (CLT, FGTS, consórcio ou financiamento) e compre painéis, inversores, cabos e estruturas com garantia de até 25 anos, para todo o Brasil.">
 <link rel="icon" href="logo-mark-128.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="styles.css">
@@ -16,13 +16,14 @@
 <!-- ===================== HEADER ===================== -->
 <header class="site-header">
   <div class="container header-inner">
-    <a href="#home" class="logo" aria-label="Marques Energia Solar - Início">
+    <a href="#credito" class="logo" aria-label="Marques Energia Solar - Início">
       <img src="logo-mark-128.png" alt="Marques Energia Solar" class="logo-mark-img">
       <span class="logo-text">Marques<strong>Energia Solar</strong></span>
     </a>
 
     <nav class="main-nav" id="mainNav">
-      <a href="#home" class="nav-link">Início</a>
+      <a href="#credito" class="nav-link">Início</a>
+      <a href="#credito" class="nav-link js-scroll-simulacao">Simular Crédito</a>
       <a href="#catalogo" class="nav-link">Catálogo</a>
       <a href="#configurador" class="nav-link">Monte seu Kit</a>
       <a href="#carrinho" class="nav-link">Carrinho</a>
@@ -33,6 +34,7 @@
     </nav>
 
     <div class="header-actions">
+      <a href="#home" class="btn btn-primary nav-buy-btn">Comprar</a>
       <a href="#carrinho" class="cart-btn" aria-label="Ver carrinho">
         <svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
         <span class="cart-badge" id="cartCount">0</span>
@@ -44,14 +46,160 @@
   </div>
 </header>
 
-<!-- ===================== HOME ===================== -->
+<!-- ===================== CRÉDITO SOLAR (PÁGINA PRINCIPAL) ===================== -->
 <main>
-<section id="home" class="view active">
+<section id="credito" class="view active">
   <div class="hero">
     <div class="hero-mesh" aria-hidden="true"></div>
     <div class="container hero-inner">
       <div class="hero-text">
-        <span class="eyebrow"><span class="eyebrow-dot"></span>Mato Grosso • Energia Fotovoltaica</span>
+        <span class="eyebrow"><span class="eyebrow-dot"></span>Todo o Brasil • Crédito para Energia Solar</span>
+        <h1><span class="line">Energia solar no crédito</span><span class="line hero-gradient-text">que cabe no seu bolso.</span></h1>
+        <p class="hero-sub">Simule seu crédito para energia solar — CLT, saque-aniversário do FGTS, consórcio ou financiamento bancário — e monte seu kit com garantia de até 25 anos. Vendemos para todo o Brasil.</p>
+        <div class="hero-ctas">
+          <a href="#home" class="btn btn-primary btn-lg">
+            Comprar
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+          <a href="#credito" class="btn btn-outline btn-lg js-scroll-simulacao">
+            Simular Crédito
+          </a>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+            <span><strong>kWp</strong>dimensionamento sob medida</span>
+          </div>
+          <div class="hero-stat">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/></svg>
+            <span><strong>25 anos</strong>de garantia</span>
+          </div>
+          <div class="hero-stat">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+            <span><strong>Brasil</strong>inteiro</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="hero-glow"></div>
+        <img src="logo-mark.png" alt="" class="hero-logo-img">
+        <div class="hero-badge hero-badge-1">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Crédito CLT
+        </div>
+        <div class="hero-badge hero-badge-2">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Saque FGTS
+        </div>
+        <div class="hero-badge hero-badge-3">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Consórcio
+        </div>
+        <div class="hero-badge hero-badge-4">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Financiamento bancário
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- DIMENSIONAMENTO (kWp) ---------- -->
+  <section class="sizing-calc">
+    <div class="container">
+      <span class="section-kicker reveal">Dimensionamento</span>
+      <h2 class="section-title reveal">Quantos kWp o seu sistema precisa?</h2>
+      <p class="section-sub reveal">Informe sua conta de luz ou seu consumo mensal e calculamos a potência recomendada em kWp (quilowatt-pico) para o seu projeto.</p>
+
+      <div class="sizing-calc-card reveal">
+        <div class="sizing-calc-inputs">
+          <label>Valor médio da conta de energia (R$/mês)
+            <input type="number" id="sizingBillInput" min="0" step="10" placeholder="Ex: 450">
+          </label>
+          <span class="sizing-calc-or">ou</span>
+          <label>Consumo médio mensal (kWh)
+            <input type="number" id="sizingKwhInput" min="0" step="10" placeholder="Ex: 500">
+          </label>
+          <button class="btn btn-primary" id="sizingCalcBtn" type="button">Calcular</button>
+        </div>
+
+        <div class="sizing-calc-result" id="sizingCalcResult" hidden>
+          <div class="sizing-result-item">
+            <span class="sizing-result-value" id="sizingResultKwp">0 kWp</span>
+            <span class="sizing-result-label">Potência recomendada</span>
+          </div>
+          <div class="sizing-result-item">
+            <span class="sizing-result-value" id="sizingResultPaineis">0 painéis</span>
+            <span class="sizing-result-label">estimativa com painéis de 450 Wp</span>
+          </div>
+          <button class="btn btn-outline" id="sizingGoWizardBtn" type="button">Montar kit com essa potência</button>
+        </div>
+
+        <p class="sizing-calc-formula">Cálculo estimado: consumo mensal (kWh) ÷ 119 = potência recomendada (kWp). O fator 119 representa a geração média mensal por kWp instalado no Brasil. Resultado apenas ilustrativo — o dimensionamento final depende de irradiação local, orientação do telhado e perfil de consumo.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- SIMULAÇÃO DE CRÉDITO ---------- -->
+  <section class="credit-sim" id="simulacao-credito">
+    <div class="container">
+      <span class="section-kicker reveal">Simulação de Crédito</span>
+      <h2 class="section-title reveal">Escolha a modalidade de crédito</h2>
+      <p class="section-sub reveal">Simulações ilustrativas — sujeitas a análise e aprovação de crédito pela instituição financeira.</p>
+
+      <div class="credit-tabs reveal" id="creditTabs" role="tablist">
+        <button class="credit-tab active" data-mode="clt" type="button">Crédito CLT</button>
+        <button class="credit-tab" data-mode="fgts" type="button">Saque FGTS</button>
+        <button class="credit-tab" data-mode="consorcio" type="button">Consórcio</button>
+        <button class="credit-tab" data-mode="financiamento" type="button">Financiamento Bancário</button>
+      </div>
+
+      <div class="credit-sim-card reveal" id="creditSimCard"></div>
+    </div>
+  </section>
+
+  <!-- ---------- BADGES DE CONFIANÇA ---------- -->
+  <section class="trust-band">
+    <div class="container trust-grid">
+      <div class="trust-item reveal">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/></svg>
+        <strong>25 anos</strong>
+        <span>de garantia nos principais equipamentos</span>
+      </div>
+      <div class="trust-item reveal reveal-delay-1">
+        <svg class="icon" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+        <strong>Brasil inteiro</strong>
+        <span>compra 100% online, entrega em todo o país</span>
+      </div>
+      <div class="trust-item reveal reveal-delay-2">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+        <strong>kWp sob medida</strong>
+        <span>dimensionamento pelo seu consumo real</span>
+      </div>
+      <div class="trust-item reveal reveal-delay-3">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <strong>Sem compromisso</strong>
+        <span>simulação de crédito gratuita</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-cta">
+    <div class="container">
+      <div class="home-cta-inner reveal">
+        <h2>Pronto para ter energia solar no crédito?</h2>
+        <a href="#home" class="btn btn-primary btn-lg">Comprar Agora</a>
+      </div>
+    </div>
+  </section>
+</section>
+
+<!-- ===================== HOME (LOJA) ===================== -->
+<section id="home" class="view">
+  <div class="hero">
+    <div class="hero-mesh" aria-hidden="true"></div>
+    <div class="container hero-inner">
+      <div class="hero-text">
+        <span class="eyebrow"><span class="eyebrow-dot"></span>Loja Oficial • Entrega para todo o Brasil</span>
         <h1><span class="line">Energia inteligente</span><span class="line hero-gradient-text">para você.</span></h1>
         <p class="hero-sub">Monte seu próprio kit de energia solar: compare painéis, inversores, cabos e estruturas de fixação lado a lado, e finalize sua compra 100% online.</p>
         <div class="hero-ctas">
@@ -258,10 +406,17 @@
         </div>
         <div class="faq-item reveal">
           <button class="faq-question" type="button">
+            <span>Como funciona a simulação de crédito?</span>
+            <svg class="icon icon-sm faq-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer"><p>Na página inicial você encontra simulações ilustrativas para crédito CLT, saque-aniversário do FGTS, consórcio de placa solar e financiamento bancário. São estimativas sem compromisso — a condição final depende da análise de crédito da instituição financeira escolhida.</p></div>
+        </div>
+        <div class="faq-item reveal">
+          <button class="faq-question" type="button">
             <span>Qual o prazo de entrega dos equipamentos?</span>
             <svg class="icon icon-sm faq-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="faq-answer"><p>O prazo varia conforme a cidade e a disponibilidade do equipamento, geralmente entre 5 e 15 dias úteis para todo o Mato Grosso.</p></div>
+          <div class="faq-answer"><p>Entregamos para todo o Brasil. O prazo varia conforme a cidade e a disponibilidade do equipamento — geralmente entre 5 e 15 dias úteis em Mato Grosso, podendo variar em outras regiões do país.</p></div>
         </div>
         <div class="faq-item reveal">
           <button class="faq-question" type="button">
@@ -275,7 +430,7 @@
             <span>Vocês fazem a instalação?</span>
             <svg class="icon icon-sm faq-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="faq-answer"><p>Sim, oferecemos instalação profissional certificada em todo o estado de Mato Grosso. Fale com a gente pelo WhatsApp para agendar uma visita técnica.</p></div>
+          <div class="faq-answer"><p>Sim, oferecemos instalação profissional certificada em Mato Grosso e região. Para outros estados, os equipamentos são entregues normalmente e você pode contar com a nossa orientação técnica para escolher uma instaladora parceira perto de você.</p></div>
         </div>
         <div class="faq-item reveal">
           <button class="faq-question" type="button">
@@ -542,10 +697,10 @@
               <input type="text" name="cep" required placeholder="00000-000">
             </label>
             <label>Cidade
-              <input type="text" name="cidade" required placeholder="Cuiabá" value="Cuiabá">
+              <input type="text" name="cidade" required placeholder="Sua cidade">
             </label>
             <label>Estado
-              <input type="text" name="estado" required placeholder="MT" value="MT" maxlength="2">
+              <input type="text" name="estado" required placeholder="UF" maxlength="2">
             </label>
             <label class="col-span-2">Rua / Avenida
               <input type="text" name="rua" required placeholder="Nome da rua">
@@ -597,7 +752,8 @@
         <div class="summary-row"><span>Subtotal</span><span id="checkoutSubtotal">R$ 0,00</span></div>
         <div class="summary-row"><span>Frete</span><span>Grátis (protótipo)</span></div>
         <div class="summary-row summary-total"><span>Total</span><span id="checkoutTotal">R$ 0,00</span></div>
-        <button type="submit" class="btn btn-primary btn-block">Finalizar Pedido</button>
+        <button type="submit" class="btn btn-primary btn-block" id="checkoutSubmitBtn">Finalizar Pedido</button>
+        <p class="checkout-error" id="checkoutError" style="display:none;"></p>
         <p class="checkout-note">Ao finalizar, nenhuma cobrança real será feita — este é um protótipo.</p>
       </aside>
     </form>
@@ -681,8 +837,8 @@
       </p>
     </div>
     <div class="footer-note">
-      <p>&copy; 2026 Marques Energia Solar — Mato Grosso.</p>
-      <span class="prototype-tag">Protótipo de site — não processa pagamentos reais. Catálogo, números, marcas e depoimentos são dados de exemplo.</span>
+      <p>&copy; 2026 Marques Energia Solar — sediada em Mato Grosso, atendendo todo o Brasil.</p>
+      <span class="prototype-tag">Protótipo de site — não processa pagamentos reais nem simulações de crédito reais. Catálogo, números, marcas, depoimentos e simulações são dados de exemplo.</span>
     </div>
   </div>
 </footer>

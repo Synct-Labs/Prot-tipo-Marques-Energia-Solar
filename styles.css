@@ -1389,6 +1389,16 @@ input, select{ font-family: inherit; }
   padding-bottom: 8px;
 }
 .checkout-note{ font-size: 0.76rem; color: var(--muted-2); margin-top: 12px; text-align: center; }
+.checkout-error{
+  font-size: 0.82rem;
+  color: var(--danger);
+  background: rgba(240,100,90,0.1);
+  border: 1px solid rgba(240,100,90,0.3);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-top: 12px;
+  text-align: center;
+}
 
 @media (min-width: 950px){ .checkout-layout{ grid-template-columns: 2fr 1fr; align-items: start; } }
 
@@ -1845,6 +1855,176 @@ input, select{ font-family: inherit; }
   padding-top: 24px;
   border-top: 1px solid var(--border-soft);
 }
+
+/* ---------- itens fixos do wizard (cabo + conector padrão) ---------- */
+.wizard-fixed-item{
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.wizard-fixed-item .product-image{
+  width: 84px;
+  height: 84px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  aspect-ratio: unset;
+}
+.wizard-fixed-item-body{ flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.wizard-fixed-item-body h4{ font-size: 0.95rem; font-weight: 600; font-family: var(--font-display); }
+.wizard-fixed-item-note{ font-size: 0.8rem; color: var(--muted); }
+.wizard-fixed-item-hint{ font-size: 0.82rem; color: var(--muted-2); margin-top: 4px; }
+.wizard-fixed-item-hint a{ color: var(--orange); text-decoration: underline; }
+.wizard-fixed-item .qty-control{ flex-shrink: 0; }
+
+.wizard-summary-kwp{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  border: 1px dashed var(--border-orange);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--orange-light);
+}
+
+/* ===================== NAV — BOTÃO COMPRAR ===================== */
+.nav-buy-btn{
+  padding: 9px 22px;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* ===================== DIMENSIONAMENTO (calculadora de kWp) ===================== */
+.sizing-calc{ padding: 70px 0; }
+.sizing-calc-card{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 30px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.sizing-calc-inputs{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+}
+.sizing-calc-inputs label{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  flex: 1;
+  min-width: 180px;
+}
+.sizing-calc-inputs input{
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  color: var(--white);
+  font-size: 0.95rem;
+}
+.sizing-calc-inputs input:focus{ border-color: var(--border-orange); }
+.sizing-calc-or{ color: var(--muted-2); font-size: 0.8rem; padding-bottom: 12px; }
+.sizing-calc-result{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 26px;
+  margin-top: 26px;
+  padding-top: 26px;
+  border-top: 1px solid var(--border-soft);
+}
+.sizing-result-item{ display: flex; flex-direction: column; gap: 2px; }
+.sizing-result-value{ font-family: var(--font-display); font-size: 1.7rem; font-weight: 700; color: var(--orange); }
+.sizing-result-label{ font-size: 0.78rem; color: var(--muted); }
+.sizing-calc-formula{ margin-top: 20px; font-size: 0.76rem; color: var(--muted-2); line-height: 1.55; }
+
+/* ===================== SIMULAÇÃO DE CRÉDITO ===================== */
+.credit-sim{ padding: 70px 0; background: var(--bg-alt); }
+.credit-tabs{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.credit-tab{
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all .15s var(--ease);
+}
+.credit-tab:hover{ border-color: var(--border-orange); color: var(--white); }
+.credit-tab.active{ background: var(--orange); border-color: var(--orange); color: #1a1200; }
+
+.credit-sim-card{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 30px;
+}
+.credit-sim-card h3{ font-size: 1.15rem; margin-bottom: 6px; }
+.credit-sim-card > p{ color: var(--muted); font-size: 0.88rem; margin-bottom: 22px; max-width: 640px; }
+.credit-sim-form{ display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 22px; }
+@media (min-width: 640px){ .credit-sim-form{ grid-template-columns: repeat(2,1fr); } }
+.credit-sim-form label{ display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; color: var(--muted); }
+.credit-sim-form input, .credit-sim-form select{
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  color: var(--white);
+  font-size: 0.95rem;
+}
+.credit-sim-result{
+  background: linear-gradient(135deg, rgba(247,148,30,0.12), rgba(247,148,30,0.02));
+  border: 1px solid var(--border-orange);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  margin-top: 4px;
+  display: none;
+}
+.credit-sim-result.show{ display: block; }
+.credit-sim-result-value{ font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--orange-light); }
+.credit-sim-result-label{ font-size: 0.8rem; color: var(--muted); margin: 2px 0 12px; }
+.credit-sim-result-label:last-child{ margin-bottom: 0; }
+.credit-sim-disclaimer{ font-size: 0.76rem; color: var(--muted-2); margin-top: 18px; line-height: 1.55; }
+
+/* ===================== BADGES DE CONFIANÇA (trust band) ===================== */
+.trust-band{ padding: 50px 0 70px; }
+.trust-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+  gap: 18px;
+  text-align: center;
+}
+.trust-item{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 18px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.trust-item .icon{ color: var(--orange); width: 26px; height: 26px; }
+.trust-item strong{ font-family: var(--font-display); font-size: 1.1rem; }
+.trust-item span{ font-size: 0.8rem; color: var(--muted); }
 
 /* ===================== WHATSAPP FAB ===================== */
 .whatsapp-fab{
