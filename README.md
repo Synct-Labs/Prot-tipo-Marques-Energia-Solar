@@ -23,21 +23,42 @@ Depois:
 npm start
 ```
 
-Isso sobe o site inteiro (loja + painel + API) em **http://localhost:3000**. Não precisa de mais nenhum comando — sem `npm install`, sem banco externo.
+Isso sobe o site inteiro (as duas páginas + painel + API) em **http://localhost:3000**. Não precisa de mais nenhum comando — sem `npm install`, sem banco externo.
 
-- Loja: http://localhost:3000
+- Página de Crédito Solar (home): http://localhost:3000
+- Loja: http://localhost:3000/loja.html
 - Painel de administrador: http://localhost:3000/admin/login.html
 
 ## O que tem
 
-- Home com identidade visual da marca (logo real, hero, propostas de valor).
+O site é dividido em **duas páginas HTML independentes** (não é mais uma SPA única):
+
+### `index.html` — Crédito Solar (página inicial)
+- Calculadora de dimensionamento: consumo (kWh ou valor da conta) → potência recomendada em **kWp**, usando a fórmula `consumo (kWh) ÷ 119`.
+- Simulação de crédito em 4 modalidades: Crédito CLT, Saque FGTS, Consórcio de placa solar, Financiamento bancário — todas com valores **ilustrativos**, sem integração real com instituição financeira.
+- Comunicação de alcance nacional ("comprar no Brasil inteiro") e garantia de 25 anos.
+- Botão "Comprar" leva para `loja.html`. O botão "Montar kit com essa potência" da calculadora também leva para lá, já passando a quantidade de painéis sugerida (ver "Handoff entre páginas" abaixo).
+
+### `loja.html` — Loja (SPA por hash, dentro da própria página)
+- Home da loja com identidade visual da marca, propostas de valor, produtos em destaque, depoimentos e FAQ.
 - Catálogo com 23 produtos placeholder em 4 categorias: painéis solares, inversores, kits de cabos/fios, parafusos e estrutura de fixação.
 - Comparação lado a lado (2–3 produtos da mesma categoria).
 - Carrinho funcional (adicionar/remover/qtd/total).
-- Configurador "Monte seu Projeto" (wizard guiado de kit completo).
+- Configurador "Monte seu Projeto" (wizard guiado de kit completo, com kWp calculado no resumo).
 - Checkout completo (dados pessoais, endereço, resumo do pedido) — o pedido é **salvo de verdade** no backend ao finalizar. **Sem gateway de pagamento real.**
-- **Painel de administrador** (`/admin`): login protegido, lista de pedidos com busca/filtro por status, detalhe de cada pedido (cliente, endereço, itens) e atualização de status (novo → confirmado → em preparação → enviado → entregue / cancelado).
-- Design responsivo mobile-first.
+- Botão "Crédito Solar" no cabeçalho leva de volta para `index.html`.
+
+### Painel de administrador (`/admin`)
+- Login protegido, lista de pedidos com busca/filtro por status, detalhe de cada pedido (cliente, endereço, itens) e atualização de status (novo → confirmado → em preparação → enviado → entregue / cancelado).
+
+Design responsivo mobile-first nas duas páginas.
+
+### Handoff entre páginas (calculadora → configurador)
+
+Como `index.html` e `loja.html` são documentos HTML separados (recarregam a página ao navegar entre eles), o estado do JavaScript não sobrevive à troca. Para levar a quantidade de painéis sugerida pela calculadora de `index.html` até o configurador de `loja.html`, usamos o `localStorage` como ponte:
+
+1. Em `credito.js`, o botão "Montar kit com essa potência" grava `localStorage.setItem("mes_sizing_qtd", qtd)` e navega para `loja.html#configurador`.
+2. Em `app.js`, ao carregar a view `configurador`, o código lê `localStorage.getItem("mes_sizing_qtd")`, aplica a quantidade ao estado do wizard, remove a chave do `localStorage` (uso único) e abre o wizard já com essa sugestão.
 
 ## Backend
 
@@ -60,9 +81,11 @@ Isso sobe o site inteiro (loja + painel + API) em **http://localhost:3000**. Nã
 ## Estrutura
 
 ```
-index.html        → estrutura e conteúdo das páginas da loja (SPA por hash)
-styles.css         → sistema de design (cores, tipografia, componentes)
-app.js             → dados do catálogo + lógica da loja (catálogo, comparação, carrinho, checkout)
+index.html         → página "Crédito Solar" (calculadora de kWp + simulação de crédito)
+credito.js         → lógica isolada de index.html (calculadora, simulação, menu mobile)
+loja.html           → página da loja (SPA por hash: catálogo, comparação, configurador, carrinho, checkout)
+app.js             → dados do catálogo + lógica da loja (catálogo, comparação, carrinho, checkout, configurador)
+styles.css         → sistema de design (cores, tipografia, componentes) — compartilhado pelas duas páginas
 logo-*.png         → logo oficial recortado em diferentes tamanhos
 admin/
   login.html       → tela de login do administrador

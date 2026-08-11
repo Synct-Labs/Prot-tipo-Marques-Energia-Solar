@@ -197,14 +197,6 @@ const WIZARD_STEPS = [
   { key:"resumo",    label:"Resumo",   title:"Resumo do Projeto",              sub:"Confira os itens selecionados antes de adicionar ao carrinho." },
 ];
 
-/* ---------------------- DIMENSIONAMENTO (kWp) ---------------------- */
-// Fator médio de geração mensal (kWh) por kWp instalado no Brasil — usado
-// para estimar a potência recomendada a partir do consumo mensal.
-const KWH_PER_KWP_MONTH = 119;
-// Tarifa média usada apenas para converter valor da conta (R$) em kWh,
-// quando o usuário informa o valor da conta em vez do consumo em kWh.
-const TARIFA_MEDIA_KWH = 0.85;
-
 /* ---------------------- HELPERS ---------------------- */
 function formatBRL(value){
   return value.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
@@ -274,17 +266,17 @@ function getWarrantyText(p){
 /* ======================================================================
    ROTEAMENTO (SPA baseada em hash) — suporta #produto/<id>
    ====================================================================== */
-const VALID_VIEWS = ["credito","home","catalogo","comparar","produto","configurador","carrinho","checkout","confirmacao"];
+const VALID_VIEWS = ["home","catalogo","comparar","produto","configurador","carrinho","checkout","confirmacao"];
 
 function navigate(){
-  const rawHash = location.hash.replace("#","") || "credito";
+  const rawHash = location.hash.replace("#","") || "home";
   let hash = rawHash;
 
   if(rawHash.startsWith("produto/")){
     hash = "produto";
     state.currentProductId = decodeURIComponent(rawHash.split("/")[1] || "");
   }
-  if(!VALID_VIEWS.includes(hash)) hash = "credito";
+  if(!VALID_VIEWS.includes(hash)) hash = "home";
 
   $all(".view").forEach(v => v.classList.remove("active"));
   const target = document.getElementById(hash);
@@ -292,11 +284,20 @@ function navigate(){
 
   closeMobileMenu();
 
-  if(hash === "credito") renderCreditSimCard();
   if(hash === "catalogo") { renderSidebar(); renderCatalog(); }
   if(hash === "comparar") renderComparison();
   if(hash === "produto") renderProductPage();
-  if(hash === "configurador") renderConfiguradorView();
+  if(hash === "configurador") {
+    // Se o usuário veio da calculadora de dimensionamento (index.html),
+    // a quantidade de painéis sugerida chega aqui via localStorage.
+    const suggestedQty = localStorage.getItem("mes_sizing_qtd");
+    if(suggestedQty){
+      localStorage.removeItem("mes_sizing_qtd");
+      state.configurator.paineis.qty = parseInt(suggestedQty, 10) || state.configurator.paineis.qty;
+      startWizard();
+    }
+    renderConfiguradorView();
+  }
   if(hash === "carrinho") renderCart();
   if(hash === "checkout") renderCheckout();
 
@@ -1208,194 +1209,6 @@ if(faqList){
     answer.style.maxHeight = !isOpen ? answer.scrollHeight + "px" : null;
   });
 }
-
-/* ======================================================================
-   DIMENSIONAMENTO (calculadora de kWp)
-   ====================================================================== */
-function calcSizing(){
-  const billVal = parseFloat($("#sizingBillInput").value);
-  const kwhVal = parseFloat($("#sizingKwhInput").value);
-
-  let kwh = null;
-  if(!isNaN(kwhVal) && kwhVal > 0) kwh = kwhVal;
-  else if(!isNaN(billVal) && billVal > 0) kwh = billVal / TARIFA_MEDIA_KWH;
-
-  if(!kwh){
-    showToast("Informe o valor da conta de luz ou o consumo em kWh.");
-    return;
-  }
-
-  const kwp = kwh / KWH_PER_KWP_MONTH;
-  const painelReferencia = getProduct("pn1"); // 450 Wp — usado só como referência de cálculo
-  const potenciaPainelWp = parseFloat(painelReferencia.specs.potencia) || 450;
-  const qtdPaineis = Math.max(1, Math.ceil((kwp * 1000) / potenciaPainelWp));
-
-  $("#sizingResultKwp").textContent = kwp.toFixed(2).replace(".", ",") + " kWp";
-  $("#sizingResultPaineis").textContent = `${qtdPaineis} painéis`;
-  const resultBox = $("#sizingCalcResult");
-  resultBox.hidden = false;
-  resultBox.dataset.qtd = qtdPaineis;
-}
-
-$("#sizingCalcBtn")?.addEventListener("click", calcSizing);
-
-$("#sizingGoWizardBtn")?.addEventListener("click", () => {
-  const qtd = parseInt($("#sizingCalcResult").dataset.qtd, 10) || 6;
-  state.configurator.paineis.qty = qtd;
-  startWizard();
-  location.hash = "#configurador";
-});
-
-/* ======================================================================
-   SIMULAÇÃO DE CRÉDITO
-   ---------------------------------------------------------------------
-   Protótipo — simulações ilustrativas com taxas de exemplo, sem nenhuma
-   integração com instituição financeira real.
-   ====================================================================== */
-function pmt(pv, i, n){
-  if(i === 0) return pv / n;
-  return (pv * i) / (1 - Math.pow(1 + i, -n));
-}
-
-const CREDIT_MODES = {
-  clt: {
-    label: "Crédito CLT",
-    description: "Simulação de crédito pessoal/consignado para quem tem carteira assinada (CLT), com desconto facilitado em folha.",
-    fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000" },
-      { key:"parcelas", label:"Número de parcelas", type:"select", options:[12,24,36,48,60] },
-    ],
-    calc(values){
-      const valor = parseFloat(values.valor) || 0;
-      const parcelas = parseInt(values.parcelas, 10) || 12;
-      const taxaMensal = 0.021; // ilustrativa
-      const parcela = pmt(valor, taxaMensal, parcelas);
-      return [
-        { label:"Parcela estimada", value: `${formatBRL(parcela)} / mês` },
-        { label:"Total estimado ao final do prazo", value: formatBRL(parcela * parcelas) },
-      ];
-    },
-  },
-  fgts: {
-    label: "Saque FGTS",
-    description: "Use o saldo disponível no saque-aniversário do FGTS como entrada ou parte do pagamento do seu sistema solar.",
-    fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000" },
-      { key:"fgts", label:"Valor disponível no FGTS (R$)", type:"number", placeholder:"Ex: 3000" },
-    ],
-    calc(values){
-      const valor = parseFloat(values.valor) || 0;
-      const fgts = parseFloat(values.fgts) || 0;
-      const cobertoPeloFgts = Math.min(fgts, valor);
-      const restante = Math.max(0, valor - fgts);
-      return [
-        { label:"Valor coberto pelo FGTS", value: formatBRL(cobertoPeloFgts) },
-        { label:"Saldo restante a pagar ou financiar", value: formatBRL(restante) },
-      ];
-    },
-  },
-  consorcio: {
-    label: "Consórcio",
-    description: "Consórcio de energia solar: sem juros, com taxa de administração diluída nas parcelas. Ideal para quem pode aguardar a contemplação.",
-    fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000" },
-      { key:"parcelas", label:"Número de parcelas", type:"select", options:[60,72,80,100] },
-    ],
-    calc(values){
-      const valor = parseFloat(values.valor) || 0;
-      const parcelas = parseInt(values.parcelas, 10) || 60;
-      const taxaAdm = 0.17; // ilustrativa
-      const total = valor * (1 + taxaAdm);
-      const parcela = total / parcelas;
-      return [
-        { label:"Parcela estimada", value: `${formatBRL(parcela)} / mês` },
-        { label:"Total estimado (com taxa de administração)", value: formatBRL(total) },
-      ];
-    },
-  },
-  financiamento: {
-    label: "Financiamento Bancário",
-    description: "Linhas de financiamento bancário específicas para energia solar, com prazos mais longos.",
-    fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000" },
-      { key:"parcelas", label:"Número de parcelas", type:"select", options:[24,36,48,60,72,84,96] },
-    ],
-    calc(values){
-      const valor = parseFloat(values.valor) || 0;
-      const parcelas = parseInt(values.parcelas, 10) || 48;
-      const taxaMensal = 0.015; // ilustrativa
-      const parcela = pmt(valor, taxaMensal, parcelas);
-      return [
-        { label:"Parcela estimada", value: `${formatBRL(parcela)} / mês` },
-        { label:"Total estimado ao final do prazo", value: formatBRL(parcela * parcelas) },
-      ];
-    },
-  },
-};
-
-let currentCreditMode = "clt";
-
-function creditFieldHTML(f){
-  if(f.type === "select"){
-    const opts = f.options.map(o => `<option value="${o}">${o}x</option>`).join("");
-    return `<label>${f.label}<select name="${f.key}">${opts}</select></label>`;
-  }
-  return `<label>${f.label}<input type="number" min="0" name="${f.key}" placeholder="${f.placeholder || ""}"></label>`;
-}
-
-function renderCreditSimCard(){
-  const card = $("#creditSimCard");
-  if(!card) return;
-  const mode = CREDIT_MODES[currentCreditMode];
-
-  card.innerHTML = `
-    <h3>${mode.label}</h3>
-    <p>${mode.description}</p>
-    <div class="credit-sim-form" id="creditSimForm">${mode.fields.map(creditFieldHTML).join("")}</div>
-    <button class="btn btn-primary" id="creditSimSubmit" type="button">Simular</button>
-    <div class="credit-sim-result" id="creditSimResult"></div>
-    <p class="credit-sim-disclaimer">Simulação ilustrativa e sem compromisso — os valores reais dependem de análise de crédito, taxa contratada e instituição financeira. Fale com um especialista para uma proposta personalizada.</p>
-  `;
-}
-
-$("#creditTabs")?.addEventListener("click", (e) => {
-  const btn = e.target.closest(".credit-tab");
-  if(!btn) return;
-  currentCreditMode = btn.dataset.mode;
-  $all(".credit-tab").forEach(t => t.classList.remove("active"));
-  btn.classList.add("active");
-  renderCreditSimCard();
-});
-
-document.addEventListener("click", (e) => {
-  if(e.target.id !== "creditSimSubmit") return;
-  const form = $("#creditSimForm");
-  const values = {};
-  $all("input, select", form).forEach(el => { values[el.name] = el.value; });
-
-  const mode = CREDIT_MODES[currentCreditMode];
-  const results = mode.calc(values);
-  const resultBox = $("#creditSimResult");
-  resultBox.innerHTML = results.map(r => `
-    <div class="credit-sim-result-value">${r.value}</div>
-    <div class="credit-sim-result-label">${r.label}</div>
-  `).join("");
-  resultBox.classList.add("show");
-});
-
-/* Rolagem suave até a simulação de crédito, a partir de qualquer página */
-document.addEventListener("click", (e) => {
-  const trigger = e.target.closest(".js-scroll-simulacao");
-  if(!trigger) return;
-  e.preventDefault();
-  const go = () => $("#simulacao-credito")?.scrollIntoView({ behavior:"smooth", block:"start" });
-  if(location.hash.replace("#","") !== "credito"){
-    location.hash = "#credito";
-    setTimeout(go, 60);
-  } else {
-    go();
-  }
-});
 
 /* ======================================================================
    MENU MOBILE
