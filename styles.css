@@ -446,18 +446,21 @@ input, select{ font-family: inherit; }
      que o círculo) fique sempre colado no topo da seção, sem nenhum vão
      vertical de centralização acima do título; o hero-art usa align-self
      próprio para continuar centralizado ao lado do texto. */
-  .hero-inner{ flex-direction: row; justify-content: flex-start; gap: 76px; text-align: left; align-items: flex-start; }
-  .hero-text{ flex: 0 1 520px; }
+  .hero-inner{ flex-direction: row; justify-content: flex-start; gap: 110px; text-align: left; align-items: flex-start; }
+  .hero-text{ flex: 0 1 500px; }
   .hero-text h1{ font-size: 3.4rem; }
-  .hero-art{ flex-shrink: 0; align-self: center; margin-top: 12px; }
-  .hero-badge-1{ right: -2%; }
-  .hero-badge-2{ left: -2%; }
-  .hero-badge-3{ left: -3%; }
-  .hero-badge-4{ right: 4%; }
+  /* align-self:flex-start (em vez de center) sobe o círculo pro mesmo nível
+     do título, ocupando o espaço que antes ficava vazio acima dele —
+     em vez de sobrar vão em cima e a arte "boiar" no meio da seção. */
+  .hero-art{ flex-shrink: 0; align-self: flex-start; margin-top: 6px; }
+  .hero-badge-1{ right: 0%; }
+  .hero-badge-2{ left: 2%; }
+  .hero-badge-3{ left: 0%; }
+  .hero-badge-4{ right: 6%; }
 }
 
 @media (min-width: 1400px){
-  .hero-inner{ gap: 96px; }
+  .hero-inner{ gap: 140px; }
 }
 
 /* ===================== STATS BAND ===================== */
