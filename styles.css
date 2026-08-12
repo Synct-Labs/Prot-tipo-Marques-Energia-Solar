@@ -1973,6 +1973,7 @@ input, select{ font-family: inherit; }
 }
 
 .credit-mode-card{
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1988,6 +1989,20 @@ input, select{ font-family: inherit; }
   border-color: var(--orange);
   background: linear-gradient(135deg, rgba(247,148,30,0.14), rgba(247,148,30,0.03));
   box-shadow: 0 0 0 1px var(--orange) inset;
+}
+.credit-mode-ribbon{
+  position: absolute;
+  top: -9px;
+  right: 10px;
+  background: var(--orange);
+  color: #1a1200;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 .credit-mode-icon{
   flex-shrink: 0;
@@ -2021,6 +2036,25 @@ input, select{ font-family: inherit; }
 .credit-sim-card-head h3{ font-size: 1.2rem; margin-bottom: 6px; }
 .credit-sim-card-head p{ color: var(--muted); font-size: 0.88rem; line-height: 1.55; max-width: 560px; }
 
+.credit-context{
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+.credit-context .icon{ width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; color: var(--muted-2); }
+.credit-context.has-value{ border-color: var(--border-orange); color: var(--white); }
+.credit-context.has-value .icon{ color: var(--orange); }
+.credit-context strong{ color: var(--orange-light); }
+.credit-context a{ color: var(--orange); text-decoration: underline; margin-left: 4px; }
+
 .credit-sim-form{ display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 22px; }
 @media (min-width: 640px){ .credit-sim-form{ grid-template-columns: repeat(2,1fr); } }
 .credit-sim-form label{ display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; color: var(--muted); }
@@ -2033,6 +2067,7 @@ input, select{ font-family: inherit; }
   font-size: 0.95rem;
 }
 .credit-sim-form input:focus, .credit-sim-form select:focus{ border-color: var(--border-orange); }
+.credit-field-hint{ font-size: 0.74rem; color: var(--muted-2); font-weight: 400; line-height: 1.4; }
 
 .credit-sim-result{
   background: linear-gradient(135deg, rgba(247,148,30,0.12), rgba(247,148,30,0.02));
@@ -2046,6 +2081,38 @@ input, select{ font-family: inherit; }
 .credit-sim-result-value{ font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--orange-light); }
 .credit-sim-result-label{ font-size: 0.8rem; color: var(--muted); margin: 2px 0 12px; }
 .credit-sim-result-label:last-child{ margin-bottom: 0; }
+
+.credit-compare{ margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--border-orange); }
+.credit-compare-row{
+  display: grid;
+  grid-template-columns: 110px 1fr 90px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.credit-compare-label{ font-size: 0.76rem; color: var(--muted); }
+.credit-compare-value{ font-size: 0.82rem; font-weight: 700; color: var(--white); text-align: right; font-family: var(--font-display); }
+.credit-compare-track{
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.credit-compare-fill{ height: 100%; border-radius: 999px; transition: width .5s var(--ease); }
+.credit-compare-fill-atual{ background: var(--muted-2); }
+.credit-compare-fill-parcela{ background: linear-gradient(90deg, var(--orange), var(--orange-light)); }
+.credit-compare-delta{ font-size: 0.82rem; color: var(--orange-light); font-weight: 600; margin-top: 4px; }
+@media (max-width: 420px){
+  .credit-compare-row{ grid-template-columns: 82px 1fr 64px; gap: 8px; }
+  .credit-compare-label{ font-size: 0.68rem; }
+  .credit-compare-value{ font-size: 0.72rem; }
+}
+
+.credit-progress-label{ display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; }
+.credit-progress-label strong{ color: var(--orange-light); font-family: var(--font-display); }
+.credit-progress-track{ height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.credit-progress-fill{ height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--orange), var(--orange-light)); transition: width .5s var(--ease); }
+
 .credit-sim-note{
   display: flex;
   gap: 10px;

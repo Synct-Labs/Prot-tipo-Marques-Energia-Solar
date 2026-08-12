@@ -75,6 +75,12 @@ function calcSizing(){
   const resultBox = $("#sizingCalcResult");
   resultBox.hidden = false;
   resultBox.dataset.qtd = qtdPaineis;
+
+  // Guarda o valor da conta em R$ (informado direto ou convertido a partir do
+  // kWh) para usar como referência de comparação na simulação de crédito.
+  const valorContaReais = (!isNaN(billVal) && billVal > 0) ? billVal : kwh * TARIFA_MEDIA_KWH;
+  localStorage.setItem("mes_conta_atual", valorContaReais.toFixed(2));
+  renderCreditContext();
 }
 
 $("#sizingCalcBtn")?.addEventListener("click", calcSizing);
@@ -107,11 +113,12 @@ const ICON_FINANCIAMENTO = `<svg class="icon" viewBox="0 0 24 24"><line x1="3" y
 const CREDIT_MODES = {
   clt: {
     label: "Crédito CLT",
-    tag: "Aprovação rápida",
+    tag: "Direto no contracheque",
     icon: ICON_CLT,
-    description: "Crédito pessoal/consignado para quem tem carteira assinada, com desconto facilitado direto na folha de pagamento — menos burocracia, aprovação mais ágil.",
+    highlight: "Mais escolhido",
+    description: "Se você tem carteira assinada, esse é o caminho mais direto: a parcela sai do contracheque todo mês, sem boleto pra esquecer e sem fiador. A análise costuma sair em poucos dias.",
     fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000" },
+      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação — use o número do seu orçamento." },
       { key:"parcelas", label:"Número de parcelas", type:"select", options:[12,24,36,48,60] },
     ],
     calc(values){
@@ -124,18 +131,19 @@ const CREDIT_MODES = {
           { label:"Parcela estimada", value: `${formatBRL(parcela)} / mês` },
           { label:"Total estimado ao final do prazo", value: formatBRL(parcela * parcelas) },
         ],
-        note: "Por ser descontado direto do contracheque, esse é geralmente o caminho mais rápido para sair do papel: menos análise, aprovação em poucos dias.",
+        note: "É uma despesa trocando de lugar: some o boleto da conta de luz, aparece o desconto no contracheque — só que esse, um dia, acaba.",
+        compare: { type:"parcela", value: parcela },
       };
     },
   },
   fgts: {
     label: "Saque FGTS",
-    tag: "Dinheiro que já é seu",
+    tag: "Sem tirar do bolso",
     icon: ICON_FGTS,
-    description: "Use o saldo disponível no saque-aniversário do FGTS como entrada (ou até para quitar parte do sistema) — dinheiro parado que hoje rende quase nada.",
+    description: "O saldo do saque-aniversário costuma ficar parado rendendo quase nada. Usado como entrada, ele reduz (ou até quita) o valor financiado sem mexer no seu salário do mês.",
     fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000" },
-      { key:"fgts", label:"Valor disponível no FGTS (R$)", type:"number", placeholder:"Ex: 3000" },
+      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação — use o número do seu orçamento." },
+      { key:"fgts", label:"Valor disponível no FGTS (R$)", type:"number", placeholder:"Ex: 3000", hint:"Consulte no app FGTS, na opção “Saque-Aniversário”." },
     ],
     calc(values){
       const valor = parseFloat(values.valor) || 0;
@@ -149,18 +157,19 @@ const CREDIT_MODES = {
           { label:"Saldo restante a pagar ou financiar", value: formatBRL(restante) },
         ],
         note: restante <= 0
-          ? "Com esse saldo, o FGTS cobre 100% do valor do seu sistema — sem precisar contratar nenhum crédito adicional."
-          : `Esse saldo já cobre cerca de ${pct}% do valor do seu sistema. O restante pode ser combinado com uma das outras modalidades de crédito.`,
+          ? "Esse saldo sozinho já paga o sistema inteiro — você garante energia solar sem contratar nenhum crédito."
+          : `Esse saldo cobre ${pct}% do sistema. Os outros ${100 - pct}% podem entrar no CLT, no financiamento ou no consórcio — dá pra combinar mais de uma modalidade.`,
+        compare: { type:"progress", value: pct },
       };
     },
   },
   consorcio: {
     label: "Consórcio",
-    tag: "Sem juros",
+    tag: "Zero juros",
     icon: ICON_CONSORCIO,
-    description: "Consórcio de energia solar: sem juros, apenas uma taxa de administração diluída nas parcelas. Ideal para quem pode planejar com calma e não tem pressa para instalar.",
+    description: "Não é financiamento — é um grupo que se cotiza para comprar sistemas solares, sem juros. Você paga uma taxa de administração e aguarda o sorteio ou dá um lance para ser contemplado antes.",
     fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000" },
+      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação — use o número do seu orçamento." },
       { key:"parcelas", label:"Número de parcelas", type:"select", options:[60,72,80,100] },
     ],
     calc(values){
@@ -174,17 +183,18 @@ const CREDIT_MODES = {
           { label:"Parcela estimada", value: `${formatBRL(parcela)} / mês` },
           { label:"Total estimado (com taxa de administração)", value: formatBRL(total) },
         ],
-        note: "Sem juros bancários — você só paga a taxa de administração do grupo. Com lance, a contemplação pode sair bem mais rápido.",
+        note: "A vantagem aparece no total pago: sem juros compostos, o valor final tende a ficar menor que num financiamento tradicional de prazo parecido.",
+        compare: { type:"parcela", value: parcela },
       };
     },
   },
   financiamento: {
     label: "Financiamento Bancário",
-    tag: "Parcelas mais longas",
+    tag: "Prazo mais longo",
     icon: ICON_FINANCIAMENTO,
-    description: "Linhas de financiamento bancário específicas para energia solar, com prazos de até 96 meses. Comece a economizar na conta de luz enquanto ainda está pagando o sistema.",
+    description: "Linhas de banco criadas especificamente para energia solar, com prazos de até 96 meses. Quanto mais longo o prazo, menor a parcela — e menor a diferença pro que você já paga de conta de luz.",
     fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000" },
+      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação — use o número do seu orçamento." },
       { key:"parcelas", label:"Número de parcelas", type:"select", options:[24,36,48,60,72,84,96] },
     ],
     calc(values){
@@ -197,7 +207,8 @@ const CREDIT_MODES = {
           { label:"Parcela estimada", value: `${formatBRL(parcela)} / mês` },
           { label:"Total estimado ao final do prazo", value: formatBRL(parcela * parcelas) },
         ],
-        note: "Quanto mais longo o prazo, menor tende a ser a parcela — muitas famílias conseguem uma parcela próxima do que já pagavam de conta de luz.",
+        note: "Nos prazos mais longos, a parcela tende a chegar perto do valor da conta de luz que você deixa de pagar — o que muda é pra quem vai esse dinheiro.",
+        compare: { type:"parcela", value: parcela },
       };
     },
   },
@@ -206,11 +217,12 @@ const CREDIT_MODES = {
 let currentCreditMode = "clt";
 
 function creditFieldHTML(f){
+  const hint = f.hint ? `<span class="credit-field-hint">${f.hint}</span>` : "";
   if(f.type === "select"){
     const opts = f.options.map(o => `<option value="${o}">${o}x</option>`).join("");
-    return `<label>${f.label}<select name="${f.key}">${opts}</select></label>`;
+    return `<label>${f.label}<select name="${f.key}">${opts}</select>${hint}</label>`;
   }
-  return `<label>${f.label}<input type="number" min="0" name="${f.key}" placeholder="${f.placeholder || ""}"></label>`;
+  return `<label>${f.label}<input type="number" min="0" name="${f.key}" placeholder="${f.placeholder || ""}">${hint}</label>`;
 }
 
 function renderCreditModes(){
@@ -218,6 +230,7 @@ function renderCreditModes(){
   if(!wrap) return;
   wrap.innerHTML = Object.entries(CREDIT_MODES).map(([key, m]) => `
     <button class="credit-mode-card${key === currentCreditMode ? " active" : ""}" data-mode="${key}" type="button" role="tab" aria-selected="${key === currentCreditMode}">
+      ${m.highlight ? `<span class="credit-mode-ribbon">${m.highlight}</span>` : ""}
       <span class="credit-mode-icon">${m.icon}</span>
       <span class="credit-mode-body">
         <span class="credit-mode-title">${m.label}</span>
@@ -227,12 +240,30 @@ function renderCreditModes(){
   `).join("");
 }
 
+/* Referência da conta de luz vinda da calculadora de dimensionamento (se já calculada) */
+function getContaAtual(){
+  const raw = localStorage.getItem("mes_conta_atual");
+  const val = parseFloat(raw);
+  return (!isNaN(val) && val > 0) ? val : null;
+}
+
+function renderCreditContext(){
+  const el = $("#creditContext");
+  if(!el) return;
+  const conta = getContaAtual();
+  el.innerHTML = conta
+    ? `${ICON_CHECK}<span>Comparando com a sua conta de <strong>${formatBRL(conta)}/mês</strong> informada acima. <a href="#dimensionamento">Alterar valor</a></span>`
+    : `<span>Calcule sua conta de luz no passo 1 acima para comparar direto com a parcela estimada aqui embaixo.</span>`;
+  el.classList.toggle("has-value", !!conta);
+}
+
 function renderCreditSimCard(){
   const card = $("#creditSimCard");
   if(!card) return;
   const mode = CREDIT_MODES[currentCreditMode];
 
   card.innerHTML = `
+    <p class="credit-context" id="creditContext"></p>
     <div class="credit-sim-card-head">
       <span class="credit-mode-icon credit-mode-icon-lg">${mode.icon}</span>
       <div>
@@ -252,6 +283,7 @@ function renderCreditSimCard(){
     </div>
     <p class="credit-sim-disclaimer">Simulação ilustrativa e sem compromisso — os valores reais dependem de análise de crédito, taxa contratada e instituição financeira.</p>
   `;
+  renderCreditContext();
 }
 
 $("#creditTabs")?.addEventListener("click", (e) => {
@@ -261,6 +293,49 @@ $("#creditTabs")?.addEventListener("click", (e) => {
   renderCreditModes();
   renderCreditSimCard();
 });
+
+function compareBarsHTML(compare){
+  const conta = getContaAtual();
+  if(!compare) return "";
+
+  if(compare.type === "progress"){
+    const pct = Math.min(100, Math.max(0, compare.value));
+    return `
+      <div class="credit-compare">
+        <div class="credit-progress-label"><span>Coberto pelo FGTS</span><strong>${pct}%</strong></div>
+        <div class="credit-progress-track"><div class="credit-progress-fill" style="width:${pct}%"></div></div>
+      </div>
+    `;
+  }
+
+  if(compare.type === "parcela"){
+    if(!conta) return "";
+    const parcela = compare.value;
+    const max = Math.max(conta, parcela, 1);
+    const pctConta = Math.round((conta / max) * 100);
+    const pctParcela = Math.round((parcela / max) * 100);
+    const diff = parcela - conta;
+    const diffLabel = diff <= 0
+      ? `${formatBRL(Math.abs(diff))} a menos por mês que sua conta de luz hoje`
+      : `${formatBRL(diff)} a mais por mês do que sua conta hoje — mas essa diferença financia um sistema que passa a ser seu`;
+    return `
+      <div class="credit-compare">
+        <div class="credit-compare-row">
+          <span class="credit-compare-label">Sua conta de luz hoje</span>
+          <div class="credit-compare-track"><div class="credit-compare-fill credit-compare-fill-atual" style="width:${pctConta}%"></div></div>
+          <span class="credit-compare-value">${formatBRL(conta)}</span>
+        </div>
+        <div class="credit-compare-row">
+          <span class="credit-compare-label">Parcela estimada</span>
+          <div class="credit-compare-track"><div class="credit-compare-fill credit-compare-fill-parcela" style="width:${pctParcela}%"></div></div>
+          <span class="credit-compare-value">${formatBRL(parcela)}</span>
+        </div>
+        <p class="credit-compare-delta">${diff <= 0 ? "▼" : "▲"} ${diffLabel}</p>
+      </div>
+    `;
+  }
+  return "";
+}
 
 document.addEventListener("click", (e) => {
   if(e.target.id !== "creditSimSubmit") return;
@@ -276,6 +351,7 @@ document.addEventListener("click", (e) => {
       <div class="credit-sim-result-value">${r.value}</div>
       <div class="credit-sim-result-label">${r.label}</div>
     `).join("")}
+    ${compareBarsHTML(result.compare)}
     ${result.note ? `<div class="credit-sim-note">${ICON_CHECK}<span>${result.note}</span></div>` : ""}
   `;
   resultBox.classList.add("show");
