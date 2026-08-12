@@ -437,23 +437,27 @@ input, select{ font-family: inherit; }
 }
 
 @media (min-width: 960px){
-  .hero{ padding: 90px 0 80px; }
+  .hero{ padding: 56px 0 64px; }
   /* gap fixo (em vez de space-between) evita tanto um vão vazio enorme em
      telas muito largas quanto a sobreposição dos badges flutuantes com o
      texto em telas de notebook (ex: 1366px), que é o que causava a
-     "formatação bugada" só no desktop. */
-  .hero-inner{ flex-direction: row; justify-content: flex-start; gap: 64px; text-align: left; align-items: center; }
+     "formatação bugada" só no desktop.
+     align-items:flex-start garante que o texto (que costuma ser mais alto
+     que o círculo) fique sempre colado no topo da seção, sem nenhum vão
+     vertical de centralização acima do título; o hero-art usa align-self
+     próprio para continuar centralizado ao lado do texto. */
+  .hero-inner{ flex-direction: row; justify-content: flex-start; gap: 76px; text-align: left; align-items: flex-start; }
   .hero-text{ flex: 0 1 520px; }
   .hero-text h1{ font-size: 3.4rem; }
-  .hero-art{ flex-shrink: 0; }
-  .hero-badge-1{ right: -4%; }
-  .hero-badge-2{ left: -6%; }
-  .hero-badge-3{ left: -8%; }
-  .hero-badge-4{ right: 0%; }
+  .hero-art{ flex-shrink: 0; align-self: center; margin-top: 12px; }
+  .hero-badge-1{ right: -2%; }
+  .hero-badge-2{ left: -2%; }
+  .hero-badge-3{ left: -3%; }
+  .hero-badge-4{ right: 4%; }
 }
 
 @media (min-width: 1400px){
-  .hero-inner{ gap: 90px; }
+  .hero-inner{ gap: 96px; }
 }
 
 /* ===================== STATS BAND ===================== */
