@@ -454,8 +454,12 @@ input, select{ font-family: inherit; }
      em vez de sobrar vão em cima e a arte "boiar" no meio da seção. */
   .hero-art{ flex-shrink: 0; align-self: flex-start; margin-top: 48px; }
   .hero-badge-1{ right: 0%; }
-  .hero-badge-2{ left: 2%; }
-  .hero-badge-3{ left: 0%; }
+  .hero-badge-2{ left: 0%; }
+  /* badge-3 fica na altura do meio do círculo (top:38%), onde ele é mais
+     largo — por isso precisa de mais deslocamento pra não cair em cima
+     da logo, diferente dos badges perto do topo/base onde o círculo já
+     estreita. */
+  .hero-badge-3{ left: -20%; }
   .hero-badge-4{ right: 6%; }
 }
 
