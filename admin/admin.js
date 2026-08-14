@@ -50,6 +50,29 @@ window.MES = (function(){
     return `<select class="admin-status-select" data-order-id="${orderId}">${opts}</select>`;
   }
 
+  /* ---- status das solicitações de análise de crédito ---- */
+  const LEAD_STATUS_LABELS = {
+    novo: "Novo",
+    em_analise: "Em análise",
+    contatado: "Contatado",
+    proposta_enviada: "Proposta enviada",
+    convertido: "Convertido",
+    recusado: "Recusado",
+  };
+  const LEAD_STATUS_ORDER = ["novo","em_analise","contatado","proposta_enviada","convertido","recusado"];
+
+  function leadStatusBadge(status){
+    const label = LEAD_STATUS_LABELS[status] || status;
+    return `<span class="status-badge status-${status}">${label}</span>`;
+  }
+
+  function leadStatusSelectHTML(currentStatus, leadId){
+    const opts = LEAD_STATUS_ORDER.map(s =>
+      `<option value="${s}" ${s === currentStatus ? "selected" : ""}>${LEAD_STATUS_LABELS[s]}</option>`
+    ).join("");
+    return `<select class="admin-status-select" data-lead-id="${leadId}">${opts}</select>`;
+  }
+
   function showToast(msg){
     let toast = document.querySelector(".admin-toast");
     if(!toast){
@@ -84,6 +107,8 @@ window.MES = (function(){
     formatBRL, formatDate,
     STATUS_LABELS, STATUS_ORDER,
     statusBadge, statusSelectHTML,
+    LEAD_STATUS_LABELS, LEAD_STATUS_ORDER,
+    leadStatusBadge, leadStatusSelectHTML,
     showToast, requireAuth, logout,
   };
 })();

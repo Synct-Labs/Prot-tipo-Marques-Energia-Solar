@@ -53,6 +53,33 @@ db.exec(`
     created_at           TEXT NOT NULL,
     updated_at           TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS credit_leads (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    lead_number         TEXT UNIQUE NOT NULL,
+    status              TEXT NOT NULL DEFAULT 'novo',
+    modalidade_interesse TEXT,
+
+    -- dados básicos
+    nome                TEXT NOT NULL,
+    cpf                 TEXT NOT NULL,
+    data_nascimento     TEXT NOT NULL,
+    estado_civil        TEXT,
+    telefone            TEXT NOT NULL,
+    email               TEXT NOT NULL,
+    cidade_uf           TEXT NOT NULL,
+
+    -- dados profissionais
+    profissao           TEXT NOT NULL,
+    tipo_vinculo        TEXT NOT NULL,
+    empresa             TEXT NOT NULL,
+    tempo_trabalho      TEXT NOT NULL,
+    renda_bruta         REAL NOT NULL,
+    renda_liquida       REAL NOT NULL,
+
+    created_at          TEXT NOT NULL,
+    updated_at          TEXT NOT NULL
+  );
 `);
 
 module.exports = db;

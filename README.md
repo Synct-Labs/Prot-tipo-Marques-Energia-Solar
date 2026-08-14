@@ -67,8 +67,10 @@ Como `index.html` e `loja.html` são documentos HTML separados (recarregam a pá
 - Autenticação de administrador: sessão por cookie `HttpOnly` (token opaco guardado no banco, senha com hash `scrypt`). Só existe um administrador por padrão (criado a partir do `.env` na primeira execução); é possível trocar a senha pelo próprio painel.
 - Rotas principais da API:
   - `POST /api/orders` — cria um pedido (usado pelo checkout do site).
+  - `POST /api/credit-leads` — cria uma solicitação de análise de crédito (usado pelo formulário em `index.html`).
   - `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`, `POST /api/auth/change-password`.
   - `GET /api/admin/orders`, `GET /api/admin/orders/:id`, `PATCH /api/admin/orders/:id`, `GET /api/admin/stats` — todas protegidas por login.
+  - `GET /api/admin/credit-leads`, `GET /api/admin/credit-leads/:id`, `PATCH /api/admin/credit-leads/:id`, `GET /api/admin/credit-leads/stats` — idem, para as solicitações de crédito.
 
 ## Pendências para produção
 
@@ -77,6 +79,7 @@ Como `index.html` e `loja.html` são documentos HTML separados (recarregam a pá
 3. Cálculo de frete real (hoje o checkout mostra "Grátis (protótipo)").
 4. Envio de e-mail transacional ao cliente e à loja quando um pedido é criado ou muda de status.
 5. Antes de ir para produção com dados reais de clientes: colocar o backend atrás de HTTPS (setar `NODE_ENV=production` no `.env` para ativar o cookie `Secure`), revisar política de backup do banco SQLite e considerar um processo gerenciado (ex: PM2, systemd) em vez de rodar `npm start` manualmente.
+6. **Importante:** o GitHub Pages (usado para publicar o protótipo atualmente) hospeda apenas arquivos estáticos — ele não executa este backend Node. Isso significa que, na versão publicada em `github.io`, tanto o checkout (`POST /api/orders`) quanto o formulário de solicitação de crédito (`POST /api/credit-leads`) e o login do painel não funcionam de verdade (o `fetch` falha, pois não há servidor para responder). Para essas rotas funcionarem de fato — e os dados serem realmente salvos —, é preciso rodar o backend localmente (`npm start` dentro de `backend/`) ou hospedá-lo num serviço que execute Node de verdade (ex: Render, Railway, Fly.io), apontando o front-end para essa URL.
 
 ## Estrutura
 
@@ -88,18 +91,20 @@ app.js             → dados do catálogo + lógica da loja (catálogo, compara�
 styles.css         → sistema de design (cores, tipografia, componentes) — compartilhado pelas duas páginas
 logo-*.png         → logo oficial recortado em diferentes tamanhos
 admin/
-  login.html       → tela de login do administrador
-  dashboard.html   → lista de pedidos, filtros, detalhe e atualização de status
-  admin.js         → helpers de API/autenticação compartilhados pelo painel
-  admin.css        → estilos do painel (reaproveita as variáveis de styles.css)
+  login.html         → tela de login do administrador
+  dashboard.html     → lista de pedidos, filtros, detalhe e atualização de status
+  credit-leads.html  → lista de solicitações de análise de crédito, filtros, detalhe e status
+  admin.js           → helpers de API/autenticação compartilhados pelo painel
+  admin.css          → estilos do painel (reaproveita as variáveis de styles.css)
 backend/
   package.json
   .env.example     → copie para .env e preencha antes de rodar
   src/
-    server.js      → servidor HTTP + rotas da API
-    db.js          → schema do SQLite
-    auth.js        → login, sessão, hash de senha
+    server.js       → servidor HTTP + rotas da API
+    db.js           → schema do SQLite
+    auth.js         → login, sessão, hash de senha
     orders.js       → criação/listagem/atualização de pedidos
+    creditLeads.js   → criação/listagem/atualização de solicitações de crédito
     config.js       → leitura do .env
     http-utils.js   → helpers de request/response
     static.js       → serve os arquivos do site

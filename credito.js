@@ -292,7 +292,15 @@ $("#creditTabs")?.addEventListener("click", (e) => {
   currentCreditMode = btn.dataset.mode;
   renderCreditModes();
   renderCreditSimCard();
+  syncLeadModalidade();
 });
+
+/* Mantém o select "Modalidade de interesse" do formulário de solicitação
+   sincronizado com a modalidade escolhida na simulação acima. */
+function syncLeadModalidade(){
+  const select = $("#leadModalidade");
+  if(select) select.value = currentCreditMode;
+}
 
 function compareBarsHTML(compare){
   const conta = getContaAtual();
@@ -358,6 +366,106 @@ document.addEventListener("click", (e) => {
 });
 
 /* ======================================================================
+   POP-UP: AUTORIZAÇÃO DE CONSULTA DO FGTS
+   ---------------------------------------------------------------------
+   Exibido depois que a pessoa solicita a análise de crédito na modalidade
+   "Saque FGTS" — ensina a autorizar os dois bancos parceiros a consultar
+   o saldo do saque-aniversário no app oficial (FGTS / Caixa).
+   ====================================================================== */
+function openFgtsAuthModal(){
+  const modal = $("#fgtsAuthModal");
+  if(!modal) return;
+  modal.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function closeFgtsAuthModal(){
+  const modal = $("#fgtsAuthModal");
+  if(!modal) return;
+  modal.classList.remove("open");
+  document.body.style.overflow = "";
+}
+$("#fgtsAuthCloseBtn")?.addEventListener("click", closeFgtsAuthModal);
+$("#fgtsAuthDoneBtn")?.addEventListener("click", closeFgtsAuthModal);
+$("#fgtsAuthModal")?.addEventListener("click", (e) => {
+  if(e.target.id === "fgtsAuthModal") closeFgtsAuthModal();
+});
+document.addEventListener("keydown", (e) => {
+  if(e.key === "Escape") closeFgtsAuthModal();
+});
+$("#fgtsAuthReopenBtn")?.addEventListener("click", openFgtsAuthModal);
+
+/* ======================================================================
+   SOLICITAÇÃO DE ANÁLISE DE CRÉDITO (formulário)
+   ---------------------------------------------------------------------
+   Envia os dados para o backend (rota pública /api/credit-leads), que
+   persiste a solicitação no banco e a deixa disponível no painel de
+   administrador — mesmo fluxo já usado pelos pedidos da loja.
+   ====================================================================== */
+$("#creditLeadForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const submitBtn = $("#leadFormSubmitBtn");
+  const errorBox = $("#leadFormError");
+  errorBox.style.display = "none";
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Enviando solicitação...";
+
+  const formData = new FormData(e.target);
+  const payload = {
+    modalidade_interesse: formData.get("modalidade_interesse"),
+    nome: formData.get("nome"),
+    cpf: formData.get("cpf"),
+    data_nascimento: formData.get("data_nascimento"),
+    estado_civil: formData.get("estado_civil") || "",
+    telefone: formData.get("telefone"),
+    email: formData.get("email"),
+    cidade_uf: formData.get("cidade_uf"),
+    profissao: formData.get("profissao"),
+    tipo_vinculo: formData.get("tipo_vinculo"),
+    empresa: formData.get("empresa"),
+    tempo_trabalho: formData.get("tempo_trabalho"),
+    renda_bruta: formData.get("renda_bruta"),
+    renda_liquida: formData.get("renda_liquida"),
+  };
+
+  try {
+    const res = await fetch("/api/credit-leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+
+    if(!data.ok){
+      errorBox.textContent = data.error || "Não foi possível enviar sua solicitação. Tente novamente.";
+      errorBox.style.display = "block";
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Solicitar Simulação Personalizada";
+      return;
+    }
+
+    $("#leadNumberChip").textContent = data.leadNumber;
+    e.target.hidden = true;
+    $("#leadFormSuccess").hidden = false;
+    $("#leadFormSuccess").scrollIntoView({ behavior: "smooth", block: "start" });
+
+    // Na modalidade "Saque FGTS", a análise depende de consultar o saldo do
+    // saque-aniversário — por isso ensinamos a pessoa a autorizar os dois
+    // bancos parceiros a fazer essa consulta no app oficial.
+    if(payload.modalidade_interesse === "fgts"){
+      $("#fgtsAuthReopenBtn").hidden = false;
+      setTimeout(openFgtsAuthModal, 500);
+    }
+  } catch(err){
+    errorBox.textContent = "Não foi possível conectar ao servidor. Verifique se o backend está rodando (ver README) e tente novamente.";
+    errorBox.style.display = "block";
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Solicitar Simulação Personalizada";
+  }
+});
+
+/* ======================================================================
    MENU MOBILE
    ====================================================================== */
 function closeMobileMenu(){
@@ -379,4 +487,5 @@ $("#mainNav").addEventListener("click", (e) => {
    ====================================================================== */
 renderCreditModes();
 renderCreditSimCard();
+syncLeadModalidade();
 initScrollReveal();

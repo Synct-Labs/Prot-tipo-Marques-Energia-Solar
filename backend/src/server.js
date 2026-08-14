@@ -11,6 +11,7 @@ const { URL } = require("url");
 const config = require("./config");
 const auth = require("./auth");
 const orders = require("./orders");
+const creditLeads = require("./creditLeads");
 const { parseJSONBody, sendJSON, getClientIP } = require("./http-utils");
 const { serveStatic } = require("./static");
 
@@ -120,6 +121,68 @@ async function handleApi(req, res, pathname) {
        =================================================================== */
     const { id, orderNumber } = orders.createOrder(body);
     return sendJSON(res, 201, { ok: true, id, orderNumber });
+  }
+
+  // ---- SOLICITAÇÕES DE ANÁLISE DE CRÉDITO (formulário público) ----
+  if (pathname === "/api/credit-leads" && req.method === "POST") {
+    const body = await parseJSONBody(req);
+    const missing = creditLeads.validateLeadPayload(body);
+    if (missing.length) {
+      return sendJSON(res, 400, {
+        ok: false,
+        error: `Campos obrigatórios ausentes: ${missing.join(", ")}`,
+      });
+    }
+
+    /* ===================================================================
+       Ponto de integração futura (produção):
+       - E-mail/WhatsApp: notificar equipe comercial após nova solicitação.
+       - Bureau de crédito: consulta automática de score, se aplicável.
+       =================================================================== */
+    const { id, leadNumber } = creditLeads.createLead(body);
+    return sendJSON(res, 201, { ok: true, id, leadNumber });
+  }
+
+  // ---- ADMIN: SOLICITAÇÕES DE CRÉDITO ----
+  if (pathname === "/api/admin/credit-leads" && req.method === "GET") {
+    const admin = requireAdmin(req, res);
+    if (!admin) return;
+    const url = new URL(req.url, "http://localhost");
+    const status = url.searchParams.get("status") || undefined;
+    const q = url.searchParams.get("q") || undefined;
+    return sendJSON(res, 200, { ok: true, leads: creditLeads.listLeads({ status, q }) });
+  }
+
+  if (pathname === "/api/admin/credit-leads/stats" && req.method === "GET") {
+    const admin = requireAdmin(req, res);
+    if (!admin) return;
+    return sendJSON(res, 200, { ok: true, stats: creditLeads.getLeadStats() });
+  }
+
+  const creditLeadIdMatch = pathname.match(/^\/api\/admin\/credit-leads\/(\d+)$/);
+  if (creditLeadIdMatch && (req.method === "GET" || req.method === "PATCH")) {
+    const admin = requireAdmin(req, res);
+    if (!admin) return;
+    const id = parseInt(creditLeadIdMatch[1], 10);
+
+    if (req.method === "GET") {
+      const lead = creditLeads.getLeadById(id);
+      if (!lead) return sendJSON(res, 404, { ok: false, error: "Solicitação não encontrada." });
+      return sendJSON(res, 200, { ok: true, lead });
+    }
+
+    if (req.method === "PATCH") {
+      const body = await parseJSONBody(req);
+      if (!creditLeads.VALID_STATUSES.includes(body.status)) {
+        return sendJSON(res, 400, {
+          ok: false,
+          error: `Status inválido. Use um de: ${creditLeads.VALID_STATUSES.join(", ")}`,
+        });
+      }
+      const changed = creditLeads.updateLeadStatus(id, body.status);
+      if (!changed) return sendJSON(res, 404, { ok: false, error: "Solicitação não encontrada." });
+      return sendJSON(res, 200, { ok: true, lead: creditLeads.getLeadById(id) });
+    }
   }
 
   // ---- ADMIN: PEDIDOS ----

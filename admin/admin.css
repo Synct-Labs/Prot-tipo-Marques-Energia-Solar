@@ -13,7 +13,8 @@
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:16px;
+  flex-wrap: wrap;
+  gap:12px 16px;
   padding:16px 24px;
   border-bottom:1px solid var(--border);
   background: var(--bg-alt);
@@ -27,6 +28,17 @@
   font-size:1.05rem;
 }
 .admin-brand img{ height:32px; width:auto; }
+.admin-nav{ display:flex; align-items:center; gap:6px; }
+.admin-nav-link{
+  font-size:.85rem;
+  font-weight:600;
+  color: var(--muted);
+  padding: 8px 14px;
+  border-radius: 999px;
+  transition: color .15s ease, background .15s ease;
+}
+.admin-nav-link:hover{ color: var(--white); }
+.admin-nav-link.active{ color: var(--orange-light); background: rgba(247,148,30,0.12); }
 .admin-topbar-right{ display:flex; align-items:center; gap:14px; }
 .admin-user{ color: var(--muted); font-size:.9rem; }
 .admin-main{ flex:1; padding: 28px 24px 60px; }
@@ -188,6 +200,13 @@
 .status-enviado{ background: rgba(167,139,250,0.15); color: #b7a3fb; }
 .status-entregue{ background: rgba(52,211,153,0.22); color: var(--success); }
 .status-cancelado{ background: rgba(240,100,90,0.15); color: var(--danger); }
+
+/* ---- status das solicitações de análise de crédito ---- */
+.status-em_analise{ background: rgba(93,163,255,0.15); color: #7fb2ff; }
+.status-contatado{ background: rgba(167,139,250,0.15); color: #b7a3fb; }
+.status-proposta_enviada{ background: rgba(255,193,7,0.16); color: #ffd166; }
+.status-convertido{ background: rgba(52,211,153,0.22); color: var(--success); }
+.status-recusado{ background: rgba(240,100,90,0.15); color: var(--danger); }
 
 .admin-order-detail{ background: var(--bg-alt); }
 .admin-order-detail td{ padding: 0; }
