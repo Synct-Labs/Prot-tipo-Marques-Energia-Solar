@@ -274,6 +274,10 @@ function renderCreditSimCard(){
     <div class="credit-sim-form" id="creditSimForm">${mode.fields.map(creditFieldHTML).join("")}</div>
     <button class="btn btn-primary btn-lg" id="creditSimSubmit" type="button">Simular parcela</button>
     <div class="credit-sim-result" id="creditSimResult"></div>
+    ${currentCreditMode === "fgts" ? `
+    <button type="button" class="fgts-auth-reopen-btn fgts-auth-reopen-btn-inline" id="fgtsAuthReopenBtnSim">
+      Como autorizar os bancos a consultar meu FGTS?
+    </button>` : ""}
     <div class="credit-sim-cta">
       <p>Ficou com dúvida sobre qual modalidade escolher?</p>
       <a href="https://wa.me/5565996591300" target="_blank" rel="noopener" class="btn btn-outline">
@@ -286,6 +290,8 @@ function renderCreditSimCard(){
   renderCreditContext();
 }
 
+let fgtsAuthShownOnce = false;
+
 $("#creditTabs")?.addEventListener("click", (e) => {
   const btn = e.target.closest(".credit-mode-card");
   if(!btn) return;
@@ -293,6 +299,18 @@ $("#creditTabs")?.addEventListener("click", (e) => {
   renderCreditModes();
   renderCreditSimCard();
   syncLeadModalidade();
+
+  // Ao escolher a modalidade "Saque FGTS", já adiantamos a explicação de
+  // como autorizar os bancos parceiros — assim a pessoa resolve isso antes
+  // mesmo de preencher e enviar o formulário de solicitação.
+  if(currentCreditMode === "fgts" && !fgtsAuthShownOnce){
+    fgtsAuthShownOnce = true;
+    setTimeout(openFgtsAuthModal, 400);
+  }
+});
+
+document.addEventListener("click", (e) => {
+  if(e.target.closest("#fgtsAuthReopenBtnSim")) openFgtsAuthModal();
 });
 
 /* Mantém o select "Modalidade de interesse" do formulário de solicitação

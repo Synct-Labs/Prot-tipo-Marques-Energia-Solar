@@ -1674,6 +1674,12 @@ input, select{ font-family: inherit; }
   text-underline-offset: 3px;
 }
 .fgts-auth-reopen-btn:hover{ color: var(--orange-light); }
+.fgts-auth-reopen-btn-inline{
+  margin: 18px auto 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--orange-light);
+}
 
 /* ---- popup de autorização dos bancos parceiros (FGTS) ---- */
 .fgts-auth-kicker{
