@@ -2296,9 +2296,12 @@ input, select{ font-family: inherit; }
 
 .credit-modes{
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 12px;
   flex-shrink: 0;
+}
+@media (min-width: 420px){
+  .credit-modes{ grid-template-columns: repeat(2, 1fr); }
 }
 @media (min-width: 880px){
   .credit-modes{ grid-template-columns: 1fr; width: 280px; }
