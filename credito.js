@@ -6,6 +6,10 @@
    carrinho ou checkout — isso fica em loja.html / app.js.
    ===================================================================== */
 
+/* Base da API — "" localmente (mesmo domínio), URL do Render em produção.
+   Definida em api-config.js, carregado antes deste arquivo. */
+const API_BASE = window.MES_API_BASE || "";
+
 /* ---------------------- HELPERS ---------------------- */
 function $(sel, root=document){ return root.querySelector(sel); }
 function $all(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
@@ -447,9 +451,10 @@ $("#creditLeadForm")?.addEventListener("submit", async (e) => {
   };
 
   try {
-    const res = await fetch("/api/credit-leads", {
+    const res = await fetch(`${API_BASE}/api/credit-leads`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(payload),
     });
     const data = await res.json();

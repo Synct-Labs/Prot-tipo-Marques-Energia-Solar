@@ -3,12 +3,16 @@
    ===================================================================== */
 window.MES = (function(){
 
+  // Base da API — "" localmente (mesmo domínio), URL do Render em
+  // produção. Definida em ../api-config.js, carregado antes deste arquivo.
+  const API_BASE = window.MES_API_BASE || "";
+
   async function request(method, path, body){
-    const res = await fetch(path, {
+    const res = await fetch(`${API_BASE}${path}`, {
       method,
       headers: body ? { "Content-Type": "application/json" } : undefined,
       body: body ? JSON.stringify(body) : undefined,
-      credentials: "same-origin",
+      credentials: "include",
     });
     let data;
     try { data = await res.json(); }

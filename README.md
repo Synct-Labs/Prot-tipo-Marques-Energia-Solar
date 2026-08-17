@@ -2,20 +2,23 @@
 
 Protótipo navegável (HTML/CSS/JS puro no front, sem build) para aprovação visual do cliente **Marques Energia Solar** (Mato Grosso). Agora inclui um backend real para persistência de pedidos e um painel de administrador com login.
 
-## Como rodar
+## Como rodar (local, com front e backend juntos)
 
-Diferente da primeira versão, o site precisa do backend rodando (o checkout salva o pedido de verdade em um banco de dados). Não dá mais para simplesmente abrir o `index.html` no navegador.
+O site precisa do backend rodando (checkout, solicitação de crédito e login do admin salvam de verdade num banco de dados). Não dá para simplesmente abrir o `index.html` no navegador.
 
-Pré-requisito: **Node.js 22.5 ou mais recente** (o backend usa o SQLite nativo do Node, sem precisar instalar nada com `npm install`).
+Pré-requisito: **Node.js 18+** e uma **connection string de um Postgres** (recomendado: um projeto gratuito no [Supabase](https://supabase.com) — ver seção "Deploy em produção" abaixo para o passo a passo de criar um).
 
 ```bash
 cd backend
+npm install
 copy .env.example .env      # no Windows (ou "cp .env.example .env" no Mac/Linux)
 ```
 
-Abra o arquivo `backend/.env` e defina:
-- `ADMIN_EMAIL` — e-mail de login do administrador
-- `ADMIN_PASSWORD` — senha inicial (pode trocar depois pelo próprio painel)
+Abra o arquivo `backend/.env` e defina pelo menos:
+- `DATABASE_URL` — connection string do Postgres (Supabase)
+- `ADMIN_EMAIL` / `ADMIN_PASSWORD` — login inicial do administrador (pode trocar a senha depois pelo próprio painel)
+
+Rodando localmente (front + backend no mesmo domínio), pode deixar `CORS_ORIGIN` em branco.
 
 Depois:
 
@@ -23,7 +26,7 @@ Depois:
 npm start
 ```
 
-Isso sobe o site inteiro (as duas páginas + painel + API) em **http://localhost:3000**. Não precisa de mais nenhum comando — sem `npm install`, sem banco externo.
+Isso sobe o site inteiro (as duas páginas + painel + API) em **http://localhost:3000**, com os dados persistidos no Postgres do Supabase.
 
 - Página de Crédito Solar (home): http://localhost:3000
 - Loja: http://localhost:3000/loja.html
@@ -62,9 +65,10 @@ Como `index.html` e `loja.html` são documentos HTML separados (recarregam a pá
 
 ## Backend
 
-- Pasta `backend/`, servidor HTTP em Node puro — **zero dependências de terceiros** (só módulos nativos: `http`, `node:sqlite`, `crypto`, `fs`, `path`). Não precisa de `npm install`.
-- Banco de dados: SQLite (arquivo `backend/data/mes.db`, criado automaticamente na primeira execução — não versionado no Git).
+- Pasta `backend/`, servidor HTTP em Node puro (módulos nativos: `http`, `crypto`, `fs`, `path`) + o pacote `pg` para falar com o Postgres.
+- Banco de dados: **Postgres, hospedado no Supabase** (antes era SQLite local — migrado para permitir hospedar o backend fora do GitHub Pages, ver seção abaixo). O schema é criado automaticamente na primeira execução (`CREATE TABLE IF NOT EXISTS...` em `db.js`).
 - Autenticação de administrador: sessão por cookie `HttpOnly` (token opaco guardado no banco, senha com hash `scrypt`). Só existe um administrador por padrão (criado a partir do `.env` na primeira execução); é possível trocar a senha pelo próprio painel.
+- CORS: liberado apenas para as origens listadas em `CORS_ORIGIN` (backend/.env) — necessário porque em produção o site (GitHub Pages) e a API (Render) ficam em domínios diferentes.
 - Rotas principais da API:
   - `POST /api/orders` — cria um pedido (usado pelo checkout do site).
   - `POST /api/credit-leads` — cria uma solicitação de análise de crédito (usado pelo formulário em `index.html`).
@@ -72,14 +76,53 @@ Como `index.html` e `loja.html` são documentos HTML separados (recarregam a pá
   - `GET /api/admin/orders`, `GET /api/admin/orders/:id`, `PATCH /api/admin/orders/:id`, `GET /api/admin/stats` — todas protegidas por login.
   - `GET /api/admin/credit-leads`, `GET /api/admin/credit-leads/:id`, `PATCH /api/admin/credit-leads/:id`, `GET /api/admin/credit-leads/stats` — idem, para as solicitações de crédito.
 
+## Deploy em produção (GitHub Pages + Render + Supabase)
+
+O GitHub Pages hospeda só arquivos estáticos — ele não executa este backend Node. Por isso a arquitetura em produção fica dividida em três partes:
+
+| Peça | Onde roda | O que faz |
+|---|---|---|
+| Site (`index.html`, `loja.html`, `styles.css`, `app.js`, `credito.js`, `admin/`) | **GitHub Pages** (já publicado) | Front-end estático |
+| API (`backend/`) | **Render** (Web Service) | Roda o `server.js`, expõe `/api/*` |
+| Banco de dados | **Supabase** (Postgres) | Guarda admins, sessões, pedidos, solicitações de crédito |
+
+### 1. Criar o banco no Supabase
+1. Crie uma conta e um novo projeto em [supabase.com](https://supabase.com) (escolha uma senha forte para o banco — vai precisar dela na connection string).
+2. Em **Project Settings → Database → Connection string**, copie a opção **Transaction pooler** (porta `6543` — funciona melhor com hosts como o Render do que a conexão direta).
+3. Guarde essa URL — é o `DATABASE_URL`.
+
+### 2. Publicar o backend no Render
+1. Crie uma conta em [render.com](https://render.com) e clique em **New → Web Service**, apontando para este repositório do GitHub.
+2. Configure:
+   - **Root Directory**: `backend`
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+3. Em **Environment**, adicione as variáveis (mesmas do `.env.example`):
+   - `DATABASE_URL` — a connection string do Supabase (passo 1)
+   - `CORS_ORIGIN` — a URL exata do site no GitHub Pages, ex: `https://synct-labs.github.io`
+   - `ADMIN_EMAIL` / `ADMIN_PASSWORD` — login inicial do admin
+   - `NODE_ENV` — `production`
+   - `SESSION_TTL_HOURS` — `168` (opcional, esse é o padrão)
+4. Depois do deploy, copie a URL pública do serviço (algo como `https://mes-backend.onrender.com`).
+
+> No plano gratuito, o Render "dorme" o serviço depois de ~15 min sem uso — a primeira requisição depois disso demora uns 30–50s pra responder (ele está "acordando"). É esperado, não é bug.
+
+### 3. Apontar o site para o backend
+1. Edite `api-config.js` (na raiz do projeto) e troque `window.MES_API_BASE = "";` pela URL do Render do passo 2, ex:
+   ```js
+   window.MES_API_BASE = "https://mes-backend.onrender.com";
+   ```
+2. Faça commit e push — o GitHub Pages republica automaticamente.
+
+Depois disso, checkout, formulário de crédito e login do admin funcionam de verdade também na versão publicada em `github.io`.
+
 ## Pendências para produção
 
 1. Catálogo real de produtos (os dados atuais são de exemplo, ainda vivem em `app.js`).
 2. Integração de pagamento real — ponto de integração comentado em `app.js` (busque por "PONTO DE INTEGRAÇÃO DE PAGAMENTO") e no handler de `POST /api/orders` em `backend/src/server.js`.
 3. Cálculo de frete real (hoje o checkout mostra "Grátis (protótipo)").
 4. Envio de e-mail transacional ao cliente e à loja quando um pedido é criado ou muda de status.
-5. Antes de ir para produção com dados reais de clientes: colocar o backend atrás de HTTPS (setar `NODE_ENV=production` no `.env` para ativar o cookie `Secure`), revisar política de backup do banco SQLite e considerar um processo gerenciado (ex: PM2, systemd) em vez de rodar `npm start` manualmente.
-6. **Importante:** o GitHub Pages (usado para publicar o protótipo atualmente) hospeda apenas arquivos estáticos — ele não executa este backend Node. Isso significa que, na versão publicada em `github.io`, tanto o checkout (`POST /api/orders`) quanto o formulário de solicitação de crédito (`POST /api/credit-leads`) e o login do painel não funcionam de verdade (o `fetch` falha, pois não há servidor para responder). Para essas rotas funcionarem de fato — e os dados serem realmente salvos —, é preciso rodar o backend localmente (`npm start` dentro de `backend/`) ou hospedá-lo num serviço que execute Node de verdade (ex: Render, Railway, Fly.io), apontando o front-end para essa URL.
+5. Backup do banco: o Supabase já faz backup automático nos planos pagos; no plano gratuito, vale exportar o schema/dados periodicamente.
 
 ## Estrutura
 
@@ -88,6 +131,7 @@ index.html         → página "Crédito Solar" (calculadora de kWp + simulaçã
 credito.js         → lógica isolada de index.html (calculadora, simulação, menu mobile)
 loja.html           → página da loja (SPA por hash: catálogo, comparação, configurador, carrinho, checkout)
 app.js             → dados do catálogo + lógica da loja (catálogo, comparação, carrinho, checkout, configurador)
+api-config.js      → URL do backend em produção (editar depois do deploy no Render — ver "Deploy em produção")
 styles.css         → sistema de design (cores, tipografia, componentes) — compartilhado pelas duas páginas
 logo-*.png         → logo oficial recortado em diferentes tamanhos
 admin/
@@ -97,16 +141,15 @@ admin/
   admin.js           → helpers de API/autenticação compartilhados pelo painel
   admin.css          → estilos do painel (reaproveita as variáveis de styles.css)
 backend/
-  package.json
+  package.json     → depende só do pacote "pg" (driver do Postgres)
   .env.example     → copie para .env e preencha antes de rodar
   src/
-    server.js       → servidor HTTP + rotas da API
-    db.js           → schema do SQLite
+    server.js       → servidor HTTP + rotas da API + CORS
+    db.js           → conexão com o Postgres (Supabase) + schema
     auth.js         → login, sessão, hash de senha
     orders.js       → criação/listagem/atualização de pedidos
     creditLeads.js   → criação/listagem/atualização de solicitações de crédito
     config.js       → leitura do .env
     http-utils.js   → helpers de request/response
-    static.js       → serve os arquivos do site
-  data/            → banco SQLite (criado ao rodar, não versionado)
+    static.js       → serve os arquivos do site (usado só rodando local)
 ```
