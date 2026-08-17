@@ -7,7 +7,7 @@
      JWT). Simples e adequado para um único usuário administrador.
    ===================================================================== */
 const crypto = require("crypto");
-const db = require("./db");
+const { pool } = require("./db");
 const config = require("./config");
 
 const SESSION_COOKIE_NAME = "mes_admin_session";
@@ -29,9 +29,9 @@ function verifyPassword(password, stored) {
 }
 
 /* ---------------------- BOOTSTRAP DO ADMIN ---------------------- */
-function ensureAdminSeeded() {
-  const countRow = db.prepare("SELECT COUNT(*) as c FROM admins").get();
-  if (countRow.c > 0) return;
+async function ensureAdminSeeded() {
+  const { rows } = await pool.query("SELECT COUNT(*)::int as c FROM admins");
+  if (rows[0].c > 0) return;
 
   if (!config.ADMIN_EMAIL || !config.ADMIN_PASSWORD) {
     console.error(
@@ -41,61 +41,64 @@ function ensureAdminSeeded() {
     process.exit(1);
   }
 
-  db.prepare(
-    "INSERT INTO admins (email, password_hash, name, created_at) VALUES (?, ?, ?, ?)"
-  ).run(
-    config.ADMIN_EMAIL.toLowerCase().trim(),
-    hashPassword(config.ADMIN_PASSWORD),
-    "Administrador",
-    new Date().toISOString()
+  await pool.query(
+    "INSERT INTO admins (email, password_hash, name, created_at) VALUES ($1, $2, $3, $4)",
+    [
+      config.ADMIN_EMAIL.toLowerCase().trim(),
+      hashPassword(config.ADMIN_PASSWORD),
+      "Administrador",
+      new Date().toISOString(),
+    ]
   );
   console.log(`[ok] Administrador inicial criado: ${config.ADMIN_EMAIL}`);
 }
 
 /* ---------------------- SESSÕES ---------------------- */
-function createSession(adminId) {
+async function createSession(adminId) {
   const token = crypto.randomBytes(32).toString("hex");
   const now = new Date();
   const expires = new Date(now.getTime() + config.SESSION_TTL_HOURS * 3600 * 1000);
-  db.prepare(
-    "INSERT INTO sessions (token, admin_id, created_at, expires_at) VALUES (?, ?, ?, ?)"
-  ).run(token, adminId, now.toISOString(), expires.toISOString());
+  await pool.query(
+    "INSERT INTO sessions (token, admin_id, created_at, expires_at) VALUES ($1, $2, $3, $4)",
+    [token, adminId, now.toISOString(), expires.toISOString()]
+  );
   return { token, expiresAt: expires };
 }
 
-function destroySession(token) {
+async function destroySession(token) {
   if (!token) return;
-  db.prepare("DELETE FROM sessions WHERE token = ?").run(token);
+  await pool.query("DELETE FROM sessions WHERE token = $1", [token]);
 }
 
-function getAdminBySession(token) {
+async function getAdminBySession(token) {
   if (!token) return null;
-  const row = db
-    .prepare(
-      `SELECT admins.id as id, admins.email as email, admins.name as name, sessions.expires_at as expires_at
-       FROM sessions JOIN admins ON admins.id = sessions.admin_id
-       WHERE sessions.token = ?`
-    )
-    .get(token);
+  const { rows } = await pool.query(
+    `SELECT admins.id as id, admins.email as email, admins.name as name, sessions.expires_at as expires_at
+     FROM sessions JOIN admins ON admins.id = sessions.admin_id
+     WHERE sessions.token = $1`,
+    [token]
+  );
+  const row = rows[0];
   if (!row) return null;
   if (new Date(row.expires_at).getTime() < Date.now()) {
-    destroySession(token);
+    await destroySession(token);
     return null;
   }
   return { id: row.id, email: row.email, name: row.name };
 }
 
-function findAdminByEmail(email) {
-  return db
-    .prepare("SELECT * FROM admins WHERE email = ?")
-    .get(String(email).toLowerCase().trim());
+async function findAdminByEmail(email) {
+  const { rows } = await pool.query("SELECT * FROM admins WHERE email = $1", [
+    String(email).toLowerCase().trim(),
+  ]);
+  return rows[0] || null;
 }
 
-function updateAdminPassword(adminId, newPassword) {
-  db.prepare("UPDATE admins SET password_hash = ? WHERE id = ?").run(
+async function updateAdminPassword(adminId, newPassword) {
+  await pool.query("UPDATE admins SET password_hash = $1 WHERE id = $2", [
     hashPassword(newPassword),
-    adminId
-  );
+    adminId,
+  ]);
 }
 
 /* ---------------------- COOKIES ---------------------- */
@@ -113,15 +116,23 @@ function parseCookies(req) {
   return out;
 }
 
+/* Em produção o site (GitHub Pages) e o backend (Render) ficam em domínios
+   diferentes — cookie cross-site precisa de SameSite=None + Secure. Em
+   desenvolvimento local (mesmo domínio, http) usamos SameSite=Lax normal. */
+function cookieSameSiteAttrs() {
+  return config.NODE_ENV === "production"
+    ? ["SameSite=None", "Secure"]
+    : ["SameSite=Lax"];
+}
+
 function buildSessionCookie(token, expiresAt) {
   const parts = [
     `${SESSION_COOKIE_NAME}=${encodeURIComponent(token)}`,
     "HttpOnly",
     "Path=/",
-    "SameSite=Lax",
+    ...cookieSameSiteAttrs(),
     `Expires=${expiresAt.toUTCString()}`,
   ];
-  if (config.NODE_ENV === "production") parts.push("Secure");
   return parts.join("; ");
 }
 
@@ -130,10 +141,9 @@ function buildClearCookie() {
     `${SESSION_COOKIE_NAME}=`,
     "HttpOnly",
     "Path=/",
-    "SameSite=Lax",
+    ...cookieSameSiteAttrs(),
     "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
   ];
-  if (config.NODE_ENV === "production") parts.push("Secure");
   return parts.join("; ");
 }
 

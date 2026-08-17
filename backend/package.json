@@ -2,12 +2,15 @@
   "name": "marques-energia-solar-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Backend do protótipo Marques Energia Solar — login de administrador e persistência de pedidos. Zero dependências externas (usa apenas módulos nativos do Node).",
+  "description": "Backend do protótipo Marques Energia Solar — login de administrador, pedidos e solicitações de crédito, persistidos em Postgres (Supabase).",
   "main": "src/server.js",
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=18.0.0"
   },
   "scripts": {
     "start": "node src/server.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.3"
   }
 }

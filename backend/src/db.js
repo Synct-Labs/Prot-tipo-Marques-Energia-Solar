@@ -1,85 +1,100 @@
 /* =====================================================================
-   BANCO DE DADOS (SQLite embutido do Node — sem dependências externas)
+   BANCO DE DADOS (Postgres — Supabase)
    ---------------------------------------------------------------------
-   Usa o módulo nativo `node:sqlite` (disponível a partir do Node 22.5+).
-   Não é necessário instalar nenhum pacote para o banco funcionar.
+   Usa o pacote "pg" para conectar num Postgres hospedado (Supabase).
+   A connection string vem de DATABASE_URL (backend/.env).
    ===================================================================== */
-const path = require("path");
-const fs = require("fs");
-const { DatabaseSync } = require("node:sqlite");
+const { Pool } = require("pg");
+const config = require("./config");
 
-const DATA_DIR = path.join(__dirname, "..", "data");
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-
-const DB_PATH = path.join(DATA_DIR, "mes.db");
-const db = new DatabaseSync(DB_PATH);
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS admins (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    email         TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    name          TEXT,
-    created_at    TEXT NOT NULL
+if (!config.DATABASE_URL) {
+  console.error(
+    "\n[ERRO] DATABASE_URL não definida.\n" +
+    "Copie backend/.env.example para backend/.env e preencha a connection " +
+    "string do Postgres (Supabase: Project Settings > Database > Connection string).\n"
   );
+  process.exit(1);
+}
 
-  CREATE TABLE IF NOT EXISTS sessions (
-    token       TEXT PRIMARY KEY,
-    admin_id    INTEGER NOT NULL,
-    created_at  TEXT NOT NULL,
-    expires_at  TEXT NOT NULL,
-    FOREIGN KEY (admin_id) REFERENCES admins(id)
-  );
+const pool = new Pool({
+  connectionString: config.DATABASE_URL,
+  // Supabase exige TLS; rejectUnauthorized:false evita erro de certificado
+  // autoassinado em alguns ambientes (padrão recomendado pelo Supabase
+  // para conexões de servidor a servidor).
+  ssl: { rejectUnauthorized: false },
+});
 
-  CREATE TABLE IF NOT EXISTS orders (
-    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_number         TEXT UNIQUE NOT NULL,
-    status               TEXT NOT NULL DEFAULT 'novo',
-    customer_nome        TEXT NOT NULL,
-    customer_cpf         TEXT NOT NULL,
-    customer_email       TEXT NOT NULL,
-    customer_telefone    TEXT NOT NULL,
-    endereco_cep         TEXT,
-    endereco_cidade      TEXT,
-    endereco_estado      TEXT,
-    endereco_rua         TEXT,
-    endereco_numero      TEXT,
-    endereco_bairro      TEXT,
-    endereco_complemento TEXT,
-    pagamento            TEXT,
-    itens_json           TEXT NOT NULL,
-    subtotal             REAL NOT NULL,
-    total                REAL NOT NULL,
-    created_at           TEXT NOT NULL,
-    updated_at           TEXT NOT NULL
-  );
+pool.on("error", (err) => {
+  console.error("[erro no pool do Postgres]", err);
+});
 
-  CREATE TABLE IF NOT EXISTS credit_leads (
-    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-    lead_number         TEXT UNIQUE NOT NULL,
-    status              TEXT NOT NULL DEFAULT 'novo',
-    modalidade_interesse TEXT,
+async function initSchema() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS admins (
+      id            SERIAL PRIMARY KEY,
+      email         TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      name          TEXT,
+      created_at    TEXT NOT NULL
+    );
 
-    -- dados básicos
-    nome                TEXT NOT NULL,
-    cpf                 TEXT NOT NULL,
-    data_nascimento     TEXT NOT NULL,
-    estado_civil        TEXT,
-    telefone            TEXT NOT NULL,
-    email               TEXT NOT NULL,
-    cidade_uf           TEXT NOT NULL,
+    CREATE TABLE IF NOT EXISTS sessions (
+      token       TEXT PRIMARY KEY,
+      admin_id    INTEGER NOT NULL REFERENCES admins(id),
+      created_at  TEXT NOT NULL,
+      expires_at  TEXT NOT NULL
+    );
 
-    -- dados profissionais
-    profissao           TEXT NOT NULL,
-    tipo_vinculo        TEXT NOT NULL,
-    empresa             TEXT NOT NULL,
-    tempo_trabalho      TEXT NOT NULL,
-    renda_bruta         REAL NOT NULL,
-    renda_liquida       REAL NOT NULL,
+    CREATE TABLE IF NOT EXISTS orders (
+      id                   SERIAL PRIMARY KEY,
+      order_number         TEXT UNIQUE NOT NULL,
+      status               TEXT NOT NULL DEFAULT 'novo',
+      customer_nome        TEXT NOT NULL,
+      customer_cpf         TEXT NOT NULL,
+      customer_email       TEXT NOT NULL,
+      customer_telefone    TEXT NOT NULL,
+      endereco_cep         TEXT,
+      endereco_cidade      TEXT,
+      endereco_estado      TEXT,
+      endereco_rua         TEXT,
+      endereco_numero      TEXT,
+      endereco_bairro      TEXT,
+      endereco_complemento TEXT,
+      pagamento            TEXT,
+      itens_json           TEXT NOT NULL,
+      subtotal             DOUBLE PRECISION NOT NULL,
+      total                DOUBLE PRECISION NOT NULL,
+      created_at           TEXT NOT NULL,
+      updated_at           TEXT NOT NULL
+    );
 
-    created_at          TEXT NOT NULL,
-    updated_at          TEXT NOT NULL
-  );
-`);
+    CREATE TABLE IF NOT EXISTS credit_leads (
+      id                   SERIAL PRIMARY KEY,
+      lead_number          TEXT UNIQUE NOT NULL,
+      status               TEXT NOT NULL DEFAULT 'novo',
+      modalidade_interesse TEXT,
 
-module.exports = db;
+      -- dados básicos
+      nome                 TEXT NOT NULL,
+      cpf                  TEXT NOT NULL,
+      data_nascimento      TEXT NOT NULL,
+      estado_civil         TEXT,
+      telefone             TEXT NOT NULL,
+      email                TEXT NOT NULL,
+      cidade_uf            TEXT NOT NULL,
+
+      -- dados profissionais
+      profissao            TEXT NOT NULL,
+      tipo_vinculo         TEXT NOT NULL,
+      empresa              TEXT NOT NULL,
+      tempo_trabalho       TEXT NOT NULL,
+      renda_bruta          DOUBLE PRECISION NOT NULL,
+      renda_liquida        DOUBLE PRECISION NOT NULL,
+
+      created_at           TEXT NOT NULL,
+      updated_at           TEXT NOT NULL
+    );
+  `);
+}
+
+module.exports = { pool, initSchema };
