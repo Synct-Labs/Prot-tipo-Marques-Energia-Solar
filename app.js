@@ -1121,6 +1121,68 @@ function renderCheckout(){
   $("#checkoutTotal").textContent = formatBRL(total);
 }
 
+/* ---------------------- BUSCA DE CEP (autopreenchimento) ----------------------
+   Usa a API pública e gratuita ViaCEP (viacep.com.br) para preencher cidade,
+   estado, rua e bairro a partir do CEP. Os campos continuam editáveis
+   normalmente — a pessoa pode corrigir ou completar à mão a qualquer momento. */
+async function buscarEnderecoPorCep(rawCep){
+  const cep = String(rawCep || "").replace(/\D/g, "");
+  const statusEl = $("#checkoutCepStatus");
+
+  if(cep.length !== 8){
+    if(statusEl) statusEl.hidden = true;
+    return;
+  }
+
+  if(statusEl){
+    statusEl.hidden = false;
+    statusEl.className = "field-hint";
+    statusEl.textContent = "Buscando endereço...";
+  }
+
+  try{
+    const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const data = await res.json();
+
+    if(data.erro){
+      if(statusEl){
+        statusEl.className = "field-hint field-hint-error";
+        statusEl.textContent = "CEP não encontrado — preencha o endereço manualmente.";
+      }
+      return;
+    }
+
+    const cidadeEl = $("#checkoutCidade");
+    const estadoEl = $("#checkoutEstado");
+    const ruaEl = $("#checkoutRua");
+    const bairroEl = $("#checkoutBairro");
+    if(cidadeEl) cidadeEl.value = data.localidade || cidadeEl.value;
+    if(estadoEl) estadoEl.value = data.uf || estadoEl.value;
+    if(ruaEl) ruaEl.value = data.logradouro || ruaEl.value;
+    if(bairroEl) bairroEl.value = data.bairro || bairroEl.value;
+
+    if(statusEl){
+      statusEl.className = "field-hint field-hint-ok";
+      statusEl.textContent = "Endereço encontrado — confira e complete se precisar.";
+    }
+  } catch(err){
+    if(statusEl){
+      statusEl.className = "field-hint field-hint-error";
+      statusEl.textContent = "Não foi possível buscar o CEP agora — preencha manualmente.";
+    }
+  }
+}
+
+const checkoutCepInput = $("#checkoutCep");
+if(checkoutCepInput){
+  checkoutCepInput.addEventListener("input", () => {
+    const digits = checkoutCepInput.value.replace(/\D/g, "").slice(0, 8);
+    checkoutCepInput.value = digits.length > 5 ? `${digits.slice(0,5)}-${digits.slice(5)}` : digits;
+    if(digits.length === 8) buscarEnderecoPorCep(digits);
+  });
+  checkoutCepInput.addEventListener("blur", () => buscarEnderecoPorCep(checkoutCepInput.value));
+}
+
 $("#checkoutForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 

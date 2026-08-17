@@ -1477,6 +1477,15 @@ input, select{ font-family: inherit; }
 }
 .form-grid input:focus{ outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(247,148,30,0.15); }
 .col-span-2{ grid-column: 1 / -1; }
+.field-hint{
+  font-size: 0.74rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--muted-2);
+}
+.field-hint.field-hint-error{ color: var(--danger); }
+.field-hint.field-hint-ok{ color: var(--success); }
 
 @media (min-width: 640px){ .form-grid{ grid-template-columns: repeat(2, 1fr); } }
 

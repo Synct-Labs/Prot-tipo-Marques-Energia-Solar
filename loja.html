@@ -546,22 +546,23 @@
           </legend>
           <div class="form-grid">
             <label>CEP
-              <input type="text" name="cep" required placeholder="00000-000">
+              <input type="text" name="cep" id="checkoutCep" required placeholder="00000-000" inputmode="numeric" maxlength="9">
+              <span class="field-hint" id="checkoutCepStatus" hidden></span>
             </label>
             <label>Cidade
-              <input type="text" name="cidade" required placeholder="Sua cidade">
+              <input type="text" name="cidade" id="checkoutCidade" required placeholder="Sua cidade">
             </label>
             <label>Estado
-              <input type="text" name="estado" required placeholder="UF" maxlength="2">
+              <input type="text" name="estado" id="checkoutEstado" required placeholder="UF" maxlength="2">
             </label>
             <label class="col-span-2">Rua / Avenida
-              <input type="text" name="rua" required placeholder="Nome da rua">
+              <input type="text" name="rua" id="checkoutRua" required placeholder="Nome da rua">
             </label>
             <label>Número
               <input type="text" name="numero" required placeholder="123">
             </label>
             <label>Bairro
-              <input type="text" name="bairro" required placeholder="Bairro">
+              <input type="text" name="bairro" id="checkoutBairro" required placeholder="Bairro">
             </label>
             <label class="col-span-2">Complemento (opcional)
               <input type="text" name="complemento" placeholder="Apto, bloco, referência...">
