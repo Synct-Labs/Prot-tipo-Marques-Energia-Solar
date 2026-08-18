@@ -32,6 +32,20 @@ function applyCors(req, res) {
   }
 }
 
+/* ---------------------- HEADERS DE SEGURANÇA ---------------------- */
+// Hardening básico, sem dependências externas. Não substitui um proxy/CDN
+// com WAF, mas cobre o essencial pra um backend exposto direto na internet.
+function applySecurityHeaders(res) {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=()");
+  if (config.NODE_ENV === "production") {
+    // Só faz sentido com HTTPS (Render já serve tudo em HTTPS).
+    res.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
+  }
+}
+
 /* ---------------------- HELPERS DE AUTENTICAÇÃO ---------------------- */
 async function getCurrentAdmin(req) {
   const cookies = auth.parseCookies(req);
@@ -253,6 +267,7 @@ async function main() {
   const server = http.createServer(async (req, res) => {
     try {
       applyCors(req, res);
+      applySecurityHeaders(res);
 
       // Preflight de CORS (o navegador manda isso antes de POST/PATCH com
       // JSON e antes de qualquer requisição com cookies cross-site).

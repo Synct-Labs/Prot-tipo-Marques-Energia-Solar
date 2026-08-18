@@ -1016,6 +1016,30 @@ function updateCartCount(bump){
     el.classList.add("bump");
   }
   updateMobileCartBar();
+  saveCartToStorage();
+}
+
+/* ---------------------- PERSISTÊNCIA DO CARRINHO (localStorage) ---------------------- */
+function saveCartToStorage(){
+  try{
+    localStorage.setItem("mes_cart", JSON.stringify(state.cart));
+  }catch(err){
+    // localStorage indisponível (modo privado, quota cheia etc.) — ignora
+  }
+}
+
+function loadCartFromStorage(){
+  try{
+    const raw = localStorage.getItem("mes_cart");
+    if(!raw) return;
+    const parsed = JSON.parse(raw);
+    if(!Array.isArray(parsed)) return;
+    state.cart = parsed.filter(i =>
+      i && typeof i.id === "string" && typeof i.qty === "number" && i.qty > 0 && getProduct(i.id)
+    );
+  }catch(err){
+    // JSON corrompido — ignora e mantém carrinho vazio
+  }
 }
 
 /* ---------------------- BARRA FIXA DE CARRINHO (mobile) ---------------------- */
@@ -1294,6 +1318,7 @@ $("#hamburgerBtn").addEventListener("click", () => {
 /* ======================================================================
    INICIALIZAÇÃO
    ====================================================================== */
+loadCartFromStorage();
 renderTabs();
 renderFeatured();
 navigate();

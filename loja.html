@@ -5,7 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Marques Energia Solar — Loja de Equipamentos Fotovoltaicos</title>
 <meta name="description" content="Compare painéis solares, inversores, cabos e estruturas de fixação especificação por especificação e monte seu kit completo. Compra 100% online, entrega para todo o Brasil.">
+<link rel="canonical" href="https://synct-labs.github.io/loja.html">
 <link rel="icon" href="logo-mark-128.png" type="image/png">
+
+<!-- Open Graph / WhatsApp / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="Marques Energia Solar">
+<meta property="og:title" content="Marques Energia Solar — Loja de Equipamentos Fotovoltaicos">
+<meta property="og:description" content="Compare painéis solares, inversores, cabos e estruturas de fixação e monte seu kit completo. Entrega para todo o Brasil.">
+<meta property="og:url" content="https://synct-labs.github.io/loja.html">
+<meta property="og:image" content="https://synct-labs.github.io/logo-mark-256.png">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Marques Energia Solar — Loja de Equipamentos Fotovoltaicos">
+<meta name="twitter:description" content="Compare painéis solares, inversores, cabos e estruturas de fixação e monte seu kit completo.">
+<meta name="twitter:image" content="https://synct-labs.github.io/logo-mark-256.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -578,9 +595,9 @@
           <div class="payment-placeholder">
             <p class="payment-placeholder-title">
               <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
-              Protótipo — integração de pagamento ainda não conectada
+              Pagamento combinado direto com a nossa equipe
             </p>
-            <p>Nesta versão final de produção, este espaço receberá a integração real com o gateway de pagamento escolhido pelo cliente (ex: Mercado Pago, PagSeguro ou Stripe), incluindo Pix, cartão de crédito e boleto.</p>
+            <p>Ao finalizar, seu pedido é registrado e nossa equipe entra em contato para confirmar disponibilidade, prazo de entrega e a forma de pagamento (Pix, cartão ou boleto). Nenhum valor é cobrado automaticamente neste momento.</p>
             <div class="payment-options-mock">
               <label class="payment-mock-option">
                 <input type="radio" name="pagamento" value="pix" checked>
@@ -595,19 +612,25 @@
                 <svg class="icon" viewBox="0 0 24 24"><line x1="4" y1="4" x2="4" y2="20"/><line x1="8" y1="4" x2="8" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="15" y1="4" x2="15" y2="20"/><line x1="19" y1="4" x2="19" y2="20"/></svg> Boleto
               </label>
             </div>
+            <p class="payment-preference-note">Sua preferência acima ajuda nossa equipe a já chegar com a forma de pagamento combinada no contato.</p>
           </div>
         </fieldset>
+
+        <label class="lead-form-consent checkout-consent">
+          <input type="checkbox" name="consentimento" id="checkoutConsent" required>
+          <span>Autorizo o uso dos meus dados para processar este pedido e para contato pela Marques Energia Solar, conforme a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a> (LGPD).</span>
+        </label>
       </div>
 
       <aside class="checkout-summary">
         <h2>Resumo do Pedido</h2>
         <div id="checkoutItemsList" class="checkout-items-list"></div>
         <div class="summary-row"><span>Subtotal</span><span id="checkoutSubtotal">R$ 0,00</span></div>
-        <div class="summary-row"><span>Frete</span><span>Grátis (protótipo)</span></div>
+        <div class="summary-row"><span>Frete</span><span>A combinar</span></div>
         <div class="summary-row summary-total"><span>Total</span><span id="checkoutTotal">R$ 0,00</span></div>
         <button type="submit" class="btn btn-primary btn-block" id="checkoutSubmitBtn">Finalizar Pedido</button>
         <p class="checkout-error" id="checkoutError" style="display:none;"></p>
-        <p class="checkout-note">Ao finalizar, nenhuma cobrança real será feita — este é um protótipo.</p>
+        <p class="checkout-note">Nenhuma cobrança é feita ao finalizar — nossa equipe combina o pagamento com você em seguida.</p>
       </aside>
     </form>
   </div>
@@ -621,7 +644,7 @@
     </div>
     <h1>Pedido recebido com sucesso!</h1>
     <p>Número do pedido: <span class="order-number-chip" id="orderNumber">#000000</span></p>
-    <p class="confirmation-text">Este é um protótipo — nenhum pagamento real foi processado. Em produção, aqui o cliente receberia a confirmação após o gateway de pagamento aprovar a transação.</p>
+    <p class="confirmation-text">Nenhum pagamento foi cobrado ainda. Nossa equipe vai analisar seu pedido e entrar em contato para confirmar disponibilidade, prazo de entrega e forma de pagamento.</p>
     <p class="confirmation-text">Dúvidas? Fale com a gente pelo WhatsApp <a href="https://wa.me/5565996591300" target="_blank" rel="noopener">(65) 99659-1300</a>.</p>
     <a href="#home" class="btn btn-primary">Voltar ao Início</a>
   </div>
@@ -686,7 +709,8 @@
     </div>
     <div class="footer-note">
       <p>&copy; 2026 Marques Energia Solar — sediada em Mato Grosso, atendendo todo o Brasil.</p>
-      <span class="prototype-tag">Protótipo de site — não processa pagamentos reais. Catálogo, números e depoimentos são dados de exemplo.</span>
+      <p><a href="privacidade.html">Política de Privacidade</a> · <a href="termos.html">Termos de Uso</a></p>
+      <span class="prototype-tag">Site em fase de lançamento — não processa pagamentos online no momento; nossa equipe entra em contato para fechar cada pedido. Catálogo, números e depoimentos são dados de exemplo.</span>
     </div>
   </div>
 </footer>

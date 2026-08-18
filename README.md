@@ -1,6 +1,8 @@
-# Marques Energia Solar — Protótipo de E-commerce
+# Marques Energia Solar — Site + Loja Online
 
-Protótipo navegável (HTML/CSS/JS puro no front, sem build) para aprovação visual do cliente **Marques Energia Solar** (Mato Grosso). Agora inclui um backend real para persistência de pedidos e um painel de administrador com login.
+Site em HTML/CSS/JS puro (sem build) da **Marques Energia Solar** (Mato Grosso): simulação de crédito, catálogo/loja e um backend real (Node + Postgres) com painel de administrador. Em produção roda em três partes — GitHub Pages + Render + Supabase — ver "Deploy em produção" abaixo.
+
+> **Status:** infraestrutura de produção no ar (site publicado, backend publicado, banco real). O que ainda falta pra ser 100% real está listado em ["Pendências para produção"](#pendências-para-produção) — o principal é trocar o catálogo de exemplo por produtos/preços reais e decidir a forma de pagamento.
 
 ## Como rodar (local, com front e backend juntos)
 
@@ -118,11 +120,23 @@ Depois disso, checkout, formulário de crédito e login do admin funcionam de ve
 
 ## Pendências para produção
 
-1. Catálogo real de produtos (os dados atuais são de exemplo, ainda vivem em `app.js`).
-2. Integração de pagamento real — ponto de integração comentado em `app.js` (busque por "PONTO DE INTEGRAÇÃO DE PAGAMENTO") e no handler de `POST /api/orders` em `backend/src/server.js`.
-3. Cálculo de frete real (hoje o checkout mostra "Grátis (protótipo)").
-4. Envio de e-mail transacional ao cliente e à loja quando um pedido é criado ou muda de status.
-5. Backup do banco: o Supabase já faz backup automático nos planos pagos; no plano gratuito, vale exportar o schema/dados periodicamente.
+### ✅ Já resolvido nesta rodada
+- Headers de segurança HTTP (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Strict-Transport-Security` em produção) — `backend/src/server.js`.
+- `robots.txt` e `sitemap.xml` na raiz, pra indexação no Google.
+- Meta tags Open Graph / Twitter Card em `index.html` e `loja.html` (prévia correta ao compartilhar no WhatsApp/redes).
+- Política de Privacidade (`privacidade.html`) e Termos de Uso (`termos.html`), com checkbox de consentimento LGPD nos formulários de crédito e checkout.
+- Copy do checkout/confirmação ajustada: não fala mais em "protótipo" pro cliente final, e explica com clareza que o pagamento é combinado por contato (Pix/cartão/boleto) — condizente com o fato de ainda não haver gateway de pagamento real conectado.
+
+### ⚠️ Decisões/contas que só você pode resolver
+1. **Catálogo real de produtos** — os itens, preços, SKUs e fotos atuais são de exemplo (`app.js`). Este é o maior gap entre "parece pronto" e "é real": sem isso, qualquer pedido feito na loja hoje é sobre produtos fictícios.
+2. **Domínio próprio** — hoje o site vive em `synct-labs.github.io` e a API em `onrender.com`. Se quiser `marquesenergiasolar.com.br` (aparece hoje só como texto no rodapé), é preciso registrar o domínio e configurar DNS (CNAME pro GitHub Pages + domínio customizado no Render).
+3. **Supabase no plano gratuito pausa o projeto após ~7 dias sem nenhuma atividade** — isso derrubaria login do admin e o site inteiro até alguém reativar manualmente no painel do Supabase. Se o site vai ficar "no ar de verdade" recebendo pouco tráfego no início, vale considerar o plano pago (US$25/mês) ou algum ping periódico pra manter o projeto ativo.
+4. **Render no plano gratuito "dorme" após ~15 min sem uso** (primeira requisição demora 30-50s pra responder). Plano pago (~US$7/mês) elimina isso.
+5. **Integração de pagamento real** — ponto comentado em `app.js` (busque "PONTO DE INTEGRAÇÃO DE PAGAMENTO") e no handler de `POST /api/orders` em `backend/src/server.js`. Hoje o fluxo é "pedido registrado → equipe entra em contato pra combinar pagamento", o que é uma opção válida de lançamento — mas se quiser cobrança automática (Pix/cartão/boleto na hora), precisa integrar um gateway (Mercado Pago, PagSeguro, Stripe) e isso é um projeto à parte.
+6. **Cálculo de frete real** (hoje o checkout mostra "A combinar").
+7. **E-mail/WhatsApp automático** avisando a equipe quando entra um pedido novo ou uma solicitação de crédito nova — hoje só aparece no painel admin, alguém precisa checar manualmente.
+8. **Backup do banco** — Supabase faz backup automático nos planos pagos; no gratuito, vale exportar o schema/dados periodicamente.
+9. Dois arquivos do SQLite antigo (`backend/data/mes.db` e `mes.db-journal`) ficaram versionados no Git por engano antes da migração pro Postgres — não afetam o funcionamento, mas valem uma limpeza: `git rm -r backend/data && git commit` (não consegui remover por aqui por causa de uma trava no `.git` local — rode esse comando quando puder).
 
 ## Estrutura
 
