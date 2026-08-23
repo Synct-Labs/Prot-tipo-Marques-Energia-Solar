@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Solicitações de Crédito — Painel de Administrador — Marques Energia Solar</title>
+<title>Solicitações de Crédito | Painel de Administrador | Marques Energia Solar</title>
 <link rel="stylesheet" href="../styles.css">
 <link rel="stylesheet" href="admin.css">
 </head>
@@ -111,7 +111,7 @@ function renderStats(stats){
 function leadDetailHTML(lead){
   const db = lead.dadosBasicos;
   const dp = lead.dadosProfissionais;
-  const nascimento = db.dataNascimento ? new Date(db.dataNascimento + "T00:00:00").toLocaleDateString("pt-BR") : "—";
+  const nascimento = db.dataNascimento ? new Date(db.dataNascimento + "T00:00:00").toLocaleDateString("pt-BR") : "-";
 
   return `
     <div class="admin-detail-block">
@@ -154,8 +154,8 @@ function renderLeads(list){
     <tr class="admin-order-row" data-id="${lead.id}">
       <td data-label="Solicitação">${lead.leadNumber}</td>
       <td data-label="Nome">${db.nome}</td>
-      <td data-label="Modalidade">${MODALIDADE_LABELS[lead.modalidadeInteresse] || "—"}</td>
-      <td data-label="Cidade/UF">${db.cidadeUf || "—"}</td>
+      <td data-label="Modalidade">${MODALIDADE_LABELS[lead.modalidadeInteresse] || "-"}</td>
+      <td data-label="Cidade/UF">${db.cidadeUf || "-"}</td>
       <td data-label="Renda líquida">${MES.formatBRL(dp.rendaLiquida)}</td>
       <td data-label="Status">${MES.leadStatusSelectHTML(lead.status, lead.id)}</td>
       <td data-label="Data">${MES.formatDate(lead.createdAt)}</td>

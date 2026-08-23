@@ -1,10 +1,10 @@
 /* =====================================================================
-   MARQUES ENERGIA SOLAR — BACKEND (login de admin + pedidos + crédito)
+   MARQUES ENERGIA SOLAR: BACKEND (login de admin + pedidos + crédito)
    ---------------------------------------------------------------------
    Servidor HTTP simples (módulos nativos do Node: http, crypto, fs,
    path + o pacote "pg" para falar com o Postgres do Supabase). Pode
    servir o site estático localmente, mas em produção o site fica no
-   GitHub Pages e este backend roda separado (ex: Render) — por isso o
+   GitHub Pages e este backend roda separado (ex: Render), por isso o
    suporte a CORS + cookie cross-site abaixo.
    ===================================================================== */
 const http = require("http");
@@ -21,7 +21,7 @@ const { serveStatic } = require("./static");
 /* ---------------------- CORS ---------------------- */
 // Necessário porque em produção o site (GitHub Pages) e o backend (Render)
 // ficam em domínios diferentes. Só libera origens que estiverem em
-// CORS_ORIGIN (backend/.env) — sem isso configurado, nada cross-site
+// CORS_ORIGIN (backend/.env); sem isso configurado, nada cross-site
 // funciona (mas o site continua rodando normalmente em localhost).
 function applyCors(req, res) {
   const origin = req.headers.origin;
@@ -300,12 +300,12 @@ async function main() {
   });
 
   server.listen(config.PORT, () => {
-    console.log(`\nMarques Energia Solar — servidor rodando em http://localhost:${config.PORT}`);
+    console.log(`\nMarques Energia Solar: servidor rodando em http://localhost:${config.PORT}`);
     console.log(`Painel de administrador: http://localhost:${config.PORT}/admin/login.html`);
     if (config.CORS_ORIGINS.length) {
       console.log(`Origens liberadas por CORS: ${config.CORS_ORIGINS.join(", ")}`);
     } else {
-      console.log(`[aviso] CORS_ORIGIN não definida — chamadas de outro domínio (ex: GitHub Pages) serão bloqueadas.`);
+      console.log(`[aviso] CORS_ORIGIN não definida. Chamadas de outro domínio (ex: GitHub Pages) serão bloqueadas.`);
     }
     console.log("");
   });

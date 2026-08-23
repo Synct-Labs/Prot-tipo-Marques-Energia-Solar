@@ -32,7 +32,7 @@ function loadEnvFile() {
 
 loadEnvFile();
 
-// CORS_ORIGIN aceita uma ou mais origens separadas por vírgula — necessário
+// CORS_ORIGIN aceita uma ou mais origens separadas por vírgula, necessário
 // porque em produção o site (GitHub Pages) e o backend (Render) ficam em
 // domínios diferentes.
 const CORS_ORIGINS = (process.env.CORS_ORIGIN || "")

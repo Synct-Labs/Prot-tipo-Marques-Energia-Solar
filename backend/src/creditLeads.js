@@ -1,5 +1,5 @@
 /* =====================================================================
-   SOLICITAÇÕES DE ANÁLISE DE CRÉDITO — acesso ao banco
+   SOLICITAÇÕES DE ANÁLISE DE CRÉDITO: acesso ao banco
    ===================================================================== */
 const { pool } = require("./db");
 

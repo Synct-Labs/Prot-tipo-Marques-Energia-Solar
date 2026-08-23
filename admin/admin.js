@@ -1,9 +1,9 @@
 /* =====================================================================
-   PAINEL DE ADMINISTRADOR — helpers compartilhados
+   PAINEL DE ADMINISTRADOR: helpers compartilhados
    ===================================================================== */
 window.MES = (function(){
 
-  // Base da API — "" localmente (mesmo domínio), URL do Render em
+  // Base da API: "" localmente (mesmo domínio), URL do Render em
   // produção. Definida em ../api-config.js, carregado antes deste arquivo.
   const API_BASE = window.MES_API_BASE || "";
 

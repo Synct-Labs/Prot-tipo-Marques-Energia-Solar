@@ -1,12 +1,12 @@
 /* =====================================================================
-   MARQUES ENERGIA SOLAR — PÁGINA "CRÉDITO SOLAR" (index.html)
+   MARQUES ENERGIA SOLAR: PÁGINA "CRÉDITO SOLAR" (index.html)
    ---------------------------------------------------------------------
    Lógica isolada da página de crédito: calculadora de dimensionamento
    (kWp) e simulação de crédito. Não depende do catálogo de produtos,
-   carrinho ou checkout — isso fica em loja.html / app.js.
+   carrinho ou checkout; isso fica em loja.html / app.js.
    ===================================================================== */
 
-/* Base da API — "" localmente (mesmo domínio), URL do Render em produção.
+/* Base da API: "" localmente (mesmo domínio), URL do Render em produção.
    Definida em api-config.js, carregado antes deste arquivo. */
 const API_BASE = window.MES_API_BASE || "";
 
@@ -91,7 +91,7 @@ $("#sizingCalcBtn")?.addEventListener("click", calcSizing);
 
 $("#sizingGoWizardBtn")?.addEventListener("click", () => {
   const qtd = parseInt($("#sizingCalcResult").dataset.qtd, 10) || 6;
-  // A loja fica em outra página (loja.html) — passamos a quantidade
+  // A loja fica em outra página (loja.html); passamos a quantidade
   // sugerida via localStorage, e o app.js de lá lê e já abre o
   // configurador com essa potência pré-selecionada.
   localStorage.setItem("mes_sizing_qtd", qtd);
@@ -101,7 +101,7 @@ $("#sizingGoWizardBtn")?.addEventListener("click", () => {
 /* ======================================================================
    SIMULAÇÃO DE CRÉDITO
    ---------------------------------------------------------------------
-   Protótipo — simulações ilustrativas com taxas de exemplo, sem nenhuma
+   Protótipo: simulações ilustrativas com taxas de exemplo, sem nenhuma
    integração com instituição financeira real.
    ====================================================================== */
 function pmt(pv, i, n){
@@ -122,7 +122,7 @@ const CREDIT_MODES = {
     highlight: "Mais escolhido",
     description: "Se você tem carteira assinada, esse é o caminho mais direto: a parcela sai do contracheque todo mês, sem boleto pra esquecer e sem fiador. A análise costuma sair em poucos dias.",
     fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação — use o número do seu orçamento." },
+      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação. Use o número do seu orçamento." },
       { key:"parcelas", label:"Número de parcelas", type:"select", options:[12,24,36,48,60] },
     ],
     calc(values){
@@ -135,7 +135,7 @@ const CREDIT_MODES = {
           { label:"Parcela estimada", value: `${formatBRL(parcela)} / mês` },
           { label:"Total estimado ao final do prazo", value: formatBRL(parcela * parcelas) },
         ],
-        note: "É uma despesa trocando de lugar: some o boleto da conta de luz, aparece o desconto no contracheque — só que esse, um dia, acaba.",
+        note: "É uma despesa trocando de lugar: some o boleto da conta de luz, aparece o desconto no contracheque. Só que esse, um dia, acaba.",
         compare: { type:"parcela", value: parcela },
       };
     },
@@ -146,7 +146,7 @@ const CREDIT_MODES = {
     icon: ICON_FGTS,
     description: "O saldo do saque-aniversário costuma ficar parado rendendo quase nada. Usado como entrada, ele reduz (ou até quita) o valor financiado sem mexer no seu salário do mês.",
     fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação — use o número do seu orçamento." },
+      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação. Use o número do seu orçamento." },
       { key:"fgts", label:"Valor disponível no FGTS (R$)", type:"number", placeholder:"Ex: 3000", hint:"Consulte no app FGTS, na opção “Saque-Aniversário”." },
     ],
     calc(values){
@@ -161,8 +161,8 @@ const CREDIT_MODES = {
           { label:"Saldo restante a pagar ou financiar", value: formatBRL(restante) },
         ],
         note: restante <= 0
-          ? "Esse saldo sozinho já paga o sistema inteiro — você garante energia solar sem contratar nenhum crédito."
-          : `Esse saldo cobre ${pct}% do sistema. Os outros ${100 - pct}% podem entrar no CLT, no financiamento ou no consórcio — dá pra combinar mais de uma modalidade.`,
+          ? "Esse saldo sozinho já paga o sistema inteiro. Você garante energia solar sem contratar nenhum crédito."
+          : `Esse saldo cobre ${pct}% do sistema. Os outros ${100 - pct}% podem entrar no CLT, no financiamento ou no consórcio. Dá pra combinar mais de uma modalidade.`,
         compare: { type:"progress", value: pct },
       };
     },
@@ -171,9 +171,9 @@ const CREDIT_MODES = {
     label: "Consórcio",
     tag: "Zero juros",
     icon: ICON_CONSORCIO,
-    description: "Não é financiamento — é um grupo que se cotiza para comprar sistemas solares, sem juros. Você paga uma taxa de administração e aguarda o sorteio ou dá um lance para ser contemplado antes.",
+    description: "Não é financiamento, é um grupo que se cotiza para comprar sistemas solares, sem juros. Você paga uma taxa de administração e aguarda o sorteio ou dá um lance para ser contemplado antes.",
     fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação — use o número do seu orçamento." },
+      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação. Use o número do seu orçamento." },
       { key:"parcelas", label:"Número de parcelas", type:"select", options:[60,72,80,100] },
     ],
     calc(values){
@@ -196,9 +196,9 @@ const CREDIT_MODES = {
     label: "Financiamento Bancário",
     tag: "Prazo mais longo",
     icon: ICON_FINANCIAMENTO,
-    description: "Linhas de banco criadas especificamente para energia solar, com prazos de até 96 meses. Quanto mais longo o prazo, menor a parcela — e menor a diferença pro que você já paga de conta de luz.",
+    description: "Linhas de banco criadas especificamente para energia solar, com prazos de até 96 meses. Quanto mais longo o prazo, menor a parcela, e menor a diferença pro que você já paga de conta de luz.",
     fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação — use o número do seu orçamento." },
+      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação. Use o número do seu orçamento." },
       { key:"parcelas", label:"Número de parcelas", type:"select", options:[24,36,48,60,72,84,96] },
     ],
     calc(values){
@@ -211,7 +211,7 @@ const CREDIT_MODES = {
           { label:"Parcela estimada", value: `${formatBRL(parcela)} / mês` },
           { label:"Total estimado ao final do prazo", value: formatBRL(parcela * parcelas) },
         ],
-        note: "Nos prazos mais longos, a parcela tende a chegar perto do valor da conta de luz que você deixa de pagar — o que muda é pra quem vai esse dinheiro.",
+        note: "Nos prazos mais longos, a parcela tende a chegar perto do valor da conta de luz que você deixa de pagar. O que muda é pra quem vai esse dinheiro.",
         compare: { type:"parcela", value: parcela },
       };
     },
@@ -289,7 +289,7 @@ function renderCreditSimCard(){
         Falar com um especialista
       </a>
     </div>
-    <p class="credit-sim-disclaimer">Simulação ilustrativa e sem compromisso — os valores reais dependem de análise de crédito, taxa contratada e instituição financeira.</p>
+    <p class="credit-sim-disclaimer">Simulação ilustrativa e sem compromisso. Os valores reais dependem de análise de crédito, taxa contratada e instituição financeira.</p>
   `;
   renderCreditContext();
 }
@@ -305,7 +305,7 @@ $("#creditTabs")?.addEventListener("click", (e) => {
   syncLeadModalidade();
 
   // Ao escolher a modalidade "Saque FGTS", já adiantamos a explicação de
-  // como autorizar os bancos parceiros — assim a pessoa resolve isso antes
+  // como autorizar os bancos parceiros; assim a pessoa resolve isso antes
   // mesmo de preencher e enviar o formulário de solicitação.
   if(currentCreditMode === "fgts" && !fgtsAuthShownOnce){
     fgtsAuthShownOnce = true;
@@ -347,7 +347,7 @@ function compareBarsHTML(compare){
     const diff = parcela - conta;
     const diffLabel = diff <= 0
       ? `${formatBRL(Math.abs(diff))} a menos por mês que sua conta de luz hoje`
-      : `${formatBRL(diff)} a mais por mês do que sua conta hoje — mas essa diferença financia um sistema que passa a ser seu`;
+      : `${formatBRL(diff)} a mais por mês do que sua conta hoje, mas essa diferença financia um sistema que passa a ser seu`;
     return `
       <div class="credit-compare">
         <div class="credit-compare-row">
@@ -391,7 +391,7 @@ document.addEventListener("click", (e) => {
    POP-UP: AUTORIZAÇÃO DE CONSULTA DO FGTS
    ---------------------------------------------------------------------
    Exibido depois que a pessoa solicita a análise de crédito na modalidade
-   "Saque FGTS" — ensina a autorizar os dois bancos parceiros a consultar
+   "Saque FGTS", ensina a autorizar os dois bancos parceiros a consultar
    o saldo do saque-aniversário no app oficial (FGTS / Caixa).
    ====================================================================== */
 function openFgtsAuthModal(){
@@ -421,7 +421,7 @@ $("#fgtsAuthReopenBtn")?.addEventListener("click", openFgtsAuthModal);
    ---------------------------------------------------------------------
    Envia os dados para o backend (rota pública /api/credit-leads), que
    persiste a solicitação no banco e a deixa disponível no painel de
-   administrador — mesmo fluxo já usado pelos pedidos da loja.
+   administrador; mesmo fluxo já usado pelos pedidos da loja.
    ====================================================================== */
 $("#creditLeadForm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -473,7 +473,7 @@ $("#creditLeadForm")?.addEventListener("submit", async (e) => {
     $("#leadFormSuccess").scrollIntoView({ behavior: "smooth", block: "start" });
 
     // Na modalidade "Saque FGTS", a análise depende de consultar o saldo do
-    // saque-aniversário — por isso ensinamos a pessoa a autorizar os dois
+    // saque-aniversário; por isso ensinamos a pessoa a autorizar os dois
     // bancos parceiros a fazer essa consulta no app oficial.
     if(payload.modalidade_interesse === "fgts"){
       $("#fgtsAuthReopenBtn").hidden = false;

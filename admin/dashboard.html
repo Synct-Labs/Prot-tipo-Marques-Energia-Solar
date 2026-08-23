@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Pedidos — Painel de Administrador — Marques Energia Solar</title>
+<title>Pedidos | Painel de Administrador | Marques Energia Solar</title>
 <link rel="stylesheet" href="../styles.css">
 <link rel="stylesheet" href="admin.css">
 </head>
@@ -93,7 +93,7 @@ function orderDetailHTML(order){
     </div>`).join("");
 
   const end = order.endereco;
-  const enderecoLinha = `${end.rua || ""}, ${end.numero || ""}${end.complemento ? " — " + end.complemento : ""}`;
+  const enderecoLinha = `${end.rua || ""}, ${end.numero || ""}${end.complemento ? ", " + end.complemento : ""}`;
 
   return `
     <div class="admin-detail-block">
@@ -107,12 +107,12 @@ function orderDetailHTML(order){
       <h4>Endereço de entrega</h4>
       <p>${enderecoLinha}</p>
       <p>${end.bairro || ""}</p>
-      <p>${end.cidade || ""} — ${end.estado || ""}</p>
+      <p>${end.cidade || ""} / ${end.estado || ""}</p>
       <p>CEP ${end.cep || ""}</p>
     </div>
     <div class="admin-detail-block">
       <h4>Pagamento</h4>
-      <p>${order.pagamento ? order.pagamento.toUpperCase() : "—"}</p>
+      <p>${order.pagamento ? order.pagamento.toUpperCase() : "-"}</p>
       <h4 style="margin-top:14px;">Itens do pedido</h4>
       <div class="admin-detail-items">${itemsHTML}</div>
     </div>
@@ -132,7 +132,7 @@ function renderOrders(list){
     <tr class="admin-order-row" data-id="${order.id}">
       <td data-label="Pedido">${order.orderNumber}</td>
       <td data-label="Cliente">${order.customer.nome}</td>
-      <td data-label="Cidade/UF">${order.endereco.cidade || "—"} / ${order.endereco.estado || "—"}</td>
+      <td data-label="Cidade/UF">${order.endereco.cidade || "-"} / ${order.endereco.estado || "-"}</td>
       <td data-label="Itens">${itemsCount}</td>
       <td data-label="Total">${MES.formatBRL(order.total)}</td>
       <td data-label="Status">${MES.statusSelectHTML(order.status, order.id)}</td>

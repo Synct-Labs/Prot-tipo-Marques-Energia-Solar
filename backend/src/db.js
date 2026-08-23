@@ -1,5 +1,5 @@
 /* =====================================================================
-   BANCO DE DADOS (Postgres — Supabase)
+   BANCO DE DADOS (Postgres, Supabase)
    ---------------------------------------------------------------------
    Usa o pacote "pg" para conectar num Postgres hospedado (Supabase).
    A connection string vem de DATABASE_URL (backend/.env).

@@ -117,7 +117,7 @@ function parseCookies(req) {
 }
 
 /* Em produção o site (GitHub Pages) e o backend (Render) ficam em domínios
-   diferentes — cookie cross-site precisa de SameSite=None + Secure. Em
+   diferentes; cookie cross-site precisa de SameSite=None + Secure. Em
    desenvolvimento local (mesmo domínio, http) usamos SameSite=Lax normal. */
 function cookieSameSiteAttrs() {
   return config.NODE_ENV === "production"

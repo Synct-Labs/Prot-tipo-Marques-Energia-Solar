@@ -1,15 +1,15 @@
 /* =====================================================================
-   MARQUES ENERGIA SOLAR — PROTÓTIPO DE E-COMMERCE
+   MARQUES ENERGIA SOLAR: LOJA
    Dados de catálogo são PLACEHOLDER (o cliente ainda vai fornecer o
    catálogo real). As marcas usadas (Deye, Growatt, Canadian Solar,
    Romagnole etc.) são marcas reais do setor, usadas aqui apenas como
-   exemplo de como o filtro por marca funcionaria — a linha de produtos
+   exemplo de como o filtro por marca funcionaria; a linha de produtos
    real que a Marques Energia Solar vai revender ainda será definida.
-   Não há integração de pagamento real — ver seção CHECKOUT / PAYMENT
+   Não há integração de pagamento real; ver seção CHECKOUT / PAYMENT
    INTEGRATION POINT mais abaixo.
    ===================================================================== */
 
-/* Base da API — "" localmente (mesmo domínio), URL do Render em produção.
+/* Base da API: "" localmente (mesmo domínio), URL do Render em produção.
    Definida em api-config.js, carregado antes deste arquivo. */
 const API_BASE = window.MES_API_BASE || "";
 
@@ -124,7 +124,7 @@ const PRODUCTS = [
       tensaoMax:"1,8 kV DC", resistencia:"UV e intempéries, -40°C a 90°C" } },
   { id:"cb3", cat:"cabos", brand:"Stäubli", sku:"CN-MC4-10PR", embVenda:"10 pares", subcategoria:"Conectores", facetValue:"Conectores",
     name:"Par de Conectores MC4 (10 pares)", price:129.00,
-    specs:{ bitola:"Compatível 2,5 a 6 mm²", comprimento:"—", isolacao:"Corpo em PC/PA, IP67",
+    specs:{ bitola:"Compatível 2,5 a 6 mm²", comprimento:"-", isolacao:"Corpo em PC/PA, IP67",
       tensaoMax:"1000 V DC / 30 A", resistencia:"Vedação IP67" } },
   { id:"cb4", cat:"cabos", brand:"Nexans", sku:"CB-KIT-6MM-5K", embVenda:"1 kit completo", subcategoria:"Cabo Solar", facetValue:"6 mm²",
     name:"Kit Completo 6mm² p/ Instalação até 5kW", price:549.00,
@@ -133,14 +133,14 @@ const PRODUCTS = [
   { id:"cb5", cat:"cabos", brand:"Prysmian", sku:"CB-GND-10MM", embVenda:"1 unidade (rolo 20m)", subcategoria:"Aterramento", facetValue:"10 mm²",
     name:"Cabo de Aterramento 10mm² (20m)", price:179.00,
     specs:{ bitola:"10 mm²", comprimento:"20m", isolacao:"Cobre nu",
-      tensaoMax:"—", resistencia:"Uso em aterramento de estrutura" } },
+      tensaoMax:"-", resistencia:"Uso em aterramento de estrutura" } },
   { id:"cb6", cat:"cabos", brand:"Nexans", sku:"CB-SOL-4MM-35", embVenda:"1 kit (par de rolos)", subcategoria:"Cabo Solar", facetValue:"4 mm²",
-    name:"Kit Cabo Solar 4mm² Vermelho/Preto (35m + 35m) — padrão Monte seu Kit", price:299.00,
+    name:"Kit Cabo Solar 4mm² Vermelho/Preto (35m + 35m): padrão Monte seu Kit", price:299.00,
     specs:{ bitola:"4 mm²", comprimento:"35m vermelho + 35m preto", isolacao:"XLPE",
       tensaoMax:"1,8 kV DC", resistencia:"UV e intempéries, -40°C a 90°C" } },
   { id:"cb7", cat:"cabos", brand:"Stäubli", sku:"CN-MC4-PAR", embVenda:"1 par", subcategoria:"Conectores", facetValue:"Conectores",
     name:"Conector Fotovoltaico MC4 (par avulso)", price:19.90,
-    specs:{ bitola:"Compatível 2,5 a 6 mm²", comprimento:"—", isolacao:"Corpo em PC/PA, IP67",
+    specs:{ bitola:"Compatível 2,5 a 6 mm²", comprimento:"-", isolacao:"Corpo em PC/PA, IP67",
       tensaoMax:"1000 V DC / 30 A", resistencia:"Vedação IP67" } },
 
   // ---------- PARAFUSOS E ESTRUTURA DE FIXAÇÃO ----------
@@ -163,11 +163,11 @@ const PRODUCTS = [
   { id:"es5", cat:"estrutura", brand:"Ciser", sku:"ST-BOLT-A2-100", embVenda:"1 kit (100 unidades)", subcategoria:"Acessórios", facetValue:"Acessórios",
     name:"Kit Parafusos Inox A2 (100 unidades)", price:149.00,
     specs:{ material:"Aço inox A2", capacidade:"Rosca autobrocante M6, uso geral", fixacao:"Inclui arruelas de vedação",
-      resistencia:"Resistente à corrosão", garantia:"—" } },
+      resistencia:"Resistente à corrosão", garantia:"-" } },
   { id:"es6", cat:"estrutura", brand:"Romagnole", sku:"ST-CLAMP-20", embVenda:"1 kit (20 peças)", subcategoria:"Acessórios", facetValue:"Acessórios",
     name:"Kit Grampos Final e Intermediário (20 peças)", price:219.00,
     specs:{ material:"Alumínio", capacidade:"10 finais + 10 intermediários", fixacao:"Compatível molduras 30-46mm",
-      resistencia:"Anticorrosivo", garantia:"—" } },
+      resistencia:"Anticorrosivo", garantia:"-" } },
 ];
 
 /* ---------------------- ESTADO DA APLICAÇÃO ---------------------- */
@@ -196,7 +196,7 @@ const FEATURED_IDS = ["pn1", "iv2", "cb1", "es1"];
 const WIZARD_STEPS = [
   { key:"paineis",   cat:"paineis",    label:"Painéis",    title:"Escolha o Painel Solar",       sub:"Selecione o modelo e a quantidade de painéis do seu projeto." },
   { key:"inversor",  cat:"inversores", label:"Inversor",   title:"Escolha o Inversor",            sub:"Selecione o inversor compatível com a potência do projeto." },
-  { key:"cabos",     label:"Cabos",      title:"Cabos e Conectores",              sub:"Já incluímos o padrão recomendado para a maioria das instalações — ajuste as quantidades se precisar de mais." },
+  { key:"cabos",     label:"Cabos",      title:"Cabos e Conectores",              sub:"Já incluímos o padrão recomendado para a maioria das instalações. Ajuste as quantidades se precisar de mais." },
   { key:"estrutura", cat:"estrutura",  label:"Estrutura",  title:"Escolha a Estrutura de Fixação", sub:"Selecione a estrutura conforme o tipo de telhado ou solo." },
   { key:"resumo",    label:"Resumo",   title:"Resumo do Projeto",              sub:"Confira os itens selecionados antes de adicionar ao carrinho." },
 ];
@@ -251,24 +251,24 @@ function getFeatures(p){
   if(p.cat === "cabos") return [
     `Isolação em ${p.specs.isolacao}, resistente a UV e intempéries`,
     `Bitola ${p.specs.bitola}, dimensionada para instalações fotovoltaicas`,
-    p.specs.tensaoMax !== "—" ? `Suporta tensão de até ${p.specs.tensaoMax}` : `Uso recomendado por norma técnica`,
+    p.specs.tensaoMax !== "-" ? `Suporta tensão de até ${p.specs.tensaoMax}` : `Uso recomendado por norma técnica`,
     `Fácil instalação e conexão segura`,
   ];
   return [
     `Material: ${p.specs.material}`,
     `${p.specs.fixacao}`,
     `Resistência: ${p.specs.resistencia}`,
-    p.specs.garantia !== "—" ? `Garantia de ${p.specs.garantia}` : `Compatível com os principais perfis do mercado`,
+    p.specs.garantia !== "-" ? `Garantia de ${p.specs.garantia}` : `Compatível com os principais perfis do mercado`,
   ];
 }
 
 function getWarrantyText(p){
-  const garantia = p.specs.garantia && p.specs.garantia !== "—" ? p.specs.garantia : "conforme especificação do fabricante";
+  const garantia = p.specs.garantia && p.specs.garantia !== "-" ? p.specs.garantia : "conforme especificação do fabricante";
   return `Este produto possui garantia de ${garantia} contra defeitos de fabricação, conforme os termos do fabricante ${p.brand}. Em caso de sinistro, entre em contato com nosso suporte pelo WhatsApp para orientações sobre o acionamento da garantia.`;
 }
 
 /* ======================================================================
-   ROTEAMENTO (SPA baseada em hash) — suporta #produto/<id>
+   ROTEAMENTO (SPA baseada em hash), suporta #produto/<id>
    ====================================================================== */
 const VALID_VIEWS = ["home","catalogo","comparar","produto","configurador","carrinho","checkout","confirmacao"];
 
@@ -495,7 +495,7 @@ function renderFeatured(){
 function renderProductCard(p){
   const specFields = CATEGORIES[p.cat].specFields.slice(0,3);
   const specsHTML = specFields.map(([key,label]) =>
-    `<li><span>${label}</span><span>${p.specs[key] || "—"}</span></li>`).join("");
+    `<li><span>${label}</span><span>${p.specs[key] || "-"}</span></li>`).join("");
 
   const selected = (state.compareSelection[p.cat] || []).includes(p.id);
 
@@ -514,12 +514,12 @@ function renderProductCard(p){
       <div class="product-price">${formatBRL(p.price)}<small>à vista (parcelamento a definir)</small></div>
     </div>
     <div class="product-actions">
-      <label class="compare-check">
-        <input type="checkbox" class="compare-checkbox" data-id="${p.id}" data-cat="${p.cat}" ${selected ? "checked" : ""}>
-        Comparar este produto
-      </label>
+      <a href="#produto/${p.id}" class="btn btn-ghost">+ detalhes</a>
       <div class="product-actions-row">
-        <a href="#produto/${p.id}" class="btn btn-ghost">+ detalhes</a>
+        <label class="compare-check">
+          <input type="checkbox" class="compare-checkbox" data-id="${p.id}" data-cat="${p.cat}" ${selected ? "checked" : ""}>
+          Comparar
+        </label>
         <button class="btn btn-primary btn-add-cart" data-id="${p.id}">${ICON_PLUS}Adicionar</button>
       </div>
     </div>
@@ -644,7 +644,7 @@ function renderComparison(){
   fields.forEach(([key,label]) => {
     html += `<tr><td class="spec-label">${label}</td>`;
     products.forEach(p => {
-      html += `<td>${p.specs[key] || "—"}</td>`;
+      html += `<td>${p.specs[key] || "-"}</td>`;
     });
     html += `</tr>`;
   });
@@ -694,7 +694,7 @@ function renderProductPage(){
   $("#specsHighlight").innerHTML = cat.specFields.map(([key,label]) => `
     <div class="spec-highlight-item">
       <span class="spec-highlight-label">${label}</span>
-      <span class="spec-highlight-value">${p.specs[key] || "—"}</span>
+      <span class="spec-highlight-value">${p.specs[key] || "-"}</span>
     </div>`).join("");
 
   $("#featuresList").innerHTML = getFeatures(p).map(f => `<li>${ICON_CHECK}<span>${f}</span></li>`).join("");
@@ -827,7 +827,7 @@ function renderWizardCabosHTML(){
 
   return `
     <h2 class="wizard-step-title">Cabos e Conectores</h2>
-    <p class="wizard-step-sub">Já incluímos o padrão recomendado para a maioria das instalações residenciais — ajuste as quantidades se o seu projeto precisar de mais.</p>
+    <p class="wizard-step-sub">Já incluímos o padrão recomendado para a maioria das instalações residenciais. Ajuste as quantidades se o seu projeto precisar de mais.</p>
 
     <div class="wizard-fixed-item">
       ${productImageHTML(cabo, "wizard-option-image")}
@@ -902,7 +902,7 @@ function renderWizardSummaryHTML(){
 function renderWizardStep(){
   const stepDef = WIZARD_STEPS[state.configurator.step];
   renderWizardStepper();
-  $("#wizardProgressText").textContent = `Passo ${state.configurator.step + 1} de ${WIZARD_STEPS.length} — ${stepDef.title}`;
+  $("#wizardProgressText").textContent = `Passo ${state.configurator.step + 1} de ${WIZARD_STEPS.length}: ${stepDef.title}`;
 
   $("#wizardContent").innerHTML = stepDef.key === "resumo"
     ? renderWizardSummaryHTML()
@@ -1024,7 +1024,7 @@ function saveCartToStorage(){
   try{
     localStorage.setItem("mes_cart", JSON.stringify(state.cart));
   }catch(err){
-    // localStorage indisponível (modo privado, quota cheia etc.) — ignora
+    // localStorage indisponível (modo privado, quota cheia etc.), ignora
   }
 }
 
@@ -1038,7 +1038,7 @@ function loadCartFromStorage(){
       i && typeof i.id === "string" && typeof i.qty === "number" && i.qty > 0 && getProduct(i.id)
     );
   }catch(err){
-    // JSON corrompido — ignora e mantém carrinho vazio
+    // JSON corrompido, ignora e mantém carrinho vazio
   }
 }
 
@@ -1148,7 +1148,7 @@ function renderCheckout(){
 /* ---------------------- BUSCA DE CEP (autopreenchimento) ----------------------
    Usa a API pública e gratuita ViaCEP (viacep.com.br) para preencher cidade,
    estado, rua e bairro a partir do CEP. Os campos continuam editáveis
-   normalmente — a pessoa pode corrigir ou completar à mão a qualquer momento. */
+   normalmente; a pessoa pode corrigir ou completar à mão a qualquer momento. */
 async function buscarEnderecoPorCep(rawCep){
   const cep = String(rawCep || "").replace(/\D/g, "");
   const statusEl = $("#checkoutCepStatus");
@@ -1171,7 +1171,7 @@ async function buscarEnderecoPorCep(rawCep){
     if(data.erro){
       if(statusEl){
         statusEl.className = "field-hint field-hint-error";
-        statusEl.textContent = "CEP não encontrado — preencha o endereço manualmente.";
+        statusEl.textContent = "CEP não encontrado. Preencha o endereço manualmente.";
       }
       return;
     }
@@ -1187,12 +1187,12 @@ async function buscarEnderecoPorCep(rawCep){
 
     if(statusEl){
       statusEl.className = "field-hint field-hint-ok";
-      statusEl.textContent = "Endereço encontrado — confira e complete se precisar.";
+      statusEl.textContent = "Endereço encontrado. Confira e complete se precisar.";
     }
   } catch(err){
     if(statusEl){
       statusEl.className = "field-hint field-hint-error";
-      statusEl.textContent = "Não foi possível buscar o CEP agora — preencha manualmente.";
+      statusEl.textContent = "Não foi possível buscar o CEP agora. Preencha manualmente.";
     }
   }
 }

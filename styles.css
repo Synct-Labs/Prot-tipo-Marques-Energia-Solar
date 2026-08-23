@@ -1,5 +1,5 @@
 /* =====================================================================
-   MARQUES ENERGIA SOLAR — DESIGN SYSTEM
+   MARQUES ENERGIA SOLAR: DESIGN SYSTEM
    ===================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
@@ -590,13 +590,13 @@ input, select{ font-family: inherit; }
   .hero-text{ flex: 0 1 500px; }
   .hero-text h1{ font-size: 3.4rem; }
   /* align-self:flex-start (em vez de center) sobe o círculo pro mesmo nível
-     do título, ocupando o espaço que antes ficava vazio acima dele —
+     do título, ocupando o espaço que antes ficava vazio acima dele,
      em vez de sobrar vão em cima e a arte "boiar" no meio da seção. */
   .hero-art{ flex-shrink: 0; align-self: flex-start; margin-top: 48px; }
   .hero-badge-1{ right: 0%; }
   .hero-badge-2{ left: 0%; }
   /* badge-3 fica na altura do meio do círculo (top:38%), onde ele é mais
-     largo — por isso precisa de mais deslocamento pra não cair em cima
+     largo, por isso precisa de mais deslocamento pra não cair em cima
      da logo, diferente dos badges perto do topo/base onde o círculo já
      estreita. */
   .hero-badge-3{ left: -20%; }
@@ -1190,8 +1190,9 @@ input, select{ font-family: inherit; }
 .compare-check input:checked{ border-color: var(--orange); }
 .compare-check input:checked::before{ transform: scale(1); }
 
-.product-actions-row{ display: flex; gap: 8px; }
+.product-actions-row{ display: flex; align-items: center; gap: 10px; }
 .product-actions-row .btn{ flex: 1; padding: 11px 14px; font-size: 0.84rem; }
+.product-actions-row .compare-check{ flex-shrink: 0; }
 
 #featuredGrid .compare-check{ display: none; }
 
@@ -1444,9 +1445,12 @@ input, select{ font-family: inherit; }
   display: flex; align-items: center; gap: 8px;
   color: var(--orange-light);
   font-weight: 600;
-  padding: 0 6px;
+  padding: 7px 14px;
   font-size: 0.98rem;
   font-family: var(--font-display);
+  background: transparent;
+  border: 1px solid var(--border-orange);
+  border-radius: var(--radius-sm);
 }
 .form-grid{
   display: grid;
@@ -1997,7 +2001,7 @@ input, select{ font-family: inherit; }
   .configurator-teaser-text{ flex: 1; }
 }
 
-/* ===================== MONTE SEU PROJETO — LANDING (métodos) ===================== */
+/* ===================== MONTE SEU PROJETO: LANDING (métodos) ===================== */
 .methods-grid{
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 360px));
@@ -2234,7 +2238,7 @@ input, select{ font-family: inherit; }
   color: var(--orange-light);
 }
 
-/* ===================== NAV — BOTÃO COMPRAR ===================== */
+/* ===================== NAV: BOTÃO COMPRAR ===================== */
 .nav-buy-btn{
   padding: 9px 22px;
   font-size: 0.85rem;
@@ -2472,16 +2476,24 @@ input, select{ font-family: inherit; }
 
 .credit-sim-cta{
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 14px;
   margin-top: 26px;
   padding-top: 22px;
   border-top: 1px solid var(--border-soft);
 }
-.credit-sim-cta p{ font-size: 0.88rem; color: var(--muted); margin: 0; }
-.credit-sim-disclaimer{ font-size: 0.76rem; color: var(--muted-2); margin-top: 18px; line-height: 1.55; }
+.credit-sim-cta p{ font-size: 0.88rem; color: var(--muted); margin: 0; line-height: 1.5; }
+.credit-sim-cta .btn{ flex-shrink: 0; }
+@media (min-width: 560px){
+  .credit-sim-cta{
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+.credit-sim-disclaimer{ font-size: 0.76rem; color: var(--muted-2); margin-top: 18px; line-height: 1.65; }
 
 .credit-value-props{
   display: grid;
