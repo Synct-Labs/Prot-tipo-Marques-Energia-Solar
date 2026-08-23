@@ -214,6 +214,7 @@
 .admin-order-detail-inner.open{ display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:22px; }
 .admin-detail-block h4{ font-size:.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px; }
 .admin-detail-block p{ font-size:.88rem; margin-bottom:3px; }
+.admin-detail-block p.admin-muted{ color: var(--muted); font-style: italic; }
 .admin-detail-items{ display:flex; flex-direction:column; gap:6px; }
 .admin-detail-item-row{ display:flex; justify-content:space-between; font-size:.85rem; gap:10px; }
 .admin-detail-item-row span:first-child{ color:var(--muted); }

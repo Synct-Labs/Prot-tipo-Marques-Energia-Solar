@@ -134,10 +134,23 @@ function leadDetailHTML(lead){
       <p>Renda líquida: ${MES.formatBRL(dp.rendaLiquida)}</p>
     </div>
     <div class="admin-detail-block">
-      <h4>Modalidade de interesse</h4>
-      <p>${MODALIDADE_LABELS[lead.modalidadeInteresse] || lead.modalidadeInteresse || "Não informada"}</p>
+      <h4>Simulação feita pelo cliente</h4>
+      ${simulacaoDetailHTML(lead)}
     </div>
   `;
+}
+
+function simulacaoDetailHTML(lead){
+  const sim = lead.simulacao || {};
+  const modalidade = MODALIDADE_LABELS[lead.modalidadeInteresse] || lead.modalidadeInteresse || "Não informada";
+  if(sim.valorSistema == null){
+    return `<p>Modalidade: ${modalidade}</p><p class="admin-muted">Formulário enviado sem passar pela simulação.</p>`;
+  }
+  const linhas = [`<p>Modalidade: ${modalidade}</p>`, `<p>Valor do sistema: ${MES.formatBRL(sim.valorSistema)}</p>`];
+  if(sim.parcelas != null) linhas.push(`<p>Parcelas: ${sim.parcelas}x</p>`);
+  if(sim.fgtsDisponivel != null) linhas.push(`<p>FGTS disponível informado: ${MES.formatBRL(sim.fgtsDisponivel)}</p>`);
+  if(sim.parcelaEstimada != null) linhas.push(`<p>Parcela estimada: <strong>${MES.formatBRL(sim.parcelaEstimada)}/mês</strong></p>`);
+  return linhas.join("");
 }
 
 function renderLeads(list){

@@ -50,6 +50,12 @@ function rowToLead(row) {
       rendaBruta: row.renda_bruta,
       rendaLiquida: row.renda_liquida,
     },
+    simulacao: {
+      valorSistema: row.sim_valor_sistema,
+      parcelas: row.sim_parcelas,
+      fgtsDisponivel: row.sim_fgts_disponivel,
+      parcelaEstimada: row.sim_parcela_estimada,
+    },
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -63,6 +69,14 @@ function validateLeadPayload(payload) {
   return missing;
 }
 
+// Campos numéricos opcionais (vêm do simulador, no Passo 2) — converte pra
+// número só quando há valor de verdade, senão grava NULL no banco.
+function numOrNull(v) {
+  if (v === undefined || v === null || String(v).trim() === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 async function createLead(payload) {
   const now = new Date().toISOString();
   const tempNumber = `TMP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -72,8 +86,9 @@ async function createLead(payload) {
       lead_number, status, modalidade_interesse,
       nome, cpf, data_nascimento, estado_civil, telefone, email, cidade_uf,
       profissao, tipo_vinculo, empresa, tempo_trabalho, renda_bruta, renda_liquida,
+      sim_valor_sistema, sim_parcelas, sim_fgts_disponivel, sim_parcela_estimada,
       created_at, updated_at
-    ) VALUES ($1, 'novo', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+    ) VALUES ($1, 'novo', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
     RETURNING id`,
     [
       tempNumber,
@@ -91,6 +106,10 @@ async function createLead(payload) {
       payload.tempo_trabalho,
       Number(payload.renda_bruta),
       Number(payload.renda_liquida),
+      numOrNull(payload.sim_valor_sistema),
+      payload.sim_parcelas ? parseInt(payload.sim_parcelas, 10) : null,
+      numOrNull(payload.sim_fgts_disponivel),
+      numOrNull(payload.sim_parcela_estimada),
       now,
       now,
     ]

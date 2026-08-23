@@ -91,9 +91,24 @@ async function initSchema() {
       renda_bruta          DOUBLE PRECISION NOT NULL,
       renda_liquida        DOUBLE PRECISION NOT NULL,
 
+      -- dados da simulação (preenchidos no Passo 2, antes do formulário)
+      sim_valor_sistema     DOUBLE PRECISION,
+      sim_parcelas          INTEGER,
+      sim_fgts_disponivel   DOUBLE PRECISION,
+      sim_parcela_estimada  DOUBLE PRECISION,
+
       created_at           TEXT NOT NULL,
       updated_at           TEXT NOT NULL
     );
+  `);
+
+  // Colunas novas em bancos que já existiam antes desta versão (o
+  // CREATE TABLE IF NOT EXISTS acima não altera tabelas já criadas).
+  await pool.query(`
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_valor_sistema DOUBLE PRECISION;
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_parcelas INTEGER;
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_fgts_disponivel DOUBLE PRECISION;
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_parcela_estimada DOUBLE PRECISION;
   `);
 }
 

@@ -277,7 +277,6 @@ function renderCreditSimCard(){
     </div>
     <div class="credit-sim-form" id="creditSimForm">${mode.fields.map(creditFieldHTML).join("")}</div>
     <button class="btn btn-primary btn-lg" id="creditSimSubmit" type="button">Simular parcela</button>
-    <div class="credit-sim-result" id="creditSimResult"></div>
     ${currentCreditMode === "fgts" ? `
     <button type="button" class="fgts-auth-reopen-btn fgts-auth-reopen-btn-inline" id="fgtsAuthReopenBtnSim">
       Como autorizar os bancos a consultar meu FGTS?
@@ -324,48 +323,10 @@ function syncLeadModalidade(){
   if(select) select.value = currentCreditMode;
 }
 
-function compareBarsHTML(compare){
-  const conta = getContaAtual();
-  if(!compare) return "";
-
-  if(compare.type === "progress"){
-    const pct = Math.min(100, Math.max(0, compare.value));
-    return `
-      <div class="credit-compare">
-        <div class="credit-progress-label"><span>Coberto pelo FGTS</span><strong>${pct}%</strong></div>
-        <div class="credit-progress-track"><div class="credit-progress-fill" style="width:${pct}%"></div></div>
-      </div>
-    `;
-  }
-
-  if(compare.type === "parcela"){
-    if(!conta) return "";
-    const parcela = compare.value;
-    const max = Math.max(conta, parcela, 1);
-    const pctConta = Math.round((conta / max) * 100);
-    const pctParcela = Math.round((parcela / max) * 100);
-    const diff = parcela - conta;
-    const diffLabel = diff <= 0
-      ? `${formatBRL(Math.abs(diff))} a menos por mês que sua conta de luz hoje`
-      : `${formatBRL(diff)} a mais por mês do que sua conta hoje, mas essa diferença financia um sistema que passa a ser seu`;
-    return `
-      <div class="credit-compare">
-        <div class="credit-compare-row">
-          <span class="credit-compare-label">Sua conta de luz hoje</span>
-          <div class="credit-compare-track"><div class="credit-compare-fill credit-compare-fill-atual" style="width:${pctConta}%"></div></div>
-          <span class="credit-compare-value">${formatBRL(conta)}</span>
-        </div>
-        <div class="credit-compare-row">
-          <span class="credit-compare-label">Parcela estimada</span>
-          <div class="credit-compare-track"><div class="credit-compare-fill credit-compare-fill-parcela" style="width:${pctParcela}%"></div></div>
-          <span class="credit-compare-value">${formatBRL(parcela)}</span>
-        </div>
-        <p class="credit-compare-delta">${diff <= 0 ? "▼" : "▲"} ${diffLabel}</p>
-      </div>
-    `;
-  }
-  return "";
-}
+/* Guarda a última simulação feita (modalidade + valores + resultado) pra
+   levar junto quando a pessoa preencher e enviar o formulário de solicitação
+   lá embaixo, em vez de mostrar o resultado aqui mesmo. */
+let lastSimResult = null;
 
 document.addEventListener("click", (e) => {
   if(e.target.id !== "creditSimSubmit") return;
@@ -373,19 +334,36 @@ document.addEventListener("click", (e) => {
   const values = {};
   $all("input, select", form).forEach(el => { values[el.name] = el.value; });
 
+  if(!(parseFloat(values.valor) > 0)){
+    showToast("Informe o valor do sistema para simular.");
+    return;
+  }
+
   const mode = CREDIT_MODES[currentCreditMode];
   const result = mode.calc(values);
-  const resultBox = $("#creditSimResult");
-  resultBox.innerHTML = `
-    ${result.items.map(r => `
-      <div class="credit-sim-result-value">${r.value}</div>
-      <div class="credit-sim-result-label">${r.label}</div>
-    `).join("")}
-    ${compareBarsHTML(result.compare)}
-    ${result.note ? `<div class="credit-sim-note">${ICON_CHECK}<span>${result.note}</span></div>` : ""}
-  `;
-  resultBox.classList.add("show");
+  lastSimResult = { modalidade: currentCreditMode, values, result };
+
+  syncLeadModalidade();
+  renderLeadSimSummary();
+  $("#solicitar-analise")?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
+
+/* Recapitula, logo acima do formulário de solicitação, o que a pessoa
+   simulou lá em cima — sem repetir a caixa de resultado inteira. */
+function renderLeadSimSummary(){
+  const box = $("#leadSimSummary");
+  if(!box || !lastSimResult) return;
+  const mode = CREDIT_MODES[lastSimResult.modalidade];
+  const { modalidade, values, result } = lastSimResult;
+  const valor = parseFloat(values.valor) || 0;
+
+  const detalhe = modalidade === "fgts"
+    ? `${formatBRL(valor)} de sistema, ${result.items[1].value.toLowerCase()}`
+    : `${formatBRL(valor)} em ${values.parcelas}x, ${result.items[0].value}`;
+
+  box.innerHTML = `${ICON_CHECK}<span>Simulação: <strong>${mode.label}</strong>, ${detalhe}. <a href="#simulacao-credito">Alterar simulação</a></span>`;
+  box.hidden = false;
+}
 
 /* ======================================================================
    POP-UP: AUTORIZAÇÃO DE CONSULTA DO FGTS
@@ -448,6 +426,10 @@ $("#creditLeadForm")?.addEventListener("submit", async (e) => {
     tempo_trabalho: formData.get("tempo_trabalho"),
     renda_bruta: formData.get("renda_bruta"),
     renda_liquida: formData.get("renda_liquida"),
+    sim_valor_sistema: lastSimResult?.values.valor || "",
+    sim_parcelas: lastSimResult?.values.parcelas || "",
+    sim_fgts_disponivel: lastSimResult?.values.fgts || "",
+    sim_parcela_estimada: lastSimResult?.result.compare?.type === "parcela" ? lastSimResult.result.compare.value : "",
   };
 
   try {
@@ -469,6 +451,7 @@ $("#creditLeadForm")?.addEventListener("submit", async (e) => {
 
     $("#leadNumberChip").textContent = data.leadNumber;
     e.target.hidden = true;
+    if($("#leadSimSummary")) $("#leadSimSummary").hidden = true;
     $("#leadFormSuccess").hidden = false;
     $("#leadFormSuccess").scrollIntoView({ behavior: "smooth", block: "start" });
 
