@@ -354,12 +354,12 @@ function renderLeadSimSummary(){
   const box = $("#leadSimSummary");
   if(!box || !lastSimResult) return;
   const mode = CREDIT_MODES[lastSimResult.modalidade];
-  const { modalidade, values, result } = lastSimResult;
+  const { modalidade, values } = lastSimResult;
   const valor = parseFloat(values.valor) || 0;
 
   const detalhe = modalidade === "fgts"
-    ? `${formatBRL(valor)} de sistema, ${result.items[1].value.toLowerCase()}`
-    : `${formatBRL(valor)} em ${values.parcelas}x, ${result.items[0].value}`;
+    ? `${formatBRL(valor)} de sistema, com ${formatBRL(parseFloat(values.fgts) || 0)} de FGTS disponível`
+    : `${formatBRL(valor)} em ${values.parcelas}x`;
 
   box.innerHTML = `${ICON_CHECK}<span>Simulação: <strong>${mode.label}</strong>, ${detalhe}. <a href="#simulacao-credito">Alterar simulação</a></span>`;
   box.hidden = false;
