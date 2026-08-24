@@ -40,9 +40,9 @@
 <script src="admin.js"></script>
 <script>
 (async function(){
-  // Se já existir sessão válida, pula direto para o dashboard.
+  // Se já existir sessão válida, pula direto para a área que o funcionário pode ver.
   const me = await MES.apiGet("/api/auth/me").catch(() => null);
-  if(me && me.ok) window.location.href = "dashboard.html";
+  if(me && me.ok) window.location.href = MES.landingPageFor(me.admin);
 })();
 
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
@@ -63,7 +63,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       errorBox.classList.add("show");
       return;
     }
-    window.location.href = "dashboard.html";
+    window.location.href = MES.landingPageFor(res.admin);
   } catch(err){
     errorBox.textContent = "Erro de conexão com o servidor. Verifique se o backend está rodando.";
     errorBox.classList.add("show");

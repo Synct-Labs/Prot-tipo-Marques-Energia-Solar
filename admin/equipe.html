@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Equipe | Painel de Administrador | Marques</title>
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<header class="admin-topbar">
+  <div class="admin-brand">
+    <img src="../logo-mark-128.png" alt="Marques">
+    <span>Painel de Administrador</span>
+  </div>
+  <nav class="admin-nav">
+    <a href="dashboard.html" class="admin-nav-link">Pedidos</a>
+    <a href="credit-leads.html" class="admin-nav-link">Solicitações de Crédito</a>
+    <a href="equipe.html" class="admin-nav-link active">Equipe</a>
+  </nav>
+  <div class="admin-topbar-right">
+    <span class="admin-user" id="adminUserLabel"></span>
+    <button class="admin-btn admin-btn-ghost" id="logoutBtn">Sair</button>
+  </div>
+</header>
+
+<main class="admin-main">
+  <div class="admin-container">
+
+    <div class="admin-toolbar">
+      <h2 style="font-size:1.15rem;">Equipe</h2>
+      <button class="admin-btn admin-btn-ghost" id="newStaffBtn">+ Novo funcionário</button>
+    </div>
+
+    <div class="admin-table-wrap" id="newStaffCard" style="display:none; padding:22px; margin-bottom:20px;">
+      <div class="admin-error" id="newStaffError"></div>
+      <form id="newStaffForm">
+        <div class="admin-field">
+          <label for="nsNome">Nome</label>
+          <input type="text" id="nsNome" required>
+        </div>
+        <div class="admin-field">
+          <label for="nsEmail">E-mail</label>
+          <input type="email" id="nsEmail" required autocomplete="off">
+        </div>
+        <div class="admin-field">
+          <label for="nsPassword">Senha provisória</label>
+          <input type="password" id="nsPassword" required autocomplete="new-password" placeholder="Mínimo de 8 caracteres">
+        </div>
+        <div class="admin-field">
+          <label for="nsCompany">Empresa que ele enxerga</label>
+          <select id="nsCompany">
+            <option value="energia_solar">Marques Energia Solar (só pedidos)</option>
+            <option value="promotora">Marques Promotora (só crédito)</option>
+            <option value="ambas">Ambas (dono/admin geral)</option>
+          </select>
+        </div>
+        <div class="admin-field">
+          <label for="nsRole">Cargo</label>
+          <select id="nsRole">
+            <option value="funcionario">Funcionário</option>
+            <option value="owner">Dono (também pode gerenciar a equipe)</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button type="submit" class="admin-btn" id="newStaffSubmitBtn" style="width:auto;">Criar funcionário</button>
+          <button type="button" class="admin-btn admin-btn-ghost" id="cancelNewStaffBtn">Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>E-mail</th>
+            <th>Empresa</th>
+            <th>Cargo</th>
+            <th>Criado em</th>
+          </tr>
+        </thead>
+        <tbody id="staffTableBody">
+          <tr><td colspan="5" class="admin-loading">Carregando equipe...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</main>
+
+<script src="../api-config.js"></script>
+<script src="admin.js"></script>
+<script>
+let allStaff = [];
+let meAdmin = null;
+
+function staffDetailHTML(person){
+  return `
+    <div class="admin-detail-block" style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end;">
+      <div class="admin-field" style="margin-bottom:0; min-width:200px;">
+        <label>Nome</label>
+        <input type="text" class="edit-name" value="${person.name || ""}">
+      </div>
+      <div class="admin-field" style="margin-bottom:0; min-width:200px;">
+        <label>Empresa</label>
+        <select class="edit-company">
+          <option value="energia_solar" ${person.company === "energia_solar" ? "selected" : ""}>Marques Energia Solar</option>
+          <option value="promotora" ${person.company === "promotora" ? "selected" : ""}>Marques Promotora</option>
+          <option value="ambas" ${person.company === "ambas" ? "selected" : ""}>Ambas</option>
+        </select>
+      </div>
+      <div class="admin-field" style="margin-bottom:0; min-width:180px;">
+        <label>Cargo</label>
+        <select class="edit-role">
+          <option value="funcionario" ${person.role === "funcionario" ? "selected" : ""}>Funcionário</option>
+          <option value="owner" ${person.role === "owner" ? "selected" : ""}>Dono</option>
+        </select>
+      </div>
+      <button type="button" class="admin-btn save-staff-btn" style="width:auto;" data-id="${person.id}">Salvar</button>
+      <button type="button" class="admin-btn admin-btn-ghost delete-staff-btn" data-id="${person.id}" ${person.id === meAdmin.id ? "disabled title=\"Você não pode remover a própria conta\"" : ""}>Remover</button>
+    </div>
+  `;
+}
+
+function renderStaff(list){
+  const tbody = document.getElementById("staffTableBody");
+  if(list.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">Nenhum funcionário cadastrado.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(person => `
+    <tr class="admin-order-row" data-id="${person.id}">
+      <td data-label="Nome">${person.name || "-"}</td>
+      <td data-label="E-mail">${person.email}</td>
+      <td data-label="Empresa">${MES.COMPANY_LABELS[person.company] || person.company}</td>
+      <td data-label="Cargo">${MES.ROLE_LABELS[person.role] || person.role}</td>
+      <td data-label="Criado em">${MES.formatDate(person.created_at)}</td>
+    </tr>
+    <tr class="admin-order-detail" data-detail-for="${person.id}">
+      <td colspan="5"><div class="admin-order-detail-inner">${staffDetailHTML(person)}</div></td>
+    </tr>
+  `).join("");
+}
+
+async function loadStaff(){
+  document.getElementById("staffTableBody").innerHTML =
+    `<tr><td colspan="5" class="admin-loading">Carregando equipe...</td></tr>`;
+  const res = await MES.apiGet("/api/admin/staff");
+  if(!res.ok){
+    MES.showToast(res.error || "Erro ao carregar a equipe.");
+    return;
+  }
+  allStaff = res.staff;
+  renderStaff(allStaff);
+}
+
+document.getElementById("newStaffBtn").addEventListener("click", () => {
+  document.getElementById("newStaffCard").style.display = "block";
+});
+document.getElementById("cancelNewStaffBtn").addEventListener("click", () => {
+  document.getElementById("newStaffCard").style.display = "none";
+  document.getElementById("newStaffForm").reset();
+});
+
+document.getElementById("newStaffForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("newStaffError");
+  const btn = document.getElementById("newStaffSubmitBtn");
+  errorBox.classList.remove("show");
+  btn.disabled = true;
+  btn.textContent = "Criando...";
+
+  try {
+    const res = await MES.apiPost("/api/admin/staff", {
+      name: document.getElementById("nsNome").value.trim(),
+      email: document.getElementById("nsEmail").value.trim(),
+      password: document.getElementById("nsPassword").value,
+      company: document.getElementById("nsCompany").value,
+      role: document.getElementById("nsRole").value,
+    });
+    if(!res.ok){
+      errorBox.textContent = res.error || "Não foi possível criar o funcionário.";
+      errorBox.classList.add("show");
+      return;
+    }
+    document.getElementById("newStaffForm").reset();
+    document.getElementById("newStaffCard").style.display = "none";
+    MES.showToast("Funcionário criado.");
+    loadStaff();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Criar funcionário";
+  }
+});
+
+document.getElementById("staffTableBody").addEventListener("click", async (e) => {
+  const saveBtn = e.target.closest(".save-staff-btn");
+  const deleteBtn = e.target.closest(".delete-staff-btn");
+
+  if(saveBtn){
+    const id = saveBtn.dataset.id;
+    const block = saveBtn.closest(".admin-detail-block");
+    const res = await MES.apiPatch(`/api/admin/staff/${id}`, {
+      name: block.querySelector(".edit-name").value.trim(),
+      company: block.querySelector(".edit-company").value,
+      role: block.querySelector(".edit-role").value,
+    });
+    if(!res.ok){
+      MES.showToast(res.error || "Erro ao salvar.");
+      return;
+    }
+    MES.showToast("Funcionário atualizado.");
+    loadStaff();
+    return;
+  }
+
+  if(deleteBtn){
+    if(deleteBtn.disabled) return;
+    const id = deleteBtn.dataset.id;
+    if(!confirm("Remover este funcionário? Ele perderá o acesso ao painel imediatamente.")) return;
+    const res = await MES.apiDelete(`/api/admin/staff/${id}`);
+    if(!res.ok){
+      MES.showToast(res.error || "Erro ao remover.");
+      return;
+    }
+    MES.showToast("Funcionário removido.");
+    loadStaff();
+    return;
+  }
+
+  // clique na linha (fora dos botões/inputs) abre/fecha o detalhe
+  if(e.target.closest("select") || e.target.closest("input") || e.target.closest("button")) return;
+  const row = e.target.closest(".admin-order-row");
+  if(!row) return;
+  const id = row.dataset.id;
+  const detail = document.querySelector(`.admin-order-detail[data-detail-for="${id}"] .admin-order-detail-inner`);
+  if(detail) detail.classList.toggle("open");
+});
+
+async function init(){
+  const admin = await MES.requireAuth();
+  if(!admin) return;
+  if(admin.role !== "owner"){
+    window.location.href = MES.landingPageFor(admin);
+    return;
+  }
+  meAdmin = admin;
+  await loadStaff();
+}
+
+document.getElementById("logoutBtn").addEventListener("click", () => MES.logout());
+
+init();
+</script>
+</body>
+</html>

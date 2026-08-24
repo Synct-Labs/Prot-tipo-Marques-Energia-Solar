@@ -73,7 +73,9 @@ async function destroySession(token) {
 async function getAdminBySession(token) {
   if (!token) return null;
   const { rows } = await pool.query(
-    `SELECT admins.id as id, admins.email as email, admins.name as name, sessions.expires_at as expires_at
+    `SELECT admins.id as id, admins.email as email, admins.name as name,
+            admins.company as company, admins.role as role,
+            sessions.expires_at as expires_at
      FROM sessions JOIN admins ON admins.id = sessions.admin_id
      WHERE sessions.token = $1`,
     [token]
@@ -84,7 +86,7 @@ async function getAdminBySession(token) {
     await destroySession(token);
     return null;
   }
-  return { id: row.id, email: row.email, name: row.name };
+  return { id: row.id, email: row.email, name: row.name, company: row.company, role: row.role };
 }
 
 async function findAdminByEmail(email) {
@@ -99,6 +101,54 @@ async function updateAdminPassword(adminId, newPassword) {
     hashPassword(newPassword),
     adminId,
   ]);
+}
+
+/* ---------------------- GESTÃO DE EQUIPE (só "owner") ---------------------- */
+const VALID_COMPANIES = ["energia_solar", "promotora", "ambas"];
+const VALID_ROLES = ["owner", "funcionario"];
+
+async function listAdmins() {
+  const { rows } = await pool.query(
+    "SELECT id, email, name, company, role, created_at FROM admins ORDER BY id ASC"
+  );
+  return rows;
+}
+
+async function findAdminById(id) {
+  const { rows } = await pool.query(
+    "SELECT id, email, name, company, role, created_at FROM admins WHERE id = $1",
+    [id]
+  );
+  return rows[0] || null;
+}
+
+async function countOwners() {
+  const { rows } = await pool.query("SELECT COUNT(*)::int as c FROM admins WHERE role = 'owner'");
+  return rows[0].c;
+}
+
+async function createAdmin({ email, password, name, company, role }) {
+  const created_at = new Date().toISOString();
+  const insert = await pool.query(
+    `INSERT INTO admins (email, password_hash, name, company, role, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [String(email).toLowerCase().trim(), hashPassword(password), name, company, role, created_at]
+  );
+  return insert.rows[0].id;
+}
+
+async function updateAdmin(id, { name, company, role }) {
+  const result = await pool.query(
+    "UPDATE admins SET name = $1, company = $2, role = $3 WHERE id = $4",
+    [name, company, role, id]
+  );
+  return result.rowCount > 0;
+}
+
+async function deleteAdmin(id) {
+  await pool.query("DELETE FROM sessions WHERE admin_id = $1", [id]);
+  const result = await pool.query("DELETE FROM admins WHERE id = $1", [id]);
+  return result.rowCount > 0;
 }
 
 /* ---------------------- COOKIES ---------------------- */
@@ -125,9 +175,9 @@ function cookieSameSiteAttrs() {
     : ["SameSite=Lax"];
 }
 
-function buildSessionCookie(token, expiresAt) {
+function buildSessionCookie(token, expiresAt, cookieName = SESSION_COOKIE_NAME) {
   const parts = [
-    `${SESSION_COOKIE_NAME}=${encodeURIComponent(token)}`,
+    `${cookieName}=${encodeURIComponent(token)}`,
     "HttpOnly",
     "Path=/",
     ...cookieSameSiteAttrs(),
@@ -136,9 +186,9 @@ function buildSessionCookie(token, expiresAt) {
   return parts.join("; ");
 }
 
-function buildClearCookie() {
+function buildClearCookie(cookieName = SESSION_COOKIE_NAME) {
   const parts = [
-    `${SESSION_COOKIE_NAME}=`,
+    `${cookieName}=`,
     "HttpOnly",
     "Path=/",
     ...cookieSameSiteAttrs(),
@@ -177,6 +227,8 @@ function clearAttempts(ip) {
 
 module.exports = {
   SESSION_COOKIE_NAME,
+  VALID_COMPANIES,
+  VALID_ROLES,
   hashPassword,
   verifyPassword,
   ensureAdminSeeded,
@@ -185,7 +237,14 @@ module.exports = {
   getAdminBySession,
   findAdminByEmail,
   updateAdminPassword,
+  listAdmins,
+  findAdminById,
+  countOwners,
+  createAdmin,
+  updateAdmin,
+  deleteAdmin,
   parseCookies,
+  cookieSameSiteAttrs,
   buildSessionCookie,
   buildClearCookie,
   isRateLimited,

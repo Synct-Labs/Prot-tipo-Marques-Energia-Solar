@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minha Conta | Marques</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="../logo-mark-128.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<div class="noise-overlay" aria-hidden="true"></div>
+
+<!-- ===================== HEADER ===================== -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="../loja.html" class="logo" aria-label="Marques - Início">
+      <img src="../logo-mark-128.png" alt="Marques" class="logo-mark-img">
+      <span class="logo-text">Marques</span>
+    </a>
+    <nav class="main-nav" id="mainNav">
+      <a href="../index.html" class="nav-link">Crédito Solar</a>
+      <a href="../loja.html#catalogo" class="nav-link">Catálogo</a>
+    </nav>
+    <div class="header-actions">
+      <button class="hamburger" id="hamburgerBtn" aria-label="Abrir menu">
+        <svg class="icon" id="hamburgerIcon" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== CONTEÚDO ===================== -->
+<main class="account-page">
+  <div class="container">
+
+    <div class="account-topbar">
+      <div class="account-user-chip">Olá, <strong id="userName">...</strong></div>
+      <button class="btn btn-ghost" id="logoutBtn">Sair</button>
+    </div>
+
+    <div class="account-tabs" id="accountTabs">
+      <button class="account-tab active" data-tab="perfil">Meu perfil</button>
+      <button class="account-tab" data-tab="pedidos">Meus pedidos</button>
+      <button class="account-tab" data-tab="credito">Solicitações de crédito</button>
+      <button class="account-tab" data-tab="senha">Segurança</button>
+    </div>
+
+    <!-- ---- PERFIL ---- -->
+    <div class="account-panel active" data-panel="perfil">
+      <div class="account-card">
+        <h2>Meus dados</h2>
+        <p class="account-sub">Usados para agilizar seus pedidos e solicitações futuras.</p>
+        <div class="account-error" id="perfilError"></div>
+        <div class="account-success" id="perfilSuccess"></div>
+        <form id="perfilForm">
+          <div class="form-grid">
+            <label class="col-span-2">Nome completo
+              <input type="text" id="pNome" name="nome" required>
+            </label>
+            <label>E-mail
+              <input type="email" id="pEmail" name="email" disabled>
+              <span class="field-hint">O e-mail de login não pode ser alterado por aqui.</span>
+            </label>
+            <label>CPF
+              <input type="text" id="pCpf" name="cpf" placeholder="000.000.000-00">
+            </label>
+            <label class="col-span-2">Telefone
+              <input type="tel" id="pTelefone" name="telefone" placeholder="(00) 00000-0000">
+            </label>
+          </div>
+          <div style="margin-top: 22px;">
+            <button type="submit" class="btn btn-primary" id="perfilBtn">Salvar alterações</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ---- PEDIDOS ---- -->
+    <div class="account-panel" data-panel="pedidos">
+      <div class="account-card">
+        <h2>Meus pedidos</h2>
+        <p class="account-sub">Pedidos feitos na loja Marques Energia Solar.</p>
+        <div class="account-list" id="ordersList">
+          <div class="account-list-empty">Carregando...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- CRÉDITO ---- -->
+    <div class="account-panel" data-panel="credito">
+      <div class="account-card">
+        <h2>Minhas solicitações de crédito</h2>
+        <p class="account-sub">Solicitações de análise enviadas para a Marques Promotora.</p>
+        <div class="account-list" id="leadsList">
+          <div class="account-list-empty">Carregando...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- SEGURANÇA ---- -->
+    <div class="account-panel" data-panel="senha">
+      <div class="account-card">
+        <h2>Alterar senha</h2>
+        <div class="account-error" id="senhaError"></div>
+        <div class="account-success" id="senhaSuccess"></div>
+        <form id="senhaForm">
+          <div class="form-grid">
+            <label class="col-span-2">Senha atual
+              <input type="password" id="currentPassword" name="currentPassword" required autocomplete="current-password">
+            </label>
+            <label>Nova senha
+              <input type="password" id="newPassword" name="newPassword" required autocomplete="new-password" placeholder="Mínimo de 8 caracteres">
+            </label>
+            <label>Confirmar nova senha
+              <input type="password" id="newPasswordConfirm" name="newPasswordConfirm" required autocomplete="new-password">
+            </label>
+          </div>
+          <div style="margin-top: 22px;">
+            <button type="submit" class="btn btn-primary" id="senhaBtn">Atualizar senha</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="../api-config.js"></script>
+<script src="conta.js"></script>
+<script>
+let currentCustomer = null;
+
+function fillPerfilForm(customer) {
+  document.getElementById("pNome").value = customer.nome || "";
+  document.getElementById("pEmail").value = customer.email || "";
+  document.getElementById("pCpf").value = customer.cpf || "";
+  document.getElementById("pTelefone").value = customer.telefone || "";
+  document.getElementById("userName").textContent = (customer.nome || "").split(" ")[0] || customer.email;
+}
+
+function orderItemHTML(order) {
+  const label = CONTA.ORDER_STATUS_LABELS[order.status] || order.status;
+  return `
+    <div class="account-list-item">
+      <div class="item-top">
+        <span class="item-number">${order.orderNumber}</span>
+        <span class="account-status-badge">${label}</span>
+      </div>
+      <div class="item-detail">${CONTA.formatBRL(order.total)} · ${order.itens.length} ite${order.itens.length === 1 ? "m" : "ns"}</div>
+      <div class="item-date">${CONTA.formatDate(order.createdAt)}</div>
+    </div>`;
+}
+
+function leadItemHTML(lead) {
+  const label = CONTA.LEAD_STATUS_LABELS[lead.status] || lead.status;
+  const modalidade = lead.modalidadeInteresse ? lead.modalidadeInteresse : "Não informada";
+  return `
+    <div class="account-list-item">
+      <div class="item-top">
+        <span class="item-number">${lead.leadNumber}</span>
+        <span class="account-status-badge">${label}</span>
+      </div>
+      <div class="item-detail">Modalidade: ${modalidade}</div>
+      <div class="item-date">${CONTA.formatDate(lead.createdAt)}</div>
+    </div>`;
+}
+
+async function loadOrders() {
+  const box = document.getElementById("ordersList");
+  const res = await CONTA.apiGet("/api/customers/me/orders");
+  if (!res.ok) { box.innerHTML = `<div class="account-list-empty">Não foi possível carregar seus pedidos.</div>`; return; }
+  if (!res.orders.length) { box.innerHTML = `<div class="account-list-empty">Você ainda não fez nenhum pedido na loja.</div>`; return; }
+  box.innerHTML = res.orders.map(orderItemHTML).join("");
+}
+
+async function loadLeads() {
+  const box = document.getElementById("leadsList");
+  const res = await CONTA.apiGet("/api/customers/me/credit-leads");
+  if (!res.ok) { box.innerHTML = `<div class="account-list-empty">Não foi possível carregar suas solicitações.</div>`; return; }
+  if (!res.leads.length) { box.innerHTML = `<div class="account-list-empty">Você ainda não enviou nenhuma solicitação de crédito.</div>`; return; }
+  box.innerHTML = res.leads.map(leadItemHTML).join("");
+}
+
+/* ---- abas ---- */
+document.getElementById("accountTabs").addEventListener("click", (e) => {
+  const tabBtn = e.target.closest(".account-tab");
+  if (!tabBtn) return;
+  const tab = tabBtn.dataset.tab;
+
+  document.querySelectorAll(".account-tab").forEach((b) => b.classList.toggle("active", b === tabBtn));
+  document.querySelectorAll(".account-panel").forEach((p) => p.classList.toggle("active", p.dataset.panel === tab));
+});
+
+/* ---- perfil ---- */
+document.getElementById("perfilForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("perfilError");
+  const successBox = document.getElementById("perfilSuccess");
+  const btn = document.getElementById("perfilBtn");
+  errorBox.classList.remove("show");
+  successBox.classList.remove("show");
+  btn.disabled = true;
+  btn.textContent = "Salvando...";
+
+  try {
+    const res = await CONTA.apiPatch("/api/customers/me", {
+      nome: document.getElementById("pNome").value.trim(),
+      cpf: document.getElementById("pCpf").value.trim(),
+      telefone: document.getElementById("pTelefone").value.trim(),
+    });
+    if (!res.ok) {
+      errorBox.textContent = res.error || "Não foi possível salvar suas informações.";
+      errorBox.classList.add("show");
+      return;
+    }
+    currentCustomer = res.customer;
+    fillPerfilForm(res.customer);
+    successBox.textContent = "Dados atualizados.";
+    successBox.classList.add("show");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Salvar alterações";
+  }
+});
+
+/* ---- senha ---- */
+document.getElementById("senhaForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("senhaError");
+  const successBox = document.getElementById("senhaSuccess");
+  const btn = document.getElementById("senhaBtn");
+  errorBox.classList.remove("show");
+  successBox.classList.remove("show");
+
+  const currentPassword = document.getElementById("currentPassword").value;
+  const newPassword = document.getElementById("newPassword").value;
+  const newPasswordConfirm = document.getElementById("newPasswordConfirm").value;
+
+  if (newPassword !== newPasswordConfirm) {
+    errorBox.textContent = "As novas senhas não coincidem.";
+    errorBox.classList.add("show");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Atualizando...";
+  try {
+    const res = await CONTA.apiPost("/api/customers/change-password", { currentPassword, newPassword });
+    if (!res.ok) {
+      errorBox.textContent = res.error || "Não foi possível atualizar a senha.";
+      errorBox.classList.add("show");
+      return;
+    }
+    document.getElementById("senhaForm").reset();
+    successBox.textContent = "Senha atualizada.";
+    successBox.classList.add("show");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Atualizar senha";
+  }
+});
+
+document.getElementById("logoutBtn").addEventListener("click", () => CONTA.logout());
+
+(async function init() {
+  currentCustomer = await CONTA.requireAuth();
+  if (!currentCustomer) return;
+  fillPerfilForm(currentCustomer);
+  loadOrders();
+  loadLeads();
+})();
+</script>
+</body>
+</html>

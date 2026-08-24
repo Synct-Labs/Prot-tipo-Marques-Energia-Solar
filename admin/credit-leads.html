@@ -18,6 +18,7 @@
   <nav class="admin-nav">
     <a href="dashboard.html" class="admin-nav-link">Pedidos</a>
     <a href="credit-leads.html" class="admin-nav-link active">Solicitações de Crédito</a>
+    <a href="equipe.html" class="admin-nav-link">Equipe</a>
   </nav>
   <div class="admin-topbar-right">
     <span class="admin-user" id="adminUserLabel"></span>
@@ -213,9 +214,8 @@ async function loadLeads(){
 }
 
 async function init(){
-  const admin = await MES.requireAuth();
+  const admin = await MES.requireAuth("promotora");
   if(!admin) return;
-  document.getElementById("adminUserLabel").textContent = admin.email;
   document.getElementById("statusFilter").insertAdjacentHTML("beforeend", statOptionsHTML());
 
   await Promise.all([loadStats(), loadLeads()]);

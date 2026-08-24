@@ -35,12 +35,36 @@ async function initSchema() {
       email         TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       name          TEXT,
+      -- company: qual empresa esse funcionário enxerga no painel.
+      -- 'energia_solar' -> só pedidos da loja | 'promotora' -> só solicitações
+      -- de crédito | 'ambas' -> as duas (dono/admin geral).
+      company       TEXT NOT NULL DEFAULT 'ambas',
+      -- role: 'owner' pode gerenciar a equipe; 'funcionario' só usa o painel.
+      role          TEXT NOT NULL DEFAULT 'funcionario',
       created_at    TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS sessions (
       token       TEXT PRIMARY KEY,
       admin_id    INTEGER NOT NULL REFERENCES admins(id),
+      created_at  TEXT NOT NULL,
+      expires_at  TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS customers (
+      id            SERIAL PRIMARY KEY,
+      email         TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      nome          TEXT NOT NULL,
+      cpf           TEXT,
+      telefone      TEXT,
+      created_at    TEXT NOT NULL,
+      updated_at    TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS customer_sessions (
+      token       TEXT PRIMARY KEY,
+      customer_id INTEGER NOT NULL REFERENCES customers(id),
       created_at  TEXT NOT NULL,
       expires_at  TEXT NOT NULL
     );
@@ -109,6 +133,21 @@ async function initSchema() {
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_parcelas INTEGER;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_fgts_disponivel DOUBLE PRECISION;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_parcela_estimada DOUBLE PRECISION;
+
+    ALTER TABLE admins ADD COLUMN IF NOT EXISTS company TEXT NOT NULL DEFAULT 'ambas';
+    ALTER TABLE admins ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'funcionario';
+
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id);
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id);
+  `);
+
+  // Garante que sempre exista pelo menos um "owner" (dono/admin geral que
+  // enxerga as duas empresas) — promove a conta mais antiga se nenhuma
+  // ainda tiver esse papel (cobre bancos que já tinham só o admin único).
+  await pool.query(`
+    UPDATE admins SET role = 'owner', company = 'ambas'
+    WHERE id = (SELECT id FROM admins ORDER BY id ASC LIMIT 1)
+      AND NOT EXISTS (SELECT 1 FROM admins WHERE role = 'owner')
   `);
 }
 

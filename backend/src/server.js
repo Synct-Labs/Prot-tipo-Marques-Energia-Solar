@@ -15,6 +15,7 @@ const db = require("./db");
 const auth = require("./auth");
 const orders = require("./orders");
 const creditLeads = require("./creditLeads");
+const customers = require("./customers");
 const { parseJSONBody, sendJSON, getClientIP } = require("./http-utils");
 const { serveStatic } = require("./static");
 
@@ -63,6 +64,48 @@ async function requireAdmin(req, res) {
   return admin;
 }
 
+// "owner" enxerga as duas empresas; "funcionario" só a que está em admin.company.
+function hasCompanyAccess(admin, company) {
+  return admin.company === "ambas" || admin.company === company;
+}
+
+async function requireCompanyAccess(req, res, company) {
+  const admin = await requireAdmin(req, res);
+  if (!admin) return null;
+  if (!hasCompanyAccess(admin, company)) {
+    sendJSON(res, 403, { ok: false, error: "Sua conta não tem acesso a essa área." });
+    return null;
+  }
+  return admin;
+}
+
+async function requireOwner(req, res) {
+  const admin = await requireAdmin(req, res);
+  if (!admin) return null;
+  if (admin.role !== "owner") {
+    sendJSON(res, 403, { ok: false, error: "Apenas o dono da conta pode gerenciar a equipe." });
+    return null;
+  }
+  return admin;
+}
+
+/* ---------------------- HELPERS DE AUTENTICAÇÃO (CLIENTE) ---------------------- */
+async function getCurrentCustomer(req) {
+  const cookies = auth.parseCookies(req);
+  const token = cookies[customers.SESSION_COOKIE_NAME];
+  const customer = await customers.getCustomerBySession(token);
+  return { token, customer };
+}
+
+async function requireCustomer(req, res) {
+  const { customer } = await getCurrentCustomer(req);
+  if (!customer) {
+    sendJSON(res, 401, { ok: false, error: "Não autenticado. Faça login novamente." });
+    return null;
+  }
+  return customer;
+}
+
 /* ---------------------- VALIDAÇÃO DO PEDIDO ---------------------- */
 function validateOrderPayload(body) {
   const required = ["nome", "cpf", "email", "telefone", "cep", "cidade", "estado", "rua", "numero", "bairro"];
@@ -105,7 +148,16 @@ async function handleApi(req, res, pathname) {
     return sendJSON(
       res,
       200,
-      { ok: true, admin: { id: record.id, email: record.email, name: record.name } },
+      {
+        ok: true,
+        admin: {
+          id: record.id,
+          email: record.email,
+          name: record.name,
+          company: record.company,
+          role: record.role,
+        },
+      },
       { "Set-Cookie": auth.buildSessionCookie(token, expiresAt) }
     );
   }
@@ -149,7 +201,8 @@ async function handleApi(req, res, pathname) {
        - Frete: calcular valor real via CEP antes de gravar o pedido.
        - Pagamento: ver PONTO DE INTEGRAÇÃO DE PAGAMENTO em app.js.
        =================================================================== */
-    const { id, orderNumber } = await orders.createOrder(body);
+    const { customer } = await getCurrentCustomer(req);
+    const { id, orderNumber } = await orders.createOrder(body, customer ? customer.id : null);
     return sendJSON(res, 201, { ok: true, id, orderNumber });
   }
 
@@ -169,13 +222,14 @@ async function handleApi(req, res, pathname) {
        - E-mail/WhatsApp: notificar equipe comercial após nova solicitação.
        - Bureau de crédito: consulta automática de score, se aplicável.
        =================================================================== */
-    const { id, leadNumber } = await creditLeads.createLead(body);
+    const { customer } = await getCurrentCustomer(req);
+    const { id, leadNumber } = await creditLeads.createLead(body, customer ? customer.id : null);
     return sendJSON(res, 201, { ok: true, id, leadNumber });
   }
 
-  // ---- ADMIN: SOLICITAÇÕES DE CRÉDITO ----
+  // ---- ADMIN: SOLICITAÇÕES DE CRÉDITO (só Promotora ou dono) ----
   if (pathname === "/api/admin/credit-leads" && req.method === "GET") {
-    const admin = await requireAdmin(req, res);
+    const admin = await requireCompanyAccess(req, res, "promotora");
     if (!admin) return;
     const url = new URL(req.url, "http://localhost");
     const status = url.searchParams.get("status") || undefined;
@@ -184,14 +238,14 @@ async function handleApi(req, res, pathname) {
   }
 
   if (pathname === "/api/admin/credit-leads/stats" && req.method === "GET") {
-    const admin = await requireAdmin(req, res);
+    const admin = await requireCompanyAccess(req, res, "promotora");
     if (!admin) return;
     return sendJSON(res, 200, { ok: true, stats: await creditLeads.getLeadStats() });
   }
 
   const creditLeadIdMatch = pathname.match(/^\/api\/admin\/credit-leads\/(\d+)$/);
   if (creditLeadIdMatch && (req.method === "GET" || req.method === "PATCH")) {
-    const admin = await requireAdmin(req, res);
+    const admin = await requireCompanyAccess(req, res, "promotora");
     if (!admin) return;
     const id = parseInt(creditLeadIdMatch[1], 10);
 
@@ -215,9 +269,9 @@ async function handleApi(req, res, pathname) {
     }
   }
 
-  // ---- ADMIN: PEDIDOS ----
+  // ---- ADMIN: PEDIDOS (só Energia Solar ou dono) ----
   if (pathname === "/api/admin/orders" && req.method === "GET") {
-    const admin = await requireAdmin(req, res);
+    const admin = await requireCompanyAccess(req, res, "energia_solar");
     if (!admin) return;
     const url = new URL(req.url, "http://localhost");
     const status = url.searchParams.get("status") || undefined;
@@ -226,14 +280,14 @@ async function handleApi(req, res, pathname) {
   }
 
   if (pathname === "/api/admin/stats" && req.method === "GET") {
-    const admin = await requireAdmin(req, res);
+    const admin = await requireCompanyAccess(req, res, "energia_solar");
     if (!admin) return;
     return sendJSON(res, 200, { ok: true, stats: await orders.getOrderStats() });
   }
 
   const orderIdMatch = pathname.match(/^\/api\/admin\/orders\/(\d+)$/);
   if (orderIdMatch && (req.method === "GET" || req.method === "PATCH")) {
-    const admin = await requireAdmin(req, res);
+    const admin = await requireCompanyAccess(req, res, "energia_solar");
     if (!admin) return;
     const id = parseInt(orderIdMatch[1], 10);
 
@@ -257,6 +311,199 @@ async function handleApi(req, res, pathname) {
     }
   }
 
+  // ---- CLIENTES: CADASTRO/LOGIN (conta única, loja + crédito) ----
+  if (pathname === "/api/customers/register" && req.method === "POST") {
+    const body = await parseJSONBody(req);
+    const email = String(body.email || "").trim().toLowerCase();
+    const password = String(body.password || "");
+    const nome = String(body.nome || "").trim();
+
+    if (!email || !email.includes("@")) {
+      return sendJSON(res, 400, { ok: false, error: "Informe um e-mail válido." });
+    }
+    if (!nome) {
+      return sendJSON(res, 400, { ok: false, error: "Informe seu nome completo." });
+    }
+    if (!password || password.length < 8) {
+      return sendJSON(res, 400, { ok: false, error: "A senha precisa ter ao menos 8 caracteres." });
+    }
+    const existing = await customers.findByEmail(email);
+    if (existing) {
+      return sendJSON(res, 409, { ok: false, error: "Já existe uma conta com esse e-mail." });
+    }
+
+    const id = await customers.register({
+      email,
+      password,
+      nome,
+      cpf: body.cpf,
+      telefone: body.telefone,
+    });
+    const { token, expiresAt } = await customers.createSession(id);
+    const record = await customers.findById(id);
+    return sendJSON(
+      res,
+      201,
+      { ok: true, customer: customers.toPublic(record) },
+      { "Set-Cookie": auth.buildSessionCookie(token, expiresAt, customers.SESSION_COOKIE_NAME) }
+    );
+  }
+
+  if (pathname === "/api/customers/login" && req.method === "POST") {
+    if (auth.isRateLimited(ip)) {
+      return sendJSON(res, 429, { ok: false, error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." });
+    }
+    const body = await parseJSONBody(req);
+    const email = String(body.email || "").trim().toLowerCase();
+    const password = String(body.password || "");
+    const record = email ? await customers.findByEmail(email) : null;
+
+    if (!record || !auth.verifyPassword(password, record.password_hash)) {
+      auth.registerFailedAttempt(ip);
+      return sendJSON(res, 401, { ok: false, error: "E-mail ou senha inválidos." });
+    }
+
+    auth.clearAttempts(ip);
+    const { token, expiresAt } = await customers.createSession(record.id);
+    return sendJSON(
+      res,
+      200,
+      { ok: true, customer: customers.toPublic(record) },
+      { "Set-Cookie": auth.buildSessionCookie(token, expiresAt, customers.SESSION_COOKIE_NAME) }
+    );
+  }
+
+  if (pathname === "/api/customers/logout" && req.method === "POST") {
+    const { token } = await getCurrentCustomer(req);
+    await customers.destroySession(token);
+    return sendJSON(res, 200, { ok: true }, { "Set-Cookie": auth.buildClearCookie(customers.SESSION_COOKIE_NAME) });
+  }
+
+  if (pathname === "/api/customers/me" && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    return sendJSON(res, 200, { ok: true, customer: customers.toPublic(customer) });
+  }
+
+  if (pathname === "/api/customers/me" && req.method === "PATCH") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const body = await parseJSONBody(req);
+    const nome = String(body.nome || "").trim();
+    if (!nome) return sendJSON(res, 400, { ok: false, error: "Informe seu nome completo." });
+    await customers.updateProfile(customer.id, { nome, cpf: body.cpf, telefone: body.telefone });
+    const updated = await customers.findById(customer.id);
+    return sendJSON(res, 200, { ok: true, customer: customers.toPublic(updated) });
+  }
+
+  if (pathname === "/api/customers/change-password" && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const body = await parseJSONBody(req);
+    if (!body.currentPassword || !auth.verifyPassword(body.currentPassword, customer.password_hash)) {
+      return sendJSON(res, 401, { ok: false, error: "Senha atual incorreta." });
+    }
+    if (!body.newPassword || String(body.newPassword).length < 8) {
+      return sendJSON(res, 400, { ok: false, error: "A nova senha precisa ter ao menos 8 caracteres." });
+    }
+    await customers.updatePassword(customer.id, body.newPassword);
+    return sendJSON(res, 200, { ok: true });
+  }
+
+  if (pathname === "/api/customers/me/orders" && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    return sendJSON(res, 200, { ok: true, orders: await orders.listOrdersByCustomer(customer.id) });
+  }
+
+  if (pathname === "/api/customers/me/credit-leads" && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    return sendJSON(res, 200, { ok: true, leads: await creditLeads.listLeadsByCustomer(customer.id) });
+  }
+
+  // ---- ADMIN: GESTÃO DE EQUIPE (só "owner") ----
+  if (pathname === "/api/admin/staff" && req.method === "GET") {
+    const admin = await requireOwner(req, res);
+    if (!admin) return;
+    return sendJSON(res, 200, { ok: true, staff: await auth.listAdmins() });
+  }
+
+  if (pathname === "/api/admin/staff" && req.method === "POST") {
+    const admin = await requireOwner(req, res);
+    if (!admin) return;
+    const body = await parseJSONBody(req);
+    const email = String(body.email || "").trim().toLowerCase();
+    const password = String(body.password || "");
+    const name = String(body.name || "").trim();
+    const company = body.company;
+    const role = body.role;
+
+    if (!email || !email.includes("@")) {
+      return sendJSON(res, 400, { ok: false, error: "Informe um e-mail válido." });
+    }
+    if (!name) return sendJSON(res, 400, { ok: false, error: "Informe o nome do funcionário." });
+    if (!password || password.length < 8) {
+      return sendJSON(res, 400, { ok: false, error: "A senha precisa ter ao menos 8 caracteres." });
+    }
+    if (!auth.VALID_COMPANIES.includes(company)) {
+      return sendJSON(res, 400, { ok: false, error: `Empresa inválida. Use uma de: ${auth.VALID_COMPANIES.join(", ")}` });
+    }
+    if (!auth.VALID_ROLES.includes(role)) {
+      return sendJSON(res, 400, { ok: false, error: `Cargo inválido. Use um de: ${auth.VALID_ROLES.join(", ")}` });
+    }
+    const existing = await auth.findAdminByEmail(email);
+    if (existing) return sendJSON(res, 409, { ok: false, error: "Já existe uma conta com esse e-mail." });
+
+    const id = await auth.createAdmin({ email, password, name, company, role });
+    return sendJSON(res, 201, { ok: true, staff: await auth.findAdminById(id) });
+  }
+
+  const staffIdMatch = pathname.match(/^\/api\/admin\/staff\/(\d+)$/);
+  if (staffIdMatch && (req.method === "PATCH" || req.method === "DELETE")) {
+    const admin = await requireOwner(req, res);
+    if (!admin) return;
+    const id = parseInt(staffIdMatch[1], 10);
+    const target = await auth.findAdminById(id);
+    if (!target) return sendJSON(res, 404, { ok: false, error: "Funcionário não encontrado." });
+
+    if (req.method === "PATCH") {
+      const body = await parseJSONBody(req);
+      const name = String(body.name || target.name || "").trim();
+      const company = body.company || target.company;
+      const role = body.role || target.role;
+      if (!auth.VALID_COMPANIES.includes(company)) {
+        return sendJSON(res, 400, { ok: false, error: `Empresa inválida. Use uma de: ${auth.VALID_COMPANIES.join(", ")}` });
+      }
+      if (!auth.VALID_ROLES.includes(role)) {
+        return sendJSON(res, 400, { ok: false, error: `Cargo inválido. Use um de: ${auth.VALID_ROLES.join(", ")}` });
+      }
+      // Protege pra sempre existir ao menos um "owner".
+      if (target.role === "owner" && role !== "owner") {
+        const owners = await auth.countOwners();
+        if (owners <= 1) {
+          return sendJSON(res, 400, { ok: false, error: "Precisa existir ao menos um dono da conta. Promova outra pessoa antes." });
+        }
+      }
+      await auth.updateAdmin(id, { name, company, role });
+      return sendJSON(res, 200, { ok: true, staff: await auth.findAdminById(id) });
+    }
+
+    if (req.method === "DELETE") {
+      if (target.role === "owner") {
+        const owners = await auth.countOwners();
+        if (owners <= 1) {
+          return sendJSON(res, 400, { ok: false, error: "Não é possível remover o único dono da conta." });
+        }
+      }
+      if (target.id === admin.id) {
+        return sendJSON(res, 400, { ok: false, error: "Você não pode remover a própria conta." });
+      }
+      await auth.deleteAdmin(id);
+      return sendJSON(res, 200, { ok: true });
+    }
+  }
+
   sendJSON(res, 404, { ok: false, error: "Rota de API não encontrada." });
 }
 
@@ -272,7 +519,7 @@ async function main() {
       // Preflight de CORS (o navegador manda isso antes de POST/PATCH com
       // JSON e antes de qualquer requisição com cookies cross-site).
       if (req.method === "OPTIONS") {
-        res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+        res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
         res.setHeader("Access-Control-Allow-Headers", "Content-Type");
         res.writeHead(204);
         res.end();

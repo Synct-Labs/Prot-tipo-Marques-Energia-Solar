@@ -20,9 +20,10 @@ window.MES = (function(){
     return data;
   }
 
-  const apiGet   = (path)       => request("GET", path);
-  const apiPost  = (path, body) => request("POST", path, body || {});
-  const apiPatch = (path, body) => request("PATCH", path, body || {});
+  const apiGet    = (path)       => request("GET", path);
+  const apiPost   = (path, body) => request("POST", path, body || {});
+  const apiPatch  = (path, body) => request("PATCH", path, body || {});
+  const apiDelete = (path)       => request("DELETE", path);
 
   function formatBRL(value){
     return Number(value).toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
@@ -90,15 +91,58 @@ window.MES = (function(){
     showToast._t = setTimeout(() => toast.classList.remove("show"), 2600);
   }
 
+  /* ---- empresa/cargo: rótulos e visibilidade de menu ---- */
+  const COMPANY_LABELS = {
+    energia_solar: "Marques Energia Solar",
+    promotora: "Marques Promotora",
+    ambas: "Marques (ambas as empresas)",
+  };
+  const ROLE_LABELS = { owner: "Dono", funcionario: "Funcionário" };
+
+  function hasCompanyAccess(admin, company){
+    return admin.company === "ambas" || admin.company === company;
+  }
+
+  // Página de destino padrão pra cada perfil (evita cair numa tela sem acesso).
+  function landingPageFor(admin){
+    if(admin.company === "promotora") return "credit-leads.html";
+    return "dashboard.html";
+  }
+
+  // Mostra/esconde os links do menu de acordo com a empresa e o cargo do
+  // funcionário logado, e preenche o rótulo com nome + empresa + cargo.
+  function applyCompanyNav(admin){
+    const ordersLink = document.querySelector('.admin-nav-link[href="dashboard.html"]');
+    const leadsLink  = document.querySelector('.admin-nav-link[href="credit-leads.html"]');
+    const staffLink  = document.querySelector('.admin-nav-link[href="equipe.html"]');
+    if(ordersLink) ordersLink.style.display = hasCompanyAccess(admin, "energia_solar") ? "" : "none";
+    if(leadsLink)  leadsLink.style.display  = hasCompanyAccess(admin, "promotora") ? "" : "none";
+    if(staffLink)  staffLink.style.display  = admin.role === "owner" ? "" : "none";
+
+    const label = document.getElementById("adminUserLabel");
+    if(label){
+      const nome = admin.name || admin.email;
+      label.textContent = `${nome} · ${COMPANY_LABELS[admin.company] || admin.company} · ${ROLE_LABELS[admin.role] || admin.role}`;
+    }
+  }
+
   /* Protege páginas que exigem login. Redireciona para login.html se não
-     houver sessão válida. Retorna os dados do admin logado. */
-  async function requireAuth(){
+     houver sessão válida. Se "requiredCompany" for informado e o
+     funcionário não tiver acesso a essa empresa, redireciona pra área que
+     ele pode ver. Retorna os dados do admin logado. */
+  async function requireAuth(requiredCompany){
     const me = await apiGet("/api/auth/me");
     if(!me.ok){
       window.location.href = "login.html";
       return null;
     }
-    return me.admin;
+    const admin = me.admin;
+    applyCompanyNav(admin);
+    if(requiredCompany && !hasCompanyAccess(admin, requiredCompany)){
+      window.location.href = landingPageFor(admin);
+      return null;
+    }
+    return admin;
   }
 
   async function logout(){
@@ -107,12 +151,13 @@ window.MES = (function(){
   }
 
   return {
-    apiGet, apiPost, apiPatch,
+    apiGet, apiPost, apiPatch, apiDelete,
     formatBRL, formatDate,
     STATUS_LABELS, STATUS_ORDER,
     statusBadge, statusSelectHTML,
     LEAD_STATUS_LABELS, LEAD_STATUS_ORDER,
     leadStatusBadge, leadStatusSelectHTML,
+    COMPANY_LABELS, ROLE_LABELS, hasCompanyAccess, landingPageFor, applyCompanyNav,
     showToast, requireAuth, logout,
   };
 })();

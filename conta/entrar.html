@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entrar na sua conta | Marques</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="../logo-mark-128.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<div class="noise-overlay" aria-hidden="true"></div>
+
+<!-- ===================== HEADER ===================== -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="../loja.html" class="logo" aria-label="Marques - Início">
+      <img src="../logo-mark-128.png" alt="Marques" class="logo-mark-img">
+      <span class="logo-text">Marques</span>
+    </a>
+    <nav class="main-nav" id="mainNav">
+      <a href="../index.html" class="nav-link">Crédito Solar</a>
+      <a href="../loja.html#catalogo" class="nav-link">Catálogo</a>
+    </nav>
+    <div class="header-actions">
+      <button class="hamburger" id="hamburgerBtn" aria-label="Abrir menu">
+        <svg class="icon" id="hamburgerIcon" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== CONTEÚDO ===================== -->
+<main class="account-page account-narrow">
+  <div class="container">
+    <div class="account-card">
+      <h1>Entrar na sua conta</h1>
+      <p class="account-sub">Acompanhe seus pedidos da loja e suas solicitações de crédito num só lugar.</p>
+
+      <div class="account-error" id="loginError"></div>
+
+      <form id="loginForm">
+        <div class="form-grid">
+          <label class="col-span-2">E-mail
+            <input type="email" id="email" name="email" required autocomplete="username" placeholder="voce@email.com">
+          </label>
+          <label class="col-span-2">Senha
+            <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="••••••••">
+          </label>
+        </div>
+        <div style="margin-top: 22px;">
+          <button type="submit" class="btn btn-primary" id="loginBtn" style="width:100%; justify-content:center;">Entrar</button>
+        </div>
+      </form>
+
+      <p class="account-footer-link">Ainda não tem conta? <a href="cadastro.html">Cadastre-se</a></p>
+    </div>
+  </div>
+</main>
+
+<script src="../api-config.js"></script>
+<script src="conta.js"></script>
+<script>
+(async function () {
+  // Se já existir sessão válida, pula direto pra minha conta.
+  const me = await CONTA.apiGet("/api/customers/me").catch(() => null);
+  if (me && me.ok) window.location.href = "minha-conta.html";
+})();
+
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("loginError");
+  const btn = document.getElementById("loginBtn");
+  errorBox.classList.remove("show");
+  btn.disabled = true;
+  btn.textContent = "Entrando...";
+
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  try {
+    const res = await CONTA.apiPost("/api/customers/login", { email, password });
+    if (!res.ok) {
+      errorBox.textContent = res.error || "Não foi possível entrar.";
+      errorBox.classList.add("show");
+      return;
+    }
+    window.location.href = "minha-conta.html";
+  } catch (err) {
+    errorBox.textContent = "Erro de conexão com o servidor. Tente novamente em instantes.";
+    errorBox.classList.add("show");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Entrar";
+  }
+});
+</script>
+</body>
+</html>

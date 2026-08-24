@@ -32,6 +32,7 @@ function rowToLead(row) {
     id: row.id,
     leadNumber: row.lead_number,
     status: row.status,
+    customerId: row.customer_id,
     modalidadeInteresse: row.modalidade_interesse,
     dadosBasicos: {
       nome: row.nome,
@@ -77,21 +78,22 @@ function numOrNull(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-async function createLead(payload) {
+async function createLead(payload, customerId = null) {
   const now = new Date().toISOString();
   const tempNumber = `TMP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
   const insert = await pool.query(
     `INSERT INTO credit_leads (
-      lead_number, status, modalidade_interesse,
+      lead_number, status, customer_id, modalidade_interesse,
       nome, cpf, data_nascimento, estado_civil, telefone, email, cidade_uf,
       profissao, tipo_vinculo, empresa, tempo_trabalho, renda_bruta, renda_liquida,
       sim_valor_sistema, sim_parcelas, sim_fgts_disponivel, sim_parcela_estimada,
       created_at, updated_at
-    ) VALUES ($1, 'novo', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+    ) VALUES ($1, 'novo', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
     RETURNING id`,
     [
       tempNumber,
+      customerId,
       payload.modalidade_interesse || "",
       payload.nome,
       payload.cpf,
@@ -150,6 +152,14 @@ async function getLeadById(id) {
   return rows[0] ? rowToLead(rows[0]) : null;
 }
 
+async function listLeadsByCustomer(customerId) {
+  const { rows } = await pool.query(
+    "SELECT * FROM credit_leads WHERE customer_id = $1 ORDER BY id DESC",
+    [customerId]
+  );
+  return rows.map(rowToLead);
+}
+
 async function updateLeadStatus(id, status) {
   if (!VALID_STATUSES.includes(status)) {
     throw new Error("Status inválido: " + status);
@@ -178,6 +188,7 @@ module.exports = {
   createLead,
   listLeads,
   getLeadById,
+  listLeadsByCustomer,
   updateLeadStatus,
   getLeadStats,
 };

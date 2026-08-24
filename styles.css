@@ -2676,3 +2676,137 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
 }
 .consent-check span{ font-size: 0.88rem; color: var(--muted); line-height: 1.5; }
 .consent-check a{ color: var(--orange-light); }
+
+/* ---- link de conta no header (Entrar / nome do cliente logado) ---- */
+.nav-account-link{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+.nav-account-link:hover{ color: var(--white); border-color: var(--border); }
+.nav-account-link-logged{ color: var(--orange-light); border-color: var(--border-orange); background: rgba(247,148,30,0.06); }
+
+/* =====================================================================
+   CONTA DO CLIENTE (login / cadastro / minha conta)
+   ===================================================================== */
+.account-page{ padding: 140px 0 100px; }
+.account-page .container{ max-width: 900px; }
+.account-page.account-narrow .container{ max-width: 460px; }
+
+.account-card{
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 32px;
+  margin-bottom: 24px;
+}
+.account-card h1{
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--white);
+  margin-bottom: 6px;
+}
+.account-card h2{
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--white);
+  margin-bottom: 6px;
+}
+.account-sub{ color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; }
+
+.account-error, .account-success{
+  display: none;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+.account-error{ background: rgba(240,100,90,0.1); border: 1px solid rgba(240,100,90,0.35); color: var(--danger); }
+.account-success{ background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.35); color: var(--success); }
+.account-error.show, .account-success.show{ display: block; }
+
+.account-footer-link{ text-align: center; margin-top: 18px; font-size: 0.88rem; color: var(--muted); }
+.account-footer-link a{ color: var(--orange-light); font-weight: 600; }
+
+.account-consent{
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 18px 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.account-consent input[type="checkbox"]{ margin-top: 3px; width: 18px; height: 18px; accent-color: var(--orange); flex-shrink: 0; cursor: pointer; }
+.account-consent a{ color: var(--orange-light); }
+
+.account-topbar{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.account-user-chip{ font-size: 0.9rem; color: var(--muted); }
+.account-user-chip strong{ color: var(--white); }
+
+.account-tabs{ display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+.account-tab{
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease;
+}
+.account-tab:hover{ color: var(--white); }
+.account-tab.active{ border-color: var(--border-orange); color: var(--orange-light); background: rgba(247,148,30,0.08); }
+
+.account-panel{ display: none; }
+.account-panel.active{ display: block; }
+
+.account-list{ display: flex; flex-direction: column; gap: 12px; }
+.account-list-item{
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  background: var(--bg-alt);
+}
+.account-list-item .item-top{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.account-list-item .item-number{ font-weight: 700; color: var(--white); font-family: var(--font-display); }
+.account-list-item .item-date{ font-size: 0.78rem; color: var(--muted-2); }
+.account-list-item .item-detail{ font-size: 0.85rem; color: var(--muted); }
+.account-list-empty{ color: var(--muted); font-size: 0.9rem; padding: 30px 0; text-align: center; }
+
+.account-status-badge{
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: rgba(247,148,30,0.12);
+  color: var(--orange-light);
+  border: 1px solid var(--border-orange);
+}

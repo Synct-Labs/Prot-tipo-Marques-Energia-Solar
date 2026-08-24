@@ -17,6 +17,7 @@ function rowToOrder(row) {
     id: row.id,
     orderNumber: row.order_number,
     status: row.status,
+    customerId: row.customer_id,
     customer: {
       nome: row.customer_nome,
       cpf: row.customer_cpf,
@@ -41,7 +42,7 @@ function rowToOrder(row) {
   };
 }
 
-async function createOrder(payload) {
+async function createOrder(payload, customerId = null) {
   const now = new Date().toISOString();
 
   // order_number temporário único (timestamp), substituído por um número
@@ -50,14 +51,15 @@ async function createOrder(payload) {
 
   const insert = await pool.query(
     `INSERT INTO orders (
-      order_number, status, customer_nome, customer_cpf, customer_email, customer_telefone,
+      order_number, status, customer_id, customer_nome, customer_cpf, customer_email, customer_telefone,
       endereco_cep, endereco_cidade, endereco_estado, endereco_rua, endereco_numero,
       endereco_bairro, endereco_complemento, pagamento, itens_json, subtotal, total,
       created_at, updated_at
-    ) VALUES ($1, 'novo', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+    ) VALUES ($1, 'novo', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
     RETURNING id`,
     [
       tempNumber,
+      customerId,
       payload.nome,
       payload.cpf,
       payload.email,
@@ -113,6 +115,14 @@ async function getOrderById(id) {
   return rows[0] ? rowToOrder(rows[0]) : null;
 }
 
+async function listOrdersByCustomer(customerId) {
+  const { rows } = await pool.query(
+    "SELECT * FROM orders WHERE customer_id = $1 ORDER BY id DESC",
+    [customerId]
+  );
+  return rows.map(rowToOrder);
+}
+
 async function updateOrderStatus(id, status) {
   if (!VALID_STATUSES.includes(status)) {
     throw new Error("Status inválido: " + status);
@@ -138,6 +148,7 @@ module.exports = {
   createOrder,
   listOrders,
   getOrderById,
+  listOrdersByCustomer,
   updateOrderStatus,
   getOrderStats,
 };
