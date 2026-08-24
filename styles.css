@@ -193,6 +193,14 @@ input, select{ font-family: inherit; }
   flex-shrink: 0;
   box-shadow: 0 0 0 1px var(--border-orange), 0 4px 14px rgba(247,148,30,0.18);
 }
+/* Marca da Marques Promotora (tela de crédito): logo angular, não cabe bem
+   no recorte circular usado pela Marques Energia Solar. */
+.logo-mark-img-promotora{
+  width: auto;
+  height: 34px;
+  border-radius: 0;
+  box-shadow: none;
+}
 .logo-text{
   font-family: var(--font-display);
   font-size: 0.92rem;
@@ -2553,6 +2561,7 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
 .footer-brand{ display: flex; flex-direction: column; gap: 12px; }
 .footer-brand-row{ display: flex; align-items: center; gap: 10px; }
 .footer-logo-img{ width: 38px; height: 38px; border-radius: 50%; }
+.footer-logo-img-promotora{ width: auto; height: 32px; border-radius: 0; }
 .footer-brand p{ color: var(--muted); font-size: 0.85rem; }
 .footer-social{ display: flex; gap: 10px; margin-top: 4px; }
 .footer-social a{
