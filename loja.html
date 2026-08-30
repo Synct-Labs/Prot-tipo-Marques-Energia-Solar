@@ -85,7 +85,7 @@
         <div class="hero-stats">
           <div class="hero-stat">
             <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
-            <span><strong>23+</strong>equipamentos</span>
+            <span><strong>25+</strong>equipamentos</span>
           </div>
           <div class="hero-stat">
             <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/></svg>
@@ -120,14 +120,50 @@
     </div>
   </div>
 
+  <!-- ---------- DIMENSIONAMENTO (kWp) ---------- -->
+  <section class="sizing-calc" id="dimensionamento">
+    <div class="container">
+      <span class="section-kicker reveal">Antes de montar o kit</span>
+      <h2 class="section-title reveal">Qual o tamanho ideal do seu sistema?</h2>
+      <p class="section-sub reveal">Informe sua conta de luz ou seu consumo mensal. Calculamos a potência em kWp e já sugerimos a quantidade de painéis pra você montar o kit.</p>
+
+      <div class="sizing-calc-card reveal">
+        <div class="sizing-calc-inputs">
+          <label>Valor médio da conta de energia (R$/mês)
+            <input type="number" id="sizingBillInput" min="0" step="10" placeholder="Ex: 450">
+          </label>
+          <span class="sizing-calc-or">ou</span>
+          <label>Consumo médio mensal (kWh)
+            <input type="number" id="sizingKwhInput" min="0" step="10" placeholder="Ex: 500">
+          </label>
+          <button class="btn btn-primary" id="sizingCalcBtn" type="button">Calcular</button>
+        </div>
+
+        <div class="sizing-calc-result" id="sizingCalcResult" hidden>
+          <div class="sizing-result-item">
+            <span class="sizing-result-value" id="sizingResultKwp">0 kWp</span>
+            <span class="sizing-result-label">Potência recomendada</span>
+          </div>
+          <div class="sizing-result-item">
+            <span class="sizing-result-value" id="sizingResultPaineis">0 painéis</span>
+            <span class="sizing-result-label">estimativa com painéis de 450 Wp</span>
+          </div>
+          <button class="btn btn-outline" id="sizingGoWizardBtn" type="button">Montar kit com essa potência</button>
+        </div>
+
+        <p class="sizing-calc-formula">Cálculo estimado: consumo mensal (kWh) ÷ 119 = potência recomendada (kWp). O fator 119 representa a geração média mensal por kWp instalado no Brasil. Resultado apenas ilustrativo. O dimensionamento final depende de irradiação local, orientação do telhado e perfil de consumo.</p>
+      </div>
+    </div>
+  </section>
+
   <section class="stats-band">
     <div class="container stats-grid">
       <div class="stat-item reveal">
-        <span class="stat-number" id="stat1" data-target="23" data-suffix="+">0</span>
+        <span class="stat-number" id="stat1" data-target="25" data-suffix="+">0</span>
         <span class="stat-label">Equipamentos no catálogo</span>
       </div>
       <div class="stat-item reveal reveal-delay-1">
-        <span class="stat-number" id="stat2" data-target="4" data-suffix="">0</span>
+        <span class="stat-number" id="stat2" data-target="5" data-suffix="">0</span>
         <span class="stat-label">Categorias de produtos</span>
       </div>
       <div class="stat-item reveal reveal-delay-2">
@@ -177,7 +213,7 @@
     <div class="container">
       <span class="section-kicker reveal">Seleção da casa</span>
       <h2 class="section-title reveal">Produtos em destaque</h2>
-      <p class="section-sub reveal">Um destaque de cada categoria para você começar a montar seu kit.</p>
+      <p class="section-sub reveal">Kits solares completos prontos pra instalar, além de um destaque de cada categoria do catálogo.</p>
       <div class="product-grid" id="featuredGrid"></div>
       <div class="featured-cta reveal">
         <a href="#catalogo" class="btn btn-outline btn-lg">
@@ -331,7 +367,8 @@
     <p class="page-sub">Filtre por marca e especificações para montar seu kit.</p>
 
     <div class="tabs" id="categoryTabs" role="tablist">
-      <button class="tab active" data-cat="paineis" role="tab"></button>
+      <button class="tab active" data-cat="kits" role="tab"></button>
+      <button class="tab" data-cat="paineis" role="tab"></button>
       <button class="tab" data-cat="inversores" role="tab"></button>
       <button class="tab" data-cat="cabos" role="tab"></button>
       <button class="tab" data-cat="estrutura" role="tab"></button>
@@ -498,6 +535,10 @@
       <div class="warranty-block">
         <h2>Garantia do Fabricante</h2>
         <p id="warrantyText"></p>
+      </div>
+      <div class="features-block" id="bundleBlock" hidden>
+        <h2>Itens inclusos no kit</h2>
+        <ul class="features-list" id="bundleItemsList"></ul>
       </div>
     </div>
 

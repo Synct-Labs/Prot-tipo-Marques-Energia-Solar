@@ -1,9 +1,9 @@
 /* =====================================================================
    MARQUES ENERGIA SOLAR: PÁGINA "CRÉDITO SOLAR" (index.html)
    ---------------------------------------------------------------------
-   Lógica isolada da página de crédito: calculadora de dimensionamento
-   (kWp) e simulação de crédito. Não depende do catálogo de produtos,
-   carrinho ou checkout; isso fica em loja.html / app.js.
+   Lógica isolada da página de crédito: simulação de crédito. Não
+   depende do catálogo de produtos, carrinho ou checkout; isso fica em
+   loja.html / app.js (que também tem a calculadora de dimensionamento).
    ===================================================================== */
 
 /* Base da API: "" localmente (mesmo domínio), URL do Render em produção.
@@ -50,53 +50,6 @@ function initScrollReveal(){
   }
   $all(".reveal:not(.in-view)").forEach(el => revealObserver.observe(el));
 }
-
-/* ======================================================================
-   DIMENSIONAMENTO (calculadora de kWp)
-   ====================================================================== */
-const KWH_PER_KWP_MONTH = 119; // geração média mensal (kWh) por kWp instalado no Brasil
-const TARIFA_MEDIA_KWH = 0.85; // usada só para converter conta em R$ -> kWh
-const POTENCIA_PAINEL_REFERENCIA_WP = 450; // referência para estimar qtd. de painéis
-
-function calcSizing(){
-  const billVal = parseFloat($("#sizingBillInput").value);
-  const kwhVal = parseFloat($("#sizingKwhInput").value);
-
-  let kwh = null;
-  if(!isNaN(kwhVal) && kwhVal > 0) kwh = kwhVal;
-  else if(!isNaN(billVal) && billVal > 0) kwh = billVal / TARIFA_MEDIA_KWH;
-
-  if(!kwh){
-    showToast("Informe o valor da conta de luz ou o consumo em kWh.");
-    return;
-  }
-
-  const kwp = kwh / KWH_PER_KWP_MONTH;
-  const qtdPaineis = Math.max(1, Math.ceil((kwp * 1000) / POTENCIA_PAINEL_REFERENCIA_WP));
-
-  $("#sizingResultKwp").textContent = kwp.toFixed(2).replace(".", ",") + " kWp";
-  $("#sizingResultPaineis").textContent = `${qtdPaineis} painéis`;
-  const resultBox = $("#sizingCalcResult");
-  resultBox.hidden = false;
-  resultBox.dataset.qtd = qtdPaineis;
-
-  // Guarda o valor da conta em R$ (informado direto ou convertido a partir do
-  // kWh) para usar como referência de comparação na simulação de crédito.
-  const valorContaReais = (!isNaN(billVal) && billVal > 0) ? billVal : kwh * TARIFA_MEDIA_KWH;
-  localStorage.setItem("mes_conta_atual", valorContaReais.toFixed(2));
-  renderCreditContext();
-}
-
-$("#sizingCalcBtn")?.addEventListener("click", calcSizing);
-
-$("#sizingGoWizardBtn")?.addEventListener("click", () => {
-  const qtd = parseInt($("#sizingCalcResult").dataset.qtd, 10) || 6;
-  // A loja fica em outra página (loja.html); passamos a quantidade
-  // sugerida via localStorage, e o app.js de lá lê e já abre o
-  // configurador com essa potência pré-selecionada.
-  localStorage.setItem("mes_sizing_qtd", qtd);
-  window.location.href = "loja.html#configurador";
-});
 
 /* ======================================================================
    SIMULAÇÃO DE CRÉDITO
@@ -234,7 +187,7 @@ function renderCreditModes(){
   if(!wrap) return;
   wrap.innerHTML = Object.entries(CREDIT_MODES).map(([key, m]) => `
     <button class="credit-mode-card${key === currentCreditMode ? " active" : ""}" data-mode="${key}" type="button" role="tab" aria-selected="${key === currentCreditMode}">
-      ${m.highlight ? `<span class="credit-mode-ribbon">${m.highlight}</span>` : ""}
+
       <span class="credit-mode-icon">${m.icon}</span>
       <span class="credit-mode-body">
         <span class="credit-mode-title">${m.label}</span>
@@ -244,7 +197,8 @@ function renderCreditModes(){
   `).join("");
 }
 
-/* Referência da conta de luz vinda da calculadora de dimensionamento (se já calculada) */
+/* Referência da conta de luz vinda da calculadora de dimensionamento da
+   loja (loja.html / app.js), se o cliente já calculou por lá. */
 function getContaAtual(){
   const raw = localStorage.getItem("mes_conta_atual");
   const val = parseFloat(raw);
@@ -256,8 +210,8 @@ function renderCreditContext(){
   if(!el) return;
   const conta = getContaAtual();
   el.innerHTML = conta
-    ? `${ICON_CHECK}<span>Comparando com a sua conta de <strong>${formatBRL(conta)}/mês</strong> informada acima. <a href="#dimensionamento">Alterar valor</a></span>`
-    : `<span>Calcule sua conta de luz no passo 1 acima para comparar direto com a parcela estimada aqui embaixo.</span>`;
+    ? `${ICON_CHECK}<span>Comparando com a conta de <strong>${formatBRL(conta)}/mês</strong> que você informou na calculadora de dimensionamento da loja.</span>`
+    : `<span>Quer comparar com sua conta de luz? Calcule o tamanho do seu sistema <a href="loja.html#dimensionamento">na loja</a> antes de simular aqui.</span>`;
   el.classList.toggle("has-value", !!conta);
 }
 
@@ -287,8 +241,9 @@ function renderCreditSimCard(){
         <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
         Falar com um especialista
       </a>
+      <p class="credit-sim-disclaimer">Simulação ilustrativa e sem compromisso. Os valores reais dependem de análise de crédito, taxa contratada e instituição financeira.</p>
     </div>
-    <p class="credit-sim-disclaimer">Simulação ilustrativa e sem compromisso. Os valores reais dependem de análise de crédito, taxa contratada e instituição financeira.</p>
+
   `;
   renderCreditContext();
 }

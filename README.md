@@ -39,14 +39,15 @@ Isso sobe o site inteiro (as duas páginas + painel + API) em **http://localhost
 O site é dividido em **duas páginas HTML independentes** (não é mais uma SPA única):
 
 ### `index.html` — Crédito Solar (página inicial)
-- Calculadora de dimensionamento: consumo (kWh ou valor da conta) → potência recomendada em **kWp**, usando a fórmula `consumo (kWh) ÷ 119`.
 - Simulação de crédito em 4 modalidades: Crédito CLT, Saque FGTS, Consórcio de placa solar, Financiamento bancário — todas com valores **ilustrativos**, sem integração real com instituição financeira.
+- Se o cliente já usou a calculadora de dimensionamento na loja, a simulação compara a parcela com a conta de luz informada por lá (via `localStorage`, chave `mes_conta_atual`).
 - Comunicação de alcance nacional ("comprar no Brasil inteiro") e garantia de 25 anos.
-- Botão "Comprar" leva para `loja.html`. O botão "Montar kit com essa potência" da calculadora também leva para lá, já passando a quantidade de painéis sugerida (ver "Handoff entre páginas" abaixo).
+- Botão "Comprar" leva para `loja.html`.
 
 ### `loja.html` — Loja (SPA por hash, dentro da própria página)
-- Home da loja com identidade visual da marca, propostas de valor, produtos em destaque, depoimentos e FAQ.
-- Catálogo com 23 produtos placeholder em 4 categorias: painéis solares, inversores, kits de cabos/fios, parafusos e estrutura de fixação.
+- Home da loja com identidade visual da marca, calculadora de dimensionamento, propostas de valor, produtos em destaque, depoimentos e FAQ.
+- Calculadora de dimensionamento: consumo (kWh ou valor da conta) → potência recomendada em **kWp**, usando a fórmula `consumo (kWh) ÷ 119`; o botão "Montar kit com essa potência" já abre o configurador com a quantidade de painéis sugerida.
+- Catálogo com 25 produtos em 5 categorias: **kits prontos** (2 kits com orçamento real — os únicos produtos reais do catálogo por enquanto, o resto é placeholder), painéis solares, inversores, kits de cabos/fios, parafusos e estrutura de fixação.
 - Comparação lado a lado (2–3 produtos da mesma categoria).
 - Carrinho funcional (adicionar/remover/qtd/total).
 - Configurador "Monte seu Projeto" (wizard guiado de kit completo, com kWp calculado no resumo).
@@ -58,12 +59,12 @@ O site é dividido em **duas páginas HTML independentes** (não é mais uma SPA
 
 Design responsivo mobile-first nas duas páginas.
 
-### Handoff entre páginas (calculadora → configurador)
+### Handoff entre páginas (calculadora → simulação de crédito)
 
-Como `index.html` e `loja.html` são documentos HTML separados (recarregam a página ao navegar entre eles), o estado do JavaScript não sobrevive à troca. Para levar a quantidade de painéis sugerida pela calculadora de `index.html` até o configurador de `loja.html`, usamos o `localStorage` como ponte:
+A calculadora de dimensionamento e o configurador de kit vivem os dois em `loja.html`, então não precisam mais de ponte entre páginas. A única travessia que resta é a inversa: como `index.html` e `loja.html` são documentos HTML separados (recarregam a página ao navegar entre eles), o valor da conta de luz calculado na loja precisa sobreviver à troca pra a simulação de crédito comparar com a parcela. Isso usa o `localStorage` como ponte:
 
-1. Em `credito.js`, o botão "Montar kit com essa potência" grava `localStorage.setItem("mes_sizing_qtd", qtd)` e navega para `loja.html#configurador`.
-2. Em `app.js`, ao carregar a view `configurador`, o código lê `localStorage.getItem("mes_sizing_qtd")`, aplica a quantidade ao estado do wizard, remove a chave do `localStorage` (uso único) e abre o wizard já com essa sugestão.
+1. Em `app.js`, ao calcular o dimensionamento, o código grava `localStorage.setItem("mes_conta_atual", valor)`.
+2. Em `credito.js`, a simulação de crédito lê `localStorage.getItem("mes_conta_atual")` (se existir) e mostra a comparação; caso contrário, convida o cliente a calcular na loja primeiro.
 
 ## Backend
 
@@ -128,7 +129,7 @@ Depois disso, checkout, formulário de crédito e login do admin funcionam de ve
 - Copy do checkout/confirmação ajustada: não fala mais em "protótipo" pro cliente final, e explica com clareza que o pagamento é combinado por contato (Pix/cartão/boleto) — condizente com o fato de ainda não haver gateway de pagamento real conectado.
 
 ### ⚠️ Decisões/contas que só você pode resolver
-1. **Catálogo real de produtos** — os itens, preços, SKUs e fotos atuais são de exemplo (`app.js`). Este é o maior gap entre "parece pronto" e "é real": sem isso, qualquer pedido feito na loja hoje é sobre produtos fictícios.
+1. **Catálogo real de produtos** — os 2 kits prontos (`kit1`, `kit2` em `app.js`) já são orçamento real (TSUN + Solis); o restante dos itens (painéis, inversores, cabos e estrutura avulsos), preços, SKUs e fotos ainda são de exemplo. Este é o maior gap entre "parece pronto" e "é real": sem completar isso, boa parte dos pedidos feitos na loja hoje ainda seria sobre produtos fictícios.
 2. **Domínio próprio** — hoje o site vive em `synct-labs.github.io` e a API em `onrender.com`. Se quiser `marquesenergiasolar.com.br` (aparece hoje só como texto no rodapé), é preciso registrar o domínio e configurar DNS (CNAME pro GitHub Pages + domínio customizado no Render).
 3. **Supabase no plano gratuito pausa o projeto após ~7 dias sem nenhuma atividade** — isso derrubaria login do admin e o site inteiro até alguém reativar manualmente no painel do Supabase. Se o site vai ficar "no ar de verdade" recebendo pouco tráfego no início, vale considerar o plano pago (US$25/mês) ou algum ping periódico pra manter o projeto ativo.
 4. **Render no plano gratuito "dorme" após ~15 min sem uso** (primeira requisição demora 30-50s pra responder). Plano pago (~US$7/mês) elimina isso.
@@ -137,14 +138,15 @@ Depois disso, checkout, formulário de crédito e login do admin funcionam de ve
 7. **E-mail/WhatsApp automático** avisando a equipe quando entra um pedido novo ou uma solicitação de crédito nova — hoje só aparece no painel admin, alguém precisa checar manualmente.
 8. **Backup do banco** — Supabase faz backup automático nos planos pagos; no gratuito, vale exportar o schema/dados periodicamente.
 9. Dois arquivos do SQLite antigo (`backend/data/mes.db` e `mes.db-journal`) ficaram versionados no Git por engano antes da migração pro Postgres — não afetam o funcionamento, mas valem uma limpeza: `git rm -r backend/data && git commit` (não consegui remover por aqui por causa de uma trava no `.git` local — rode esse comando quando puder).
+10. **Fotos dos kits prontos (`assets/products/`) são de sites de revenda, não do fabricante** — a do inversor Solis bate com o modelo exato (S6-GR1P3K-M); a do módulo TSUN é da variante de 620W da mesma linha "RIO" bifacial preta (não achamos foto de revenda específica da variante 630W). Vale confirmar com o fornecedor/distribuidor se pode usar essas imagens comercialmente, ou pedir fotos oficiais direto da TSUN/Solis.
 
 ## Estrutura
 
 ```
-index.html         → página "Crédito Solar" (calculadora de kWp + simulação de crédito)
-credito.js         → lógica isolada de index.html (calculadora, simulação, menu mobile)
-loja.html           → página da loja (SPA por hash: catálogo, comparação, configurador, carrinho, checkout)
-app.js             → dados do catálogo + lógica da loja (catálogo, comparação, carrinho, checkout, configurador)
+index.html         → página "Crédito Solar" (simulação de crédito)
+credito.js         → lógica isolada de index.html (simulação, menu mobile)
+loja.html           → página da loja (SPA por hash: calculadora de kWp, catálogo, comparação, configurador, carrinho, checkout)
+app.js             → dados do catálogo + lógica da loja (calculadora de kWp, catálogo, comparação, carrinho, checkout, configurador)
 api-config.js      → URL do backend em produção (editar depois do deploy no Render — ver "Deploy em produção")
 styles.css         → sistema de design (cores, tipografia, componentes) — compartilhado pelas duas páginas
 logo-*.png         → logo oficial recortado em diferentes tamanhos

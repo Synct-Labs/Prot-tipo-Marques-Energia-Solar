@@ -15,6 +15,7 @@ const API_BASE = window.MES_API_BASE || "";
 
 /* ---------------------- ÍCONES (estilo line-icon, tipo lucide) ---------------------- */
 const ICONS = {
+  kits: `<svg class="icon" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/></svg>`,
   paineis: `<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4" y1="12" x2="2" y2="12"/><line x1="22" y1="12" x2="20" y2="12"/><line x1="19.07" y1="4.93" x2="17.66" y2="6.34"/><line x1="6.34" y1="17.66" x2="4.93" y2="19.07"/><line x1="19.07" y1="19.07" x2="17.66" y2="17.66"/><line x1="6.34" y1="6.34" x2="4.93" y2="4.93"/></svg>`,
   inversores: `<svg class="icon" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>`,
   cabos: `<svg class="icon" viewBox="0 0 24 24"><path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
@@ -32,7 +33,11 @@ const ICON_X = `<svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6
 const DEPARTMENT = "Equipamentos Fotovoltaicos";
 
 const CATEGORIES = {
-  paineis:    { label: "Painéis Solares",                crumbCategory: "Painel Solar",           facetLabel: "Potência (Wp)", primarySpec: "potencia", specFields: [
+  kits:       { label: "Kits Prontos",                       crumbCategory: "Kit Solar Completo",     facetLabel: "Consumo estimado", primarySpec: "potencia", specFields: [
+      ["potencia","Potência do sistema"], ["modulos","Módulos"], ["inversor","Inversor"],
+      ["entradaMax","Potência máx. de entrada"], ["saidaMax","Potência máx. de saída"], ["consumoAlvo","Consumo médio estimado"]
+    ] },
+  paineis:    { label: "Painéis Solares",               crumbCategory: "Painel Solar",           facetLabel: "Potência (Wp)", primarySpec: "potencia", specFields: [
       ["potencia","Potência"], ["tipo","Tipo de célula"], ["eficiencia","Eficiência"],
       ["tensaoMax","Tensão máxima"], ["correnteMax","Corrente máxima"],
       ["dimensoes","Dimensões"], ["peso","Peso"], ["garantia","Garantia"]
@@ -53,14 +58,39 @@ const CATEGORIES = {
 };
 
 const FACET_ORDER = {
+  kits: ["Até 400 kWh/mês", "400–700 kWh/mês", "700–1000 kWh/mês", "Acima de 1000 kWh/mês"],
   paineis: ["Até 400 Wp", "400–500 Wp", "500–600 Wp", "Acima de 600 Wp"],
   inversores: ["Até 3 kW", "3–5 kW", "5–10 kW", "Acima de 10 kW"],
   cabos: ["4 mm²", "6 mm²", "10 mm²", "Conectores"],
   estrutura: ["Telhado", "Solo/Laje", "Acessórios"],
 };
 
-/* ---------------------- CATÁLOGO (DADOS DE EXEMPLO) ---------------------- */
+/* ---------------------- CATÁLOGO (DADOS DE EXEMPLO, exceto "KITS PRONTOS" que são orçamentos reais) ---------------------- */
 const PRODUCTS = [
+  // ---------- KITS PRONTOS (orçamentos reais) ----------
+  { id:"kit1", cat:"kits", brand:"TSUN + Solis", sku:"KIT-300-TSUN-SOLIS", embVenda:"1 kit completo (módulos + inversor)", subcategoria:"Kit Residencial", facetValue:"Até 400 kWh/mês",
+    name:"Kit Solar Completo 300 kWh/mês — 2,52 kWp", price:9486.00,
+    // Foto do módulo é do irmão de linha 620W (mesma série TSUN RIO bifacial N-Type
+    // preta) — não achamos foto de revenda específica da variante 630W/132 células.
+    image:"assets/products/tsun-mftb-bifacial-630w.webp",
+    specs:{ potencia:"2,52 kWp", modulos:"4x TSUN Bifacial N-Type 630W (132 células)", inversor:"1x Solis Monofásico 1MPPT 220V 3kW",
+      entradaMax:"5,10 kW", saidaMax:"3,00 kW", consumoAlvo:"~300 kWh/mês" },
+    bundleItems:[
+      { brand:"TSUN Power", name:"Módulo Bifacial 132 Cel. N Type 630W Black Frame Cabo 0.30m", sku:"MFTB-0.3-BF-132-630W", qty:4, image:"assets/products/tsun-mftb-bifacial-630w.webp" },
+      { brand:"Solis", name:"Inversor de Corrente Monofásico 1MPPT 220V 3kW", sku:"INVSO-MO-220V-3KW", qty:1, image:"assets/products/solis-invso-mo-220v-3kw.png" },
+    ] },
+  { id:"kit2", cat:"kits", brand:"TSUN + Solis", sku:"KIT-500-TSUN-SOLIS", embVenda:"1 kit completo (módulos + inversor)", subcategoria:"Kit Residencial", facetValue:"400–700 kWh/mês",
+    name:"Kit Solar Completo 500 kWh/mês — 4,41 kWp", price:11280.00,
+    // Mesma observação do kit1: foto de estoque da linha TSUN RIO bifacial (620W),
+    // usada como aproximação visual até termos foto real da variante 144 células.
+    image:"assets/products/tsun-mftb-bifacial-630w.webp",
+    specs:{ potencia:"4,41 kWp", modulos:"7x TSUN Bifacial N-Type 630W (144 células)", inversor:"1x Solis Monofásico 1MPPT 220V 3kW",
+      entradaMax:"5,10 kW", saidaMax:"3,00 kW", consumoAlvo:"~500 kWh/mês" },
+    bundleItems:[
+      { brand:"TSUN Power", name:"Módulo Bifacial 144 Cel. N Type 630W Black Frame Cabo 0.30m", sku:"MFTB-0.3-BF-144-630W", qty:7, image:"assets/products/tsun-mftb-bifacial-630w.webp" },
+      { brand:"Solis", name:"Inversor de Corrente Monofásico 1MPPT 220V 3kW", sku:"INVSO-MO-220V-3KW", qty:1, image:"assets/products/solis-invso-mo-220v-3kw.png" },
+    ] },
+
   // ---------- PAINÉIS SOLARES ----------
   { id:"pn1", cat:"paineis", brand:"Canadian Solar", sku:"PS-MC-450W", embVenda:"1 unidade", subcategoria:"Monocristalino", facetValue:"400–500 Wp",
     name:"Painel Solar Monocristalino 450W", price:799.00,
@@ -172,7 +202,7 @@ const PRODUCTS = [
 
 /* ---------------------- ESTADO DA APLICAÇÃO ---------------------- */
 const state = {
-  currentCategory: "paineis",
+  currentCategory: "kits",
   currentProductId: null,
   sort: "relevancia",
   searchTerm: "",
@@ -190,7 +220,7 @@ const state = {
   },
 };
 
-const FEATURED_IDS = ["pn1", "iv2", "cb1", "es1"];
+const FEATURED_IDS = ["kit1", "kit2", "pn1", "iv2", "cb1", "es1"];
 
 /* ---------------------- CONFIGURADOR (MONTE SEU PROJETO) ---------------------- */
 const WIZARD_STEPS = [
@@ -222,20 +252,73 @@ function showToast(msg){
   showToast._t = setTimeout(() => toast.classList.remove("show"), 2400);
 }
 
+/* ======================================================================
+   DIMENSIONAMENTO (calculadora de kWp)
+   ====================================================================== */
+const KWH_PER_KWP_MONTH = 119; // geração média mensal (kWh) por kWp instalado no Brasil
+const TARIFA_MEDIA_KWH = 0.85; // usada só para converter conta em R$ -> kWh
+const POTENCIA_PAINEL_REFERENCIA_WP = 450; // referência para estimar qtd. de painéis
+
+function calcSizing(){
+  const billVal = parseFloat($("#sizingBillInput").value);
+  const kwhVal = parseFloat($("#sizingKwhInput").value);
+
+  let kwh = null;
+  if(!isNaN(kwhVal) && kwhVal > 0) kwh = kwhVal;
+  else if(!isNaN(billVal) && billVal > 0) kwh = billVal / TARIFA_MEDIA_KWH;
+
+  if(!kwh){
+    showToast("Informe o valor da conta de luz ou o consumo em kWh.");
+    return;
+  }
+
+  const kwp = kwh / KWH_PER_KWP_MONTH;
+  const qtdPaineis = Math.max(1, Math.ceil((kwp * 1000) / POTENCIA_PAINEL_REFERENCIA_WP));
+
+  $("#sizingResultKwp").textContent = kwp.toFixed(2).replace(".", ",") + " kWp";
+  $("#sizingResultPaineis").textContent = `${qtdPaineis} painéis`;
+  const resultBox = $("#sizingCalcResult");
+  resultBox.hidden = false;
+  resultBox.dataset.qtd = qtdPaineis;
+
+  // Guarda o valor da conta em R$ (informado direto ou convertido a partir do
+  // kWh) para a página de crédito comparar com a parcela estimada, caso o
+  // cliente vá simular crédito depois de montar o kit.
+  const valorContaReais = (!isNaN(billVal) && billVal > 0) ? billVal : kwh * TARIFA_MEDIA_KWH;
+  localStorage.setItem("mes_conta_atual", valorContaReais.toFixed(2));
+}
+
+$("#sizingCalcBtn")?.addEventListener("click", calcSizing);
+
+$("#sizingGoWizardBtn")?.addEventListener("click", () => {
+  const qtd = parseInt($("#sizingCalcResult").dataset.qtd, 10) || 6;
+  state.configurator.paineis.qty = qtd;
+  location.hash = "configurador";
+  startWizard();
+});
+
 /* ---------------------- IMAGEM DE PRODUTO (placeholder neutro, tipo "foto de estúdio") ---------------------- */
 function productImageHTML(p, extraClass=""){
-  const icon = ICONS[p.cat];
   const spec = p.specs[CATEGORIES[p.cat].primarySpec] || "";
+  const media = p.image
+    ? `<img src="${p.image}" alt="${p.name}" class="product-photo" loading="lazy">`
+    : ICONS[p.cat];
   return `<div class="product-image ${extraClass}">
     ${spec ? `<span class="spec-badge">${spec}</span>` : ""}
     ${p.isLaunch ? `<span class="launch-badge">Lançamento</span>` : ""}
-    ${icon}
+    ${media}
     <span class="image-caption">Imagem ilustrativa</span>
   </div>`;
 }
 
 /* ---------------------- GERADORES DE CONTEÚDO (a partir dos specs reais do produto) ---------------------- */
 function getFeatures(p){
+  if(p.cat === "kits") return [
+    `Sistema completo dimensionado para consumo de ${p.specs.consumoAlvo}`,
+    `${p.specs.modulos}`,
+    `${p.specs.inversor}`,
+    `Potência máxima de entrada ${p.specs.entradaMax} e saída ${p.specs.saidaMax}`,
+  ];
   if(p.cat === "paineis") return [
     `Eficiência de ${p.specs.eficiencia}, mesmo em dias nublados`,
     `Célula ${p.specs.tipo}, alta durabilidade`,
@@ -263,6 +346,9 @@ function getFeatures(p){
 }
 
 function getWarrantyText(p){
+  if(p.cat === "kits"){
+    return `Kit composto por equipamentos de fabricantes homologados — a garantia de cada item (módulos e inversor) segue os termos do respectivo fabricante, detalhados na ficha técnica. Em caso de sinistro, entre em contato com nosso suporte pelo WhatsApp para orientações sobre o acionamento da garantia.`;
+  }
   const garantia = p.specs.garantia && p.specs.garantia !== "-" ? p.specs.garantia : "conforme especificação do fabricante";
   return `Este produto possui garantia de ${garantia} contra defeitos de fabricação, conforme os termos do fabricante ${p.brand}. Em caso de sinistro, entre em contato com nosso suporte pelo WhatsApp para orientações sobre o acionamento da garantia.`;
 }
@@ -291,17 +377,7 @@ function navigate(){
   if(hash === "catalogo") { renderSidebar(); renderCatalog(); }
   if(hash === "comparar") renderComparison();
   if(hash === "produto") renderProductPage();
-  if(hash === "configurador") {
-    // Se o usuário veio da calculadora de dimensionamento (index.html),
-    // a quantidade de painéis sugerida chega aqui via localStorage.
-    const suggestedQty = localStorage.getItem("mes_sizing_qtd");
-    if(suggestedQty){
-      localStorage.removeItem("mes_sizing_qtd");
-      state.configurator.paineis.qty = parseInt(suggestedQty, 10) || state.configurator.paineis.qty;
-      startWizard();
-    }
-    renderConfiguradorView();
-  }
+  if(hash === "configurador") renderConfiguradorView();
   if(hash === "carrinho") renderCart();
   if(hash === "checkout") renderCheckout();
 
@@ -699,6 +775,21 @@ function renderProductPage(){
 
   $("#featuresList").innerHTML = getFeatures(p).map(f => `<li>${ICON_CHECK}<span>${f}</span></li>`).join("");
   $("#warrantyText").textContent = getWarrantyText(p);
+
+  const bundleBlock = $("#bundleBlock");
+  if(bundleBlock){
+    if(p.bundleItems && p.bundleItems.length){
+      $("#bundleItemsList").innerHTML = p.bundleItems.map(item => `
+        <li class="bundle-item">
+          ${item.image ? `<img src="${item.image}" alt="${item.name}" class="bundle-item-thumb" loading="lazy">` : ""}
+          <span><strong>${item.qty}x</strong> ${item.brand} — ${item.name} <em>(SKU: ${item.sku})</em></span>
+        </li>`
+      ).join("");
+      bundleBlock.hidden = false;
+    } else {
+      bundleBlock.hidden = true;
+    }
+  }
 }
 
 $("#galleryThumbs").addEventListener("click", (e) => {
