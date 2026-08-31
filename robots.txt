@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 
-Sitemap: https://synct-labs.github.io/sitemap.xml
+Sitemap: https://synct-labs.github.io/Prot-tipo-Marques-Energia-Solar/sitemap.xml
