@@ -300,7 +300,15 @@ document.addEventListener("click", (e) => {
 
   syncLeadModalidade();
   renderLeadSimSummary();
-  $("#solicitar-analise")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const leadSection = $("#solicitar-analise");
+  if(leadSection){
+    leadSection.hidden = false;
+    // Como já estamos rolando a tela até aqui de propósito, mostra o
+    // conteúdo direto em vez de depender do IntersectionObserver de scroll
+    // (que não pega elementos que acabaram de sair de "hidden").
+    $all(".reveal", leadSection).forEach(el => el.classList.add("in-view"));
+  }
+  leadSection?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 /* Recapitula, logo acima do formulário de solicitação, o que a pessoa

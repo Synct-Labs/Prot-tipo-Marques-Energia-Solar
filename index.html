@@ -149,10 +149,6 @@
         <div class="credit-modes" id="creditTabs" role="tablist"></div>
         <div class="credit-panel">
           <div class="credit-sim-card" id="creditSimCard"></div>
-          <a href="#solicitar-analise" class="btn btn-primary btn-lg btn-block credit-sim-lead-cta">
-            Solicitar essa simulação agora
-            <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          </a>
         </div>
       </div>
 
@@ -174,7 +170,9 @@
   </section>
 
   <!-- ---------- SOLICITAÇÃO DE ANÁLISE DE CRÉDITO ---------- -->
-  <section class="credit-lead" id="solicitar-analise">
+  <!-- Fica escondida até a pessoa simular a parcela (ver "Simular parcela"
+       em credito.js), pra não pedir dados pessoais antes de mostrar valor. -->
+  <section class="credit-lead" id="solicitar-analise" hidden>
     <div class="container">
       <span class="section-kicker reveal">Passo 2: Solicitação</span>
       <h2 class="section-title reveal">Pronto para simular de verdade?</h2>
