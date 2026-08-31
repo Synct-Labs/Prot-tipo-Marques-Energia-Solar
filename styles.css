@@ -1477,6 +1477,7 @@ input, select{ font-family: inherit; }
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  min-width: 0;
 }
 .form-grid input{
   background: var(--bg-alt);
