@@ -16,6 +16,7 @@ const BALANCE_TEXT = "R$ 4.285,90";
 function goToView(name){
   $all(".app-view").forEach(v => v.classList.toggle("active", v.dataset.view === name));
   $all(".app-nav-btn").forEach(b => b.classList.toggle("active", b.dataset.goto === name));
+  $(".app-bottom-nav")?.classList.toggle("hidden", name.startsWith("onboarding"));
   $("#phoneScreen").scrollTo({ top: 0, behavior: "auto" });
 }
 
