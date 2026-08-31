@@ -2701,9 +2701,10 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
 /* =====================================================================
    CONTA DO CLIENTE (login / cadastro / minha conta)
    ===================================================================== */
-.account-page{ padding: 140px 0 100px; }
+.account-page{ padding: 140px 0 100px; position: relative; overflow: hidden; isolation: isolate; }
 .account-page .container{ max-width: 900px; }
-.account-page.account-narrow .container{ max-width: 460px; }
+.account-page.account-narrow{ min-height: calc(100vh - 73px); display: flex; align-items: center; justify-content: center; }
+.account-page.account-narrow .container{ max-width: 460px; margin: 0 auto; width: 100%; }
 
 .account-card{
   background: var(--surface);
@@ -2711,6 +2712,8 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
   border-radius: var(--radius);
   padding: 32px;
   margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
 }
 .account-card h1{
   font-family: var(--font-display);
