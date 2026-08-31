@@ -34,97 +34,122 @@
 
 <!-- ===================== CONTEÚDO ===================== -->
 <main class="account-page">
-  <div class="container">
+  <div class="container account-shell">
 
-    <div class="account-topbar">
-      <div class="account-user-chip">Olá, <strong id="userName">...</strong></div>
-      <button class="btn btn-ghost" id="logoutBtn">Sair</button>
-    </div>
-
-    <div class="account-tabs" id="accountTabs">
-      <button class="account-tab active" data-tab="perfil">Meu perfil</button>
-      <button class="account-tab" data-tab="pedidos">Meus pedidos</button>
-      <button class="account-tab" data-tab="credito">Solicitações de crédito</button>
-      <button class="account-tab" data-tab="senha">Segurança</button>
-    </div>
-
-    <!-- ---- PERFIL ---- -->
-    <div class="account-panel active" data-panel="perfil">
-      <div class="account-card">
-        <h2>Meus dados</h2>
-        <p class="account-sub">Usados para agilizar seus pedidos e solicitações futuras.</p>
-        <div class="account-error" id="perfilError"></div>
-        <div class="account-success" id="perfilSuccess"></div>
-        <form id="perfilForm">
-          <div class="form-grid">
-            <label class="col-span-2">Nome completo
-              <input type="text" id="pNome" name="nome" required>
-            </label>
-            <label>E-mail
-              <input type="email" id="pEmail" name="email" disabled>
-              <span class="field-hint">O e-mail de login não pode ser alterado por aqui.</span>
-            </label>
-            <label>CPF
-              <input type="text" id="pCpf" name="cpf" placeholder="000.000.000-00">
-            </label>
-            <label class="col-span-2">Telefone
-              <input type="tel" id="pTelefone" name="telefone" placeholder="(00) 00000-0000">
-            </label>
-          </div>
-          <div style="margin-top: 22px;">
-            <button type="submit" class="btn btn-primary" id="perfilBtn">Salvar alterações</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- ---- PEDIDOS ---- -->
-    <div class="account-panel" data-panel="pedidos">
-      <div class="account-card">
-        <h2>Meus pedidos</h2>
-        <p class="account-sub">Pedidos feitos na loja Marques Energia Solar.</p>
-        <div class="account-list" id="ordersList">
-          <div class="account-list-empty">Carregando...</div>
+    <aside class="account-sidebar">
+      <div class="account-profile-card">
+        <div class="account-avatar" id="userAvatar">·</div>
+        <div class="account-profile-info">
+          <strong id="userName">...</strong>
+          <span id="userEmailSmall"></span>
         </div>
       </div>
-    </div>
 
-    <!-- ---- CRÉDITO ---- -->
-    <div class="account-panel" data-panel="credito">
-      <div class="account-card">
-        <h2>Minhas solicitações de crédito</h2>
-        <p class="account-sub">Solicitações de análise enviadas para a Marques Promotora.</p>
-        <div class="account-list" id="leadsList">
-          <div class="account-list-empty">Carregando...</div>
+      <nav class="account-nav" id="accountTabs">
+        <button class="account-nav-btn active" data-tab="perfil" type="button">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Meu perfil
+        </button>
+        <button class="account-nav-btn" data-tab="pedidos" type="button">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="11" x2="12" y2="11"/></svg>
+          Meus pedidos
+        </button>
+        <button class="account-nav-btn" data-tab="credito" type="button">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          Solicitações de crédito
+        </button>
+        <button class="account-nav-btn" data-tab="senha" type="button">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Segurança
+        </button>
+      </nav>
+
+      <button class="account-nav-logout" id="logoutBtn" type="button">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair
+      </button>
+    </aside>
+
+    <div class="account-content">
+
+      <!-- ---- PERFIL ---- -->
+      <div class="account-panel active" data-panel="perfil">
+        <div class="account-card">
+          <h2>Meus dados</h2>
+          <p class="account-sub">Usados para agilizar seus pedidos e solicitações futuras.</p>
+          <div class="account-error" id="perfilError"></div>
+          <div class="account-success" id="perfilSuccess"></div>
+          <form id="perfilForm">
+            <div class="form-grid">
+              <label class="col-span-2">Nome completo
+                <input type="text" id="pNome" name="nome" required>
+              </label>
+              <label>E-mail
+                <input type="email" id="pEmail" name="email" disabled>
+                <span class="field-hint">O e-mail de login não pode ser alterado por aqui.</span>
+              </label>
+              <label>CPF
+                <input type="text" id="pCpf" name="cpf" placeholder="000.000.000-00">
+              </label>
+              <label class="col-span-2">Telefone
+                <input type="tel" id="pTelefone" name="telefone" placeholder="(00) 00000-0000">
+              </label>
+            </div>
+            <div style="margin-top: 22px;">
+              <button type="submit" class="btn btn-primary" id="perfilBtn">Salvar alterações</button>
+            </div>
+          </form>
         </div>
       </div>
-    </div>
 
-    <!-- ---- SEGURANÇA ---- -->
-    <div class="account-panel" data-panel="senha">
-      <div class="account-card">
-        <h2>Alterar senha</h2>
-        <div class="account-error" id="senhaError"></div>
-        <div class="account-success" id="senhaSuccess"></div>
-        <form id="senhaForm">
-          <div class="form-grid">
-            <label class="col-span-2">Senha atual
-              <input type="password" id="currentPassword" name="currentPassword" required autocomplete="current-password">
-            </label>
-            <label>Nova senha
-              <input type="password" id="newPassword" name="newPassword" required autocomplete="new-password" placeholder="Mínimo de 8 caracteres">
-            </label>
-            <label>Confirmar nova senha
-              <input type="password" id="newPasswordConfirm" name="newPasswordConfirm" required autocomplete="new-password">
-            </label>
+      <!-- ---- PEDIDOS ---- -->
+      <div class="account-panel" data-panel="pedidos">
+        <div class="account-card">
+          <h2>Meus pedidos</h2>
+          <p class="account-sub">Pedidos feitos na loja Marques Energia Solar.</p>
+          <div class="account-list" id="ordersList">
+            <div class="account-list-empty">Carregando...</div>
           </div>
-          <div style="margin-top: 22px;">
-            <button type="submit" class="btn btn-primary" id="senhaBtn">Atualizar senha</button>
-          </div>
-        </form>
+        </div>
       </div>
-    </div>
 
+      <!-- ---- CRÉDITO ---- -->
+      <div class="account-panel" data-panel="credito">
+        <div class="account-card">
+          <h2>Minhas solicitações de crédito</h2>
+          <p class="account-sub">Solicitações de análise enviadas para a Marques Promotora.</p>
+          <div class="account-list" id="leadsList">
+            <div class="account-list-empty">Carregando...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- SEGURANÇA ---- -->
+      <div class="account-panel" data-panel="senha">
+        <div class="account-card">
+          <h2>Alterar senha</h2>
+          <div class="account-error" id="senhaError"></div>
+          <div class="account-success" id="senhaSuccess"></div>
+          <form id="senhaForm">
+            <div class="form-grid">
+              <label class="col-span-2">Senha atual
+                <input type="password" id="currentPassword" name="currentPassword" required autocomplete="current-password">
+              </label>
+              <label>Nova senha
+                <input type="password" id="newPassword" name="newPassword" required autocomplete="new-password" placeholder="Mínimo de 8 caracteres">
+              </label>
+              <label>Confirmar nova senha
+                <input type="password" id="newPasswordConfirm" name="newPasswordConfirm" required autocomplete="new-password">
+              </label>
+            </div>
+            <div style="margin-top: 22px;">
+              <button type="submit" class="btn btn-primary" id="senhaBtn">Atualizar senha</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
   </div>
 </main>
 
@@ -138,19 +163,51 @@ function fillPerfilForm(customer) {
   document.getElementById("pEmail").value = customer.email || "";
   document.getElementById("pCpf").value = customer.cpf || "";
   document.getElementById("pTelefone").value = customer.telefone || "";
-  document.getElementById("userName").textContent = (customer.nome || "").split(" ")[0] || customer.email;
+  const firstName = (customer.nome || "").split(" ")[0] || customer.email;
+  document.getElementById("userName").textContent = firstName;
+  document.getElementById("userEmailSmall").textContent = customer.email || "";
+  document.getElementById("userAvatar").textContent = firstName.charAt(0).toUpperCase();
+}
+
+/* ---- trilha de status (estilo "acompanhar pedido" de loja real) ---- */
+const ORDER_STEPS = ["novo", "confirmado", "em_preparacao", "enviado", "entregue"];
+const LEAD_STEPS = ["novo", "em_analise", "contatado", "proposta_enviada", "convertido"];
+
+function statusTone(status) {
+  if (status === "cancelado" || status === "recusado") return "danger";
+  if (status === "entregue" || status === "convertido") return "success";
+  if (status === "novo") return "neutral";
+  return "progress";
+}
+
+function stepperHTML(steps, labels, status) {
+  if (status === "cancelado" || status === "recusado") return "";
+  const idx = steps.indexOf(status);
+  if (idx === -1) return "";
+  return `<div class="order-stepper">${steps.map((s, i) => `
+    <span class="order-step ${i <= idx ? "done" : ""} ${i === idx ? "current" : ""}">
+      <span class="order-step-dot"></span>
+      <span class="order-step-label">${labels[s] || s}</span>
+    </span>${i < steps.length - 1 ? `<span class="order-step-line ${i < idx ? "done" : ""}"></span>` : ""}`).join("")}</div>`;
 }
 
 function orderItemHTML(order) {
   const label = CONTA.ORDER_STATUS_LABELS[order.status] || order.status;
   return `
-    <div class="account-list-item">
-      <div class="item-top">
-        <span class="item-number">${order.orderNumber}</span>
-        <span class="account-status-badge">${label}</span>
+    <div class="order-card">
+      <div class="order-card-head">
+        <div class="order-card-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M20.5 7.3 12 3 3.5 7.3v9.4L12 21l8.5-4.3z"/><path d="m3.5 7.3 8.5 4.3 8.5-4.3"/><line x1="12" y1="11.6" x2="12" y2="21"/></svg></div>
+        <div class="order-card-head-info">
+          <span class="item-number">${order.orderNumber}</span>
+          <span class="item-date">${CONTA.formatDate(order.createdAt)}</span>
+        </div>
+        <span class="account-status-badge status-${statusTone(order.status)}">${label}</span>
       </div>
-      <div class="item-detail">${CONTA.formatBRL(order.total)} · ${order.itens.length} ite${order.itens.length === 1 ? "m" : "ns"}</div>
-      <div class="item-date">${CONTA.formatDate(order.createdAt)}</div>
+      ${stepperHTML(ORDER_STEPS, CONTA.ORDER_STATUS_LABELS, order.status)}
+      <div class="order-card-foot">
+        <span class="item-detail">${order.itens.length} ite${order.itens.length === 1 ? "m" : "ns"}</span>
+        <strong class="order-card-total">${CONTA.formatBRL(order.total)}</strong>
+      </div>
     </div>`;
 }
 
@@ -158,13 +215,19 @@ function leadItemHTML(lead) {
   const label = CONTA.LEAD_STATUS_LABELS[lead.status] || lead.status;
   const modalidade = lead.modalidadeInteresse ? lead.modalidadeInteresse : "Não informada";
   return `
-    <div class="account-list-item">
-      <div class="item-top">
-        <span class="item-number">${lead.leadNumber}</span>
-        <span class="account-status-badge">${label}</span>
+    <div class="order-card">
+      <div class="order-card-head">
+        <div class="order-card-icon"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+        <div class="order-card-head-info">
+          <span class="item-number">${lead.leadNumber}</span>
+          <span class="item-date">${CONTA.formatDate(lead.createdAt)}</span>
+        </div>
+        <span class="account-status-badge status-${statusTone(lead.status)}">${label}</span>
       </div>
-      <div class="item-detail">Modalidade: ${modalidade}</div>
-      <div class="item-date">${CONTA.formatDate(lead.createdAt)}</div>
+      ${stepperHTML(LEAD_STEPS, CONTA.LEAD_STATUS_LABELS, lead.status)}
+      <div class="order-card-foot">
+        <span class="item-detail">Modalidade: ${modalidade}</span>
+      </div>
     </div>`;
 }
 
@@ -186,12 +249,13 @@ async function loadLeads() {
 
 /* ---- abas ---- */
 document.getElementById("accountTabs").addEventListener("click", (e) => {
-  const tabBtn = e.target.closest(".account-tab");
+  const tabBtn = e.target.closest(".account-nav-btn");
   if (!tabBtn) return;
   const tab = tabBtn.dataset.tab;
 
-  document.querySelectorAll(".account-tab").forEach((b) => b.classList.toggle("active", b === tabBtn));
+  document.querySelectorAll(".account-nav-btn").forEach((b) => b.classList.toggle("active", b === tabBtn));
   document.querySelectorAll(".account-panel").forEach((p) => p.classList.toggle("active", p.dataset.panel === tab));
+  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 /* ---- perfil ---- */
