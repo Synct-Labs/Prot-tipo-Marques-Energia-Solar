@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prévia do app | Conta Digital Marques</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="logo-promotora-icon-128.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="app-preview-body">
+
+<div class="noise-overlay" aria-hidden="true"></div>
+
+<div class="app-preview-page">
+  <div class="app-preview-topbar">
+    <a href="conta-digital.html" class="app-preview-back">
+      <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Voltar
+    </a>
+    <span class="prototype-tag app-preview-tag">Protótipo — mostra como o app vai funcionar. Nenhuma conta, saldo ou movimentação aqui é real.</span>
+  </div>
+
+  <!-- ===================== MOCKUP DO APP ===================== -->
+  <div class="app-phone-frame">
+    <div class="app-phone-notch" aria-hidden="true"></div>
+    <div class="app-phone-screen" id="phoneScreen">
+
+      <!-- ---------- TELA: INÍCIO ---------- -->
+      <div class="app-view active" data-view="inicio">
+        <div class="app-topbar">
+          <div class="app-greeting">
+            <span class="app-greeting-hi">Olá, Leonardo</span>
+            <span class="app-greeting-sub">Conta Digital Marques</span>
+          </div>
+          <button class="app-icon-btn" type="button" aria-label="Notificações">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="app-icon-btn-dot"></span>
+          </button>
+        </div>
+
+        <div class="balance-card">
+          <div class="balance-card-head">
+            <span>Saldo disponível</span>
+            <button class="balance-eye-btn" id="balanceEyeBtn" type="button" aria-label="Mostrar ou esconder saldo">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="balance-card-value" id="balanceValue">R$ 4.285,90</div>
+          <div class="balance-card-foot">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/></svg>
+            <span>Protegido por instituição autorizada pelo Banco Central</span>
+          </div>
+        </div>
+
+        <div class="app-quick-actions">
+          <button class="app-quick-action" type="button" data-goto="pix">
+            <span class="app-quick-action-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><circle cx="16" cy="14" r="1"/></svg></span>
+            <span>Pix</span>
+          </button>
+          <button class="app-quick-action" type="button" data-goto="cartao">
+            <span class="app-quick-action-icon"><svg class="icon" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+            <span>Cartão</span>
+          </button>
+          <button class="app-quick-action" type="button" data-goto="cashback">
+            <span class="app-quick-action-icon"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/><line x1="12" y1="16.5" x2="12" y2="16.51"/></svg></span>
+            <span>Cashback</span>
+          </button>
+          <button class="app-quick-action" type="button" data-goto="extrato">
+            <span class="app-quick-action-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="11" x2="12" y2="11"/></svg></span>
+            <span>Extrato</span>
+          </button>
+        </div>
+
+        <div class="cashback-widget">
+          <div class="cashback-widget-head">
+            <div class="cashback-widget-icon"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/></svg></div>
+            <div>
+              <strong>Cashback Energia Solar</strong>
+              <span>R$ 84,20 acumulados esse mês</span>
+            </div>
+          </div>
+          <div class="cashback-widget-bar"><span style="width: 62%;"></span></div>
+          <p class="cashback-widget-note">Faltam R$ 51,80 pra abater um pedaço da sua próxima parcela do sistema solar.</p>
+        </div>
+
+        <h3 class="app-section-title">Últimas movimentações</h3>
+        <div class="app-tx-list">
+          <div class="app-tx">
+            <span class="app-tx-icon app-tx-icon-in"><svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="8 17 7 17 7 16"/><path d="M7 7h6a4 4 0 0 1 4 4v0"/></svg></span>
+            <div class="app-tx-body"><strong>Pix recebido</strong><span>Hoje, 09:42</span></div>
+            <span class="app-tx-value app-tx-value-in">+ R$ 350,00</span>
+          </div>
+          <div class="app-tx">
+            <span class="app-tx-icon"><svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+            <div class="app-tx-body"><strong>Compra no cartão · Mercado</strong><span>Ontem, 18:15</span></div>
+            <span class="app-tx-value">- R$ 127,40</span>
+          </div>
+          <div class="app-tx">
+            <span class="app-tx-icon app-tx-icon-in"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/></svg></span>
+            <div class="app-tx-body"><strong>Cashback solar creditado</strong><span>Ontem, 08:00</span></div>
+            <span class="app-tx-value app-tx-value-in">+ R$ 12,30</span>
+          </div>
+          <div class="app-tx">
+            <span class="app-tx-icon"><svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 8 7 7 8 7"/><path d="M17 17h-6a4 4 0 0 1-4-4v0"/></svg></span>
+            <div class="app-tx-body"><strong>Pix enviado</strong><span>2 dias atrás</span></div>
+            <span class="app-tx-value">- R$ 80,00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---------- TELA: PIX ---------- -->
+      <div class="app-view" data-view="pix">
+        <div class="app-subview-head">
+          <button class="app-icon-btn app-back-btn" type="button" data-goto="inicio">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+          <strong>Pix</strong>
+        </div>
+        <div class="app-pix-actions">
+          <button class="app-pix-action" type="button">
+            <svg class="icon" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 8 7 7 8 7"/><path d="M17 17h-6a4 4 0 0 1-4-4v0"/></svg>
+            <span>Enviar Pix</span>
+          </button>
+          <button class="app-pix-action" type="button">
+            <svg class="icon" viewBox="0 0 24 24"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="8 17 7 17 7 16"/><path d="M7 7h6a4 4 0 0 1 4 4v0"/></svg>
+            <span>Receber Pix</span>
+          </button>
+          <button class="app-pix-action" type="button">
+            <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span>Ler QR Code</span>
+          </button>
+          <button class="app-pix-action" type="button">
+            <svg class="icon" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+            <span>Minhas chaves</span>
+          </button>
+        </div>
+        <p class="app-empty-note">Sem tarifa pra enviar ou receber, a qualquer hora — inclusive fins de semana e feriados.</p>
+      </div>
+
+      <!-- ---------- TELA: CARTÃO ---------- -->
+      <div class="app-view" data-view="cartao">
+        <div class="app-subview-head">
+          <button class="app-icon-btn app-back-btn" type="button" data-goto="inicio">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+          <strong>Cartão</strong>
+        </div>
+        <div class="virtual-card">
+          <div class="virtual-card-top">
+            <span>Marques</span>
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="9" cy="12" r="6" fill="rgba(255,255,255,0.55)" stroke="none"/><circle cx="15" cy="12" r="6" fill="rgba(255,255,255,0.3)" stroke="none"/></svg>
+          </div>
+          <div class="virtual-card-number">•••• •••• •••• 4821</div>
+          <div class="virtual-card-bottom">
+            <span>LEONARDO V N</span>
+            <span>12/31</span>
+          </div>
+        </div>
+        <div class="app-toggle-row">
+          <span>Cartão virtual ativo</span>
+          <span class="app-toggle app-toggle-on"><span class="app-toggle-dot"></span></span>
+        </div>
+        <div class="app-toggle-row">
+          <span>Compras online</span>
+          <span class="app-toggle app-toggle-on"><span class="app-toggle-dot"></span></span>
+        </div>
+        <button class="btn btn-outline btn-block" type="button" style="margin-top:14px;">Pedir cartão físico</button>
+      </div>
+
+      <!-- ---------- TELA: CASHBACK ---------- -->
+      <div class="app-view" data-view="cashback">
+        <div class="app-subview-head">
+          <button class="app-icon-btn app-back-btn" type="button" data-goto="inicio">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+          <strong>Cashback Solar</strong>
+        </div>
+        <div class="cashback-widget" style="margin-top:4px;">
+          <div class="cashback-widget-head">
+            <div class="cashback-widget-icon"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/></svg></div>
+            <div>
+              <strong>Esse mês</strong>
+              <span>R$ 84,20 acumulados</span>
+            </div>
+          </div>
+          <div class="cashback-widget-bar"><span style="width: 62%;"></span></div>
+          <p class="cashback-widget-note">Faltam R$ 51,80 pra abater um pedaço da sua próxima parcela do sistema solar.</p>
+        </div>
+        <h3 class="app-section-title">Como funciona</h3>
+        <div class="app-tx-list">
+          <div class="app-tx">
+            <span class="app-tx-icon app-tx-icon-in"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+            <div class="app-tx-body"><strong>Use o cartão ou Pix Marques</strong><span>Em qualquer compra do dia a dia</span></div>
+          </div>
+          <div class="app-tx">
+            <span class="app-tx-icon app-tx-icon-in"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+            <div class="app-tx-body"><strong>Acumule um % de volta</strong><span>Creditado automaticamente na conta</span></div>
+          </div>
+          <div class="app-tx">
+            <span class="app-tx-icon app-tx-icon-in"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+            <div class="app-tx-body"><strong>Abata na parcela do solar</strong><span>Direto na sua próxima cobrança</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---------- TELA: EXTRATO ---------- -->
+      <div class="app-view" data-view="extrato">
+        <div class="app-subview-head">
+          <button class="app-icon-btn app-back-btn" type="button" data-goto="inicio">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+          <strong>Extrato</strong>
+        </div>
+        <div class="app-tx-list">
+          <div class="app-tx">
+            <span class="app-tx-icon app-tx-icon-in"><svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="8 17 7 17 7 16"/><path d="M7 7h6a4 4 0 0 1 4 4v0"/></svg></span>
+            <div class="app-tx-body"><strong>Pix recebido</strong><span>Hoje, 09:42</span></div>
+            <span class="app-tx-value app-tx-value-in">+ R$ 350,00</span>
+          </div>
+          <div class="app-tx">
+            <span class="app-tx-icon"><svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+            <div class="app-tx-body"><strong>Compra no cartão · Mercado</strong><span>Ontem, 18:15</span></div>
+            <span class="app-tx-value">- R$ 127,40</span>
+          </div>
+          <div class="app-tx">
+            <span class="app-tx-icon app-tx-icon-in"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/></svg></span>
+            <div class="app-tx-body"><strong>Cashback solar creditado</strong><span>Ontem, 08:00</span></div>
+            <span class="app-tx-value app-tx-value-in">+ R$ 12,30</span>
+          </div>
+          <div class="app-tx">
+            <span class="app-tx-icon"><svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 8 7 7 8 7"/><path d="M17 17h-6a4 4 0 0 1-4-4v0"/></svg></span>
+            <div class="app-tx-body"><strong>Pix enviado</strong><span>2 dias atrás</span></div>
+            <span class="app-tx-value">- R$ 80,00</span>
+          </div>
+          <div class="app-tx">
+            <span class="app-tx-icon"><svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+            <div class="app-tx-body"><strong>Compra no cartão · Posto</strong><span>3 dias atrás</span></div>
+            <span class="app-tx-value">- R$ 210,00</span>
+          </div>
+          <div class="app-tx">
+            <span class="app-tx-icon app-tx-icon-in"><svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="8 17 7 17 7 16"/><path d="M7 7h6a4 4 0 0 1 4 4v0"/></svg></span>
+            <div class="app-tx-body"><strong>Pix recebido</strong><span>5 dias atrás</span></div>
+            <span class="app-tx-value app-tx-value-in">+ R$ 1.200,00</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ---------- NAV INFERIOR ---------- -->
+    <nav class="app-bottom-nav">
+      <button class="app-nav-btn active" type="button" data-goto="inicio">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+        <span>Início</span>
+      </button>
+      <button class="app-nav-btn" type="button" data-goto="pix">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><circle cx="16" cy="14" r="1"/></svg>
+        <span>Pix</span>
+      </button>
+      <button class="app-nav-btn" type="button" data-goto="cartao">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span>Cartão</span>
+      </button>
+      <button class="app-nav-btn" type="button" data-goto="extrato">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="11" x2="12" y2="11"/></svg>
+        <span>Extrato</span>
+      </button>
+    </nav>
+  </div>
+
+  <a href="https://wa.me/5565996591300?text=Ol%C3%A1!%20Vi%20a%20pr%C3%A9via%20do%20app%20e%20quero%20entrar%20na%20lista%20de%20espera%20da%20Conta%20Digital%20Marques." target="_blank" rel="noopener" class="btn btn-primary btn-lg app-preview-cta">
+    Quero ser avisado no lançamento
+  </a>
+</div>
+
+<script src="conta-digital-app.js"></script>
+</body>
+</html>
