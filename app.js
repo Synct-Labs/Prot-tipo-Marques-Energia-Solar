@@ -1212,17 +1212,29 @@ $("#cartItemsList").addEventListener("click", (e) => {
   renderCart();
 });
 
-$("#goCheckoutBtn").addEventListener("click", () => {
+$("#goCheckoutBtn").addEventListener("click", async () => {
   if(state.cart.length === 0) return;
+  const customer = window.MES_ACCOUNT ? await window.MES_ACCOUNT.getCustomer() : null;
+  if(!customer){
+    window.location.href = "conta/entrar.html?redirect=" + encodeURIComponent("loja.html#checkout");
+    return;
+  }
   location.hash = "#checkout";
 });
 
 /* ======================================================================
    CHECKOUT
    ====================================================================== */
-function renderCheckout(){
+async function renderCheckout(){
   if(state.cart.length === 0){
     location.hash = "#catalogo";
+    return;
+  }
+  // Segunda trava: cobre quem chega direto em #checkout pela URL, sem
+  // passar pelo botão "Finalizar Compra" acima.
+  const customer = window.MES_ACCOUNT ? await window.MES_ACCOUNT.getCustomer() : null;
+  if(!customer){
+    window.location.href = "conta/entrar.html?redirect=" + encodeURIComponent("loja.html#checkout");
     return;
   }
   const list = $("#checkoutItemsList");

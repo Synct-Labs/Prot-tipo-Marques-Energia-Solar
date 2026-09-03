@@ -283,7 +283,22 @@ function syncLeadModalidade(){
    lá embaixo, em vez de mostrar o resultado aqui mesmo. */
 let lastSimResult = null;
 
-document.addEventListener("click", (e) => {
+/* Mostra a seção "Passo 2: Solicitação" com o que já foi simulado. Só é
+   chamada depois de confirmar que existe conta logada (ver mais abaixo). */
+function revealLeadSection(){
+  renderLeadSimSummary();
+  const leadSection = $("#solicitar-analise");
+  if(leadSection){
+    leadSection.hidden = false;
+    // Como já estamos rolando a tela até aqui de propósito, mostra o
+    // conteúdo direto em vez de depender do IntersectionObserver de scroll
+    // (que não pega elementos que acabaram de sair de "hidden").
+    $all(".reveal", leadSection).forEach(el => el.classList.add("in-view"));
+  }
+  leadSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+document.addEventListener("click", async (e) => {
   if(e.target.id !== "creditSimSubmit") return;
   const form = $("#creditSimForm");
   const values = {};
@@ -297,19 +312,42 @@ document.addEventListener("click", (e) => {
   const mode = CREDIT_MODES[currentCreditMode];
   const result = mode.calc(values);
   lastSimResult = { modalidade: currentCreditMode, values, result };
-
   syncLeadModalidade();
-  renderLeadSimSummary();
-  const leadSection = $("#solicitar-analise");
-  if(leadSection){
-    leadSection.hidden = false;
-    // Como já estamos rolando a tela até aqui de propósito, mostra o
-    // conteúdo direto em vez de depender do IntersectionObserver de scroll
-    // (que não pega elementos que acabaram de sair de "hidden").
-    $all(".reveal", leadSection).forEach(el => el.classList.add("in-view"));
+
+  // Solicitar a análise exige conta: sem login, guarda a simulação (pra
+  // não precisar refazer) e manda pra tela de entrar/cadastrar, que volta
+  // pra cá sozinha depois.
+  const customer = window.MES_ACCOUNT ? await window.MES_ACCOUNT.getCustomer() : null;
+  if(!customer){
+    localStorage.setItem("mes_pending_lead_sim", JSON.stringify(lastSimResult));
+    window.location.href = "conta/entrar.html?redirect=" + encodeURIComponent("index.html#solicitar-analise");
+    return;
   }
-  leadSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  revealLeadSection();
 });
+
+/* Se a pessoa simulou, foi mandada pra login/cadastro e voltou logada,
+   retoma a simulação guardada em vez de pedir pra refazer tudo. */
+async function restorePendingLeadSim(){
+  const pending = localStorage.getItem("mes_pending_lead_sim");
+  if(!pending) return;
+  localStorage.removeItem("mes_pending_lead_sim");
+
+  const customer = window.MES_ACCOUNT ? await window.MES_ACCOUNT.getCustomer() : null;
+  if(!customer) return;
+
+  try {
+    lastSimResult = JSON.parse(pending);
+  } catch(e) {
+    return;
+  }
+  currentCreditMode = lastSimResult.modalidade;
+  renderCreditModes();
+  renderCreditSimCard();
+  syncLeadModalidade();
+  revealLeadSection();
+}
 
 /* Recapitula, logo acima do formulário de solicitação, o que a pessoa
    simulou lá em cima — sem repetir a caixa de resultado inteira. */
@@ -458,3 +496,4 @@ renderCreditModes();
 renderCreditSimCard();
 syncLeadModalidade();
 initScrollReveal();
+restorePendingLeadSim();

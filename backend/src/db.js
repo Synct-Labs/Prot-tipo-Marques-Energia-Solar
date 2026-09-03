@@ -52,14 +52,18 @@ async function initSchema() {
     );
 
     CREATE TABLE IF NOT EXISTS customers (
-      id            SERIAL PRIMARY KEY,
-      email         TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      nome          TEXT NOT NULL,
-      cpf           TEXT,
-      telefone      TEXT,
-      created_at    TEXT NOT NULL,
-      updated_at    TEXT NOT NULL
+      id                      SERIAL PRIMARY KEY,
+      email                   TEXT UNIQUE NOT NULL,
+      password_hash           TEXT NOT NULL,
+      nome                    TEXT NOT NULL,
+      cpf                     TEXT,
+      telefone                TEXT,
+      -- verificação em duas etapas (TOTP, tipo Google Authenticator)
+      two_factor_enabled      BOOLEAN NOT NULL DEFAULT false,
+      two_factor_secret       TEXT,
+      two_factor_backup_codes TEXT,
+      created_at              TEXT NOT NULL,
+      updated_at              TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS customer_sessions (
@@ -139,6 +143,10 @@ async function initSchema() {
 
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id);
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id);
+
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS two_factor_secret TEXT;
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS two_factor_backup_codes TEXT;
   `);
 
   // Garante que sempre exista pelo menos um "owner" (dono/admin geral que

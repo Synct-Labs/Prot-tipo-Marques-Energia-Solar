@@ -74,7 +74,7 @@
         </div>
       </form>
 
-      <p class="account-footer-link">Já tem conta? <a href="entrar.html">Entrar</a></p>
+      <p class="account-footer-link">Já tem conta? <a href="entrar.html" id="switchToLoginLink">Entrar</a></p>
     </div>
   </div>
 </main>
@@ -82,9 +82,24 @@
 <script src="../api-config.js"></script>
 <script src="conta.js"></script>
 <script>
+// Pra onde ir depois de cadastrar: ?redirect=loja.html%23checkout leva de
+// volta pro checkout/simulação que a pessoa estava fazendo.
+function getRedirectTarget(){
+  const raw = new URLSearchParams(location.search).get("redirect");
+  return raw ? `../${raw}` : "minha-conta.html";
+}
+
 (async function () {
   const me = await CONTA.apiGet("/api/customers/me").catch(() => null);
-  if (me && me.ok) window.location.href = "minha-conta.html";
+  if (me && me.ok) window.location.href = getRedirectTarget();
+})();
+
+// Preserva o ?redirect= ao trocar pra tela de login.
+(function () {
+  const redirect = new URLSearchParams(location.search).get("redirect");
+  if (redirect) {
+    document.getElementById("switchToLoginLink").href = "entrar.html?redirect=" + encodeURIComponent(redirect);
+  }
 })();
 
 document.getElementById("cadastroForm").addEventListener("submit", async (e) => {
@@ -122,7 +137,7 @@ document.getElementById("cadastroForm").addEventListener("submit", async (e) => 
       errorBox.classList.add("show");
       return;
     }
-    window.location.href = "minha-conta.html";
+    window.location.href = getRedirectTarget();
   } catch (err) {
     errorBox.textContent = "Erro de conexão com o servidor. Tente novamente em instantes.";
     errorBox.classList.add("show");

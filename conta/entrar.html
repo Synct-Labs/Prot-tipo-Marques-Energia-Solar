@@ -56,7 +56,27 @@
         </div>
       </form>
 
-      <p class="account-footer-link">Ainda não tem conta? <a href="cadastro.html">Cadastre-se</a></p>
+      <p class="account-footer-link">Ainda não tem conta? <a href="cadastro.html" id="switchToCadastroLink">Cadastre-se</a></p>
+    </div>
+
+    <!-- ---- PASSO 2FA: aparece só se a conta tiver verificação em duas etapas ativa ---- -->
+    <div class="account-card" id="twoFaCard" hidden>
+      <h1>Verificação em duas etapas</h1>
+      <p class="account-sub">Digite o código de 6 dígitos do seu app autenticador, ou um dos seus códigos de backup.</p>
+
+      <div class="account-error" id="twoFaError"></div>
+
+      <form id="twoFaForm">
+        <div class="form-grid">
+          <label class="col-span-2">Código
+            <input type="text" id="twoFaCode" name="code" required autocomplete="one-time-code" inputmode="numeric" placeholder="000000" maxlength="9">
+          </label>
+        </div>
+        <div style="margin-top: 22px; display:flex; flex-direction:column; gap:10px;">
+          <button type="submit" class="btn btn-primary" id="twoFaBtn" style="width:100%; justify-content:center;">Confirmar</button>
+          <button type="button" class="btn btn-ghost" id="twoFaBackBtn" style="width:100%; justify-content:center;">Voltar</button>
+        </div>
+      </form>
     </div>
   </div>
 </main>
@@ -64,11 +84,29 @@
 <script src="../api-config.js"></script>
 <script src="conta.js"></script>
 <script>
+// Pra onde ir depois de autenticar: ?redirect=loja.html%23checkout leva de
+// volta pro checkout/simulação que a pessoa estava fazendo; sem isso, cai
+// na tela de Minha Conta.
+function getRedirectTarget(){
+  const raw = new URLSearchParams(location.search).get("redirect");
+  return raw ? `../${raw}` : "minha-conta.html";
+}
+
 (async function () {
-  // Se já existir sessão válida, pula direto pra minha conta.
+  // Se já existir sessão válida, pula direto pro destino.
   const me = await CONTA.apiGet("/api/customers/me").catch(() => null);
-  if (me && me.ok) window.location.href = "minha-conta.html";
+  if (me && me.ok) window.location.href = getRedirectTarget();
 })();
+
+// Preserva o ?redirect= ao trocar pra tela de cadastro.
+(function () {
+  const redirect = new URLSearchParams(location.search).get("redirect");
+  if (redirect) {
+    document.getElementById("switchToCadastroLink").href = "cadastro.html?redirect=" + encodeURIComponent(redirect);
+  }
+})();
+
+let pendingTwoFaToken = null;
 
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -88,7 +126,14 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       errorBox.classList.add("show");
       return;
     }
-    window.location.href = "minha-conta.html";
+    if (res.requires2FA) {
+      pendingTwoFaToken = res.pendingToken;
+      document.getElementById("loginForm").closest(".account-card").hidden = true;
+      document.getElementById("twoFaCard").hidden = false;
+      document.getElementById("twoFaCode").focus();
+      return;
+    }
+    window.location.href = getRedirectTarget();
   } catch (err) {
     errorBox.textContent = "Erro de conexão com o servidor. Tente novamente em instantes.";
     errorBox.classList.add("show");
@@ -96,6 +141,45 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     btn.disabled = false;
     btn.textContent = "Entrar";
   }
+});
+
+document.getElementById("twoFaForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("twoFaError");
+  const btn = document.getElementById("twoFaBtn");
+  errorBox.classList.remove("show");
+  btn.disabled = true;
+  btn.textContent = "Confirmando...";
+
+  const code = document.getElementById("twoFaCode").value.trim();
+
+  try {
+    const res = await CONTA.apiPost("/api/customers/login/2fa", { pendingToken: pendingTwoFaToken, code });
+    if (!res.ok) {
+      if (res.pendingToken) pendingTwoFaToken = res.pendingToken;
+      errorBox.textContent = res.error || "Não foi possível confirmar o código.";
+      errorBox.classList.add("show");
+      if (res.expired) {
+        document.getElementById("twoFaCard").hidden = true;
+        document.getElementById("loginForm").closest(".account-card").hidden = false;
+      }
+      return;
+    }
+    window.location.href = getRedirectTarget();
+  } catch (err) {
+    errorBox.textContent = "Erro de conexão com o servidor. Tente novamente em instantes.";
+    errorBox.classList.add("show");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Confirmar";
+  }
+});
+
+document.getElementById("twoFaBackBtn").addEventListener("click", () => {
+  pendingTwoFaToken = null;
+  document.getElementById("twoFaCard").hidden = true;
+  document.getElementById("loginForm").closest(".account-card").hidden = false;
+  document.getElementById("twoFaForm").reset();
 });
 </script>
 </body>

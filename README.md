@@ -72,10 +72,14 @@ A calculadora de dimensionamento e o configurador de kit vivem os dois em `loja.
 - Banco de dados: **Postgres, hospedado no Supabase** (antes era SQLite local — migrado para permitir hospedar o backend fora do GitHub Pages, ver seção abaixo). O schema é criado automaticamente na primeira execução (`CREATE TABLE IF NOT EXISTS...` em `db.js`).
 - Autenticação de administrador: sessão por cookie `HttpOnly` (token opaco guardado no banco, senha com hash `scrypt`). Só existe um administrador por padrão (criado a partir do `.env` na primeira execução); é possível trocar a senha pelo próprio painel.
 - CORS: liberado apenas para as origens listadas em `CORS_ORIGIN` (backend/.env) — necessário porque em produção o site (GitHub Pages) e a API (Render) ficam em domínios diferentes.
+- Conta de cliente obrigatória: desde a v2, `POST /api/orders` (checkout) e `POST /api/credit-leads` (solicitação de crédito) exigem sessão de cliente logado — sem conta, o site manda pra `conta/entrar.html` antes de deixar comprar ou simular.
+- Verificação em duas etapas (2FA) opcional pra clientes: TOTP compatível com Google Authenticator/Authy (implementação própria em `backend/src/totp.js`, sem dependência externa), com códigos de backup de uso único. Ativa/gerencia pelo painel "Minha Conta" > Segurança.
 - Rotas principais da API:
-  - `POST /api/orders` — cria um pedido (usado pelo checkout do site).
-  - `POST /api/credit-leads` — cria uma solicitação de análise de crédito (usado pelo formulário em `index.html`).
+  - `POST /api/orders` — cria um pedido (usado pelo checkout do site; exige cliente logado).
+  - `POST /api/credit-leads` — cria uma solicitação de análise de crédito (usado pelo formulário em `index.html`; exige cliente logado).
   - `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`, `POST /api/auth/change-password`.
+  - `POST /api/customers/register`, `POST /api/customers/login` (retorna `requires2FA` se a conta tiver 2FA ativo), `POST /api/customers/login/2fa`, `POST /api/customers/logout`, `GET /api/customers/me`, `PATCH /api/customers/me`, `POST /api/customers/change-password`.
+  - `POST /api/customers/2fa/setup`, `POST /api/customers/2fa/confirm`, `POST /api/customers/2fa/disable` — protegidas por login de cliente.
   - `GET /api/admin/orders`, `GET /api/admin/orders/:id`, `PATCH /api/admin/orders/:id`, `GET /api/admin/stats` — todas protegidas por login.
   - `GET /api/admin/credit-leads`, `GET /api/admin/credit-leads/:id`, `PATCH /api/admin/credit-leads/:id`, `GET /api/admin/credit-leads/stats` — idem, para as solicitações de crédito.
 

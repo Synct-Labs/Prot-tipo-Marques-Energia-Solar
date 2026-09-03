@@ -2955,6 +2955,42 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
   .order-stepper{ overflow-x: auto; }
 }
 
+/* ---- verificação em duas etapas (Minha Conta > Segurança) ---- */
+.two-fa-status{ display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 16px; }
+.two-fa-status-off{ color: var(--muted); }
+.two-fa-status-off .icon{ color: var(--muted-2); }
+.two-fa-status-on{ color: var(--success); }
+.two-fa-status-on .icon{ color: var(--success); }
+.two-fa-step{ font-size: 0.88rem; color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
+.two-fa-secret{
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  color: var(--white);
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  word-break: break-all;
+}
+.two-fa-code-label input{ max-width: 200px; letter-spacing: 0.1em; }
+.two-fa-backup-codes{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 16px 0;
+}
+.two-fa-backup-code{
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  text-align: center;
+  font-size: 0.92rem;
+  color: var(--white);
+  letter-spacing: 0.03em;
+}
+
 /* =====================================================================
    PRÉVIA DO APP "CONTA DIGITAL MARQUES" (conta-digital-app.html)
    ===================================================================== */

@@ -147,6 +147,69 @@
             </div>
           </form>
         </div>
+
+        <div class="account-card" id="twoFaCard">
+          <h2>Verificação em duas etapas</h2>
+          <p class="account-sub">Peça um código do seu celular toda vez que você entrar na conta — protege mesmo se alguém descobrir sua senha.</p>
+
+          <!-- ---- desativada ---- -->
+          <div id="twoFaOffState">
+            <p class="two-fa-status two-fa-status-off">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              Desativada
+            </p>
+            <button type="button" class="btn btn-outline" id="twoFaStartBtn">Ativar verificação em duas etapas</button>
+          </div>
+
+          <!-- ---- configurando ---- -->
+          <div id="twoFaSetupState" hidden>
+            <div class="account-error" id="twoFaSetupError"></div>
+            <p class="two-fa-step"><strong>1.</strong> Abra um app autenticador (Google Authenticator, Authy, Microsoft Authenticator...). No celular, toque no link abaixo pra adicionar direto; no computador, digite a chave manualmente.</p>
+            <p><a href="#" id="twoFaOtpauthLink" class="btn btn-ghost" target="_blank" rel="noopener">Adicionar ao app autenticador</a></p>
+            <p class="two-fa-secret mono" id="twoFaSecretText"></p>
+            <form id="twoFaConfirmForm">
+              <div class="form-grid">
+                <label class="two-fa-code-label"><strong>2.</strong> Digite o código de 6 dígitos que apareceu no app
+                  <input type="text" id="twoFaConfirmCode" name="code" inputmode="numeric" maxlength="6" required placeholder="000000" autocomplete="one-time-code">
+                </label>
+              </div>
+              <div style="margin-top: 16px; display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-primary" id="twoFaConfirmBtn">Confirmar e ativar</button>
+                <button type="button" class="btn btn-ghost" id="twoFaCancelSetupBtn">Cancelar</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- ---- códigos de backup (mostrados uma única vez) ---- -->
+          <div id="twoFaBackupState" hidden>
+            <div class="account-success show">Verificação em duas etapas ativada.</div>
+            <p class="two-fa-step">Guarde esses códigos de backup num lugar seguro. Cada um funciona <strong>uma única vez</strong>, caso você perca acesso ao app autenticador — eles não vão aparecer de novo.</p>
+            <div class="two-fa-backup-codes" id="twoFaBackupCodesList"></div>
+            <button type="button" class="btn btn-primary" id="twoFaBackupDoneBtn">Já salvei os códigos</button>
+          </div>
+
+          <!-- ---- ativada ---- -->
+          <div id="twoFaOnState" hidden>
+            <p class="two-fa-status two-fa-status-on">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              Ativada
+            </p>
+            <button type="button" class="btn btn-outline" id="twoFaDisableStartBtn">Desativar</button>
+
+            <form id="twoFaDisableForm" hidden style="margin-top: 16px;">
+              <div class="account-error" id="twoFaDisableError"></div>
+              <div class="form-grid">
+                <label>Confirme sua senha pra desativar
+                  <input type="password" id="twoFaDisablePassword" name="password" required autocomplete="current-password">
+                </label>
+              </div>
+              <div style="margin-top: 14px; display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-primary" id="twoFaDisableConfirmBtn">Desativar verificação em duas etapas</button>
+                <button type="button" class="btn btn-ghost" id="twoFaDisableCancelBtn">Cancelar</button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -329,10 +392,103 @@ document.getElementById("senhaForm").addEventListener("submit", async (e) => {
 
 document.getElementById("logoutBtn").addEventListener("click", () => CONTA.logout());
 
+/* ---- verificação em duas etapas ---- */
+function showTwoFaState(state) {
+  document.getElementById("twoFaOffState").hidden = state !== "off";
+  document.getElementById("twoFaSetupState").hidden = state !== "setup";
+  document.getElementById("twoFaBackupState").hidden = state !== "backup";
+  document.getElementById("twoFaOnState").hidden = state !== "on";
+}
+
+function renderTwoFaStatus() {
+  showTwoFaState(currentCustomer.twoFactorEnabled ? "on" : "off");
+}
+
+document.getElementById("twoFaStartBtn").addEventListener("click", async () => {
+  const res = await CONTA.apiPost("/api/customers/2fa/setup");
+  if (!res.ok) return;
+  document.getElementById("twoFaSecretText").textContent = (res.secret.match(/.{1,4}/g) || [res.secret]).join(" ");
+  document.getElementById("twoFaOtpauthLink").href = res.otpauthUri;
+  showTwoFaState("setup");
+});
+
+document.getElementById("twoFaConfirmForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("twoFaSetupError");
+  const btn = document.getElementById("twoFaConfirmBtn");
+  errorBox.classList.remove("show");
+  btn.disabled = true;
+  btn.textContent = "Confirmando...";
+
+  try {
+    const code = document.getElementById("twoFaConfirmCode").value.trim();
+    const res = await CONTA.apiPost("/api/customers/2fa/confirm", { code });
+    if (!res.ok) {
+      errorBox.textContent = res.error || "Código inválido.";
+      errorBox.classList.add("show");
+      return;
+    }
+    currentCustomer.twoFactorEnabled = true;
+    document.getElementById("twoFaConfirmForm").reset();
+    document.getElementById("twoFaBackupCodesList").innerHTML = res.backupCodes
+      .map((c) => `<span class="two-fa-backup-code mono">${c}</span>`)
+      .join("");
+    showTwoFaState("backup");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Confirmar e ativar";
+  }
+});
+
+document.getElementById("twoFaCancelSetupBtn").addEventListener("click", () => {
+  document.getElementById("twoFaConfirmForm").reset();
+  showTwoFaState("off");
+});
+
+document.getElementById("twoFaBackupDoneBtn").addEventListener("click", () => showTwoFaState("on"));
+
+document.getElementById("twoFaDisableStartBtn").addEventListener("click", () => {
+  document.getElementById("twoFaDisableForm").hidden = false;
+});
+
+document.getElementById("twoFaDisableCancelBtn").addEventListener("click", () => {
+  const form = document.getElementById("twoFaDisableForm");
+  form.hidden = true;
+  form.reset();
+});
+
+document.getElementById("twoFaDisableForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("twoFaDisableError");
+  const btn = document.getElementById("twoFaDisableConfirmBtn");
+  errorBox.classList.remove("show");
+  btn.disabled = true;
+  btn.textContent = "Desativando...";
+
+  try {
+    const password = document.getElementById("twoFaDisablePassword").value;
+    const res = await CONTA.apiPost("/api/customers/2fa/disable", { password });
+    if (!res.ok) {
+      errorBox.textContent = res.error || "Não foi possível desativar.";
+      errorBox.classList.add("show");
+      return;
+    }
+    currentCustomer.twoFactorEnabled = false;
+    const form = document.getElementById("twoFaDisableForm");
+    form.hidden = true;
+    form.reset();
+    showTwoFaState("off");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Desativar verificação em duas etapas";
+  }
+});
+
 (async function init() {
   currentCustomer = await CONTA.requireAuth();
   if (!currentCustomer) return;
   fillPerfilForm(currentCustomer);
+  renderTwoFaStatus();
   loadOrders();
   loadLeads();
 })();

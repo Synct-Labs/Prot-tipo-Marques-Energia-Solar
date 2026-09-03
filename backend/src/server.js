@@ -189,8 +189,11 @@ async function handleApi(req, res, pathname) {
     return sendJSON(res, 200, { ok: true });
   }
 
-  // ---- PEDIDOS (checkout público) ----
+  // ---- PEDIDOS (exige conta logada — ver requireCustomer) ----
   if (pathname === "/api/orders" && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+
     const body = await parseJSONBody(req);
     const error = validateOrderPayload(body);
     if (error) return sendJSON(res, 400, { ok: false, error });
@@ -201,13 +204,15 @@ async function handleApi(req, res, pathname) {
        - Frete: calcular valor real via CEP antes de gravar o pedido.
        - Pagamento: ver PONTO DE INTEGRAÇÃO DE PAGAMENTO em app.js.
        =================================================================== */
-    const { customer } = await getCurrentCustomer(req);
-    const { id, orderNumber } = await orders.createOrder(body, customer ? customer.id : null);
+    const { id, orderNumber } = await orders.createOrder(body, customer.id);
     return sendJSON(res, 201, { ok: true, id, orderNumber });
   }
 
-  // ---- SOLICITAÇÕES DE ANÁLISE DE CRÉDITO (formulário público) ----
+  // ---- SOLICITAÇÕES DE ANÁLISE DE CRÉDITO (exige conta logada) ----
   if (pathname === "/api/credit-leads" && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+
     const body = await parseJSONBody(req);
     const missing = creditLeads.validateLeadPayload(body);
     if (missing.length) {
@@ -222,8 +227,7 @@ async function handleApi(req, res, pathname) {
        - E-mail/WhatsApp: notificar equipe comercial após nova solicitação.
        - Bureau de crédito: consulta automática de score, se aplicável.
        =================================================================== */
-    const { customer } = await getCurrentCustomer(req);
-    const { id, leadNumber } = await creditLeads.createLead(body, customer ? customer.id : null);
+    const { id, leadNumber } = await creditLeads.createLead(body, customer.id);
     return sendJSON(res, 201, { ok: true, id, leadNumber });
   }
 
@@ -364,6 +368,13 @@ async function handleApi(req, res, pathname) {
     }
 
     auth.clearAttempts(ip);
+
+    if (record.two_factor_enabled) {
+      // Login ainda não fecha: falta o código de verificação em duas etapas.
+      const pendingToken = customers.createPending2FALogin(record.id);
+      return sendJSON(res, 200, { ok: true, requires2FA: true, pendingToken });
+    }
+
     const { token, expiresAt } = await customers.createSession(record.id);
     return sendJSON(
       res,
@@ -371,6 +382,69 @@ async function handleApi(req, res, pathname) {
       { ok: true, customer: customers.toPublic(record) },
       { "Set-Cookie": auth.buildSessionCookie(token, expiresAt, customers.SESSION_COOKIE_NAME) }
     );
+  }
+
+  if (pathname === "/api/customers/login/2fa" && req.method === "POST") {
+    if (auth.isRateLimited(ip)) {
+      return sendJSON(res, 429, { ok: false, error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." });
+    }
+    const body = await parseJSONBody(req);
+    const customerId = customers.consumePending2FALogin(String(body.pendingToken || ""));
+    if (!customerId) {
+      return sendJSON(res, 401, {
+        ok: false,
+        error: "Sessão de verificação expirada. Faça login novamente.",
+        expired: true,
+      });
+    }
+
+    const valid = await customers.verify2FACode(customerId, String(body.code || "").trim());
+    if (!valid) {
+      auth.registerFailedAttempt(ip);
+      // Gera um novo token pendente pra permitir tentar de novo sem repetir a senha.
+      const retryToken = customers.createPending2FALogin(customerId);
+      return sendJSON(res, 401, { ok: false, error: "Código inválido.", pendingToken: retryToken });
+    }
+
+    auth.clearAttempts(ip);
+    const record = await customers.findById(customerId);
+    const { token, expiresAt } = await customers.createSession(customerId);
+    return sendJSON(
+      res,
+      200,
+      { ok: true, customer: customers.toPublic(record) },
+      { "Set-Cookie": auth.buildSessionCookie(token, expiresAt, customers.SESSION_COOKIE_NAME) }
+    );
+  }
+
+  // ---- CLIENTES: VERIFICAÇÃO EM DUAS ETAPAS (gerenciar, precisa estar logado) ----
+  if (pathname === "/api/customers/2fa/setup" && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const { secret, otpauthUri } = await customers.start2FASetup(customer.id, customer.email);
+    return sendJSON(res, 200, { ok: true, secret, otpauthUri });
+  }
+
+  if (pathname === "/api/customers/2fa/confirm" && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const body = await parseJSONBody(req);
+    const backupCodes = await customers.confirm2FA(customer.id, String(body.code || "").trim());
+    if (!backupCodes) {
+      return sendJSON(res, 400, { ok: false, error: "Código inválido. Confira o app autenticador e tente de novo." });
+    }
+    return sendJSON(res, 200, { ok: true, backupCodes });
+  }
+
+  if (pathname === "/api/customers/2fa/disable" && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const body = await parseJSONBody(req);
+    if (!body.password || !auth.verifyPassword(body.password, customer.password_hash)) {
+      return sendJSON(res, 401, { ok: false, error: "Senha incorreta." });
+    }
+    await customers.disable2FA(customer.id);
+    return sendJSON(res, 200, { ok: true });
   }
 
   if (pathname === "/api/customers/logout" && req.method === "POST") {
