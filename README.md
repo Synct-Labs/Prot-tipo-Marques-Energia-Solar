@@ -73,7 +73,11 @@ A calculadora de dimensionamento e o configurador de kit vivem os dois em `loja.
 - Autenticação de administrador: sessão por cookie `HttpOnly` (token opaco guardado no banco, senha com hash `scrypt`). Só existe um administrador por padrão (criado a partir do `.env` na primeira execução); é possível trocar a senha pelo próprio painel.
 - CORS: liberado apenas para as origens listadas em `CORS_ORIGIN` (backend/.env) — necessário porque em produção o site (GitHub Pages) e a API (Render) ficam em domínios diferentes.
 - Conta de cliente obrigatória: desde a v2, `POST /api/orders` (checkout) e `POST /api/credit-leads` (solicitação de crédito) exigem sessão de cliente logado — sem conta, o site manda pra `conta/entrar.html` antes de deixar comprar ou simular.
-- Verificação em duas etapas (2FA) opcional pra clientes: TOTP compatível com Google Authenticator/Authy (implementação própria em `backend/src/totp.js`, sem dependência externa), com códigos de backup de uso único. Ativa/gerencia pelo painel "Minha Conta" > Segurança.
+- Verificação em duas etapas (2FA) opcional pra clientes, com dois métodos à escolha:
+  - **App autenticador** — TOTP compatível com Google Authenticator/Authy/Microsoft Authenticator (implementação própria em `backend/src/totp.js`, sem dependência externa, validada contra o vetor de teste oficial do RFC 6238).
+  - **E-mail** — código de 6 dígitos enviado por e-mail a cada login (`backend/src/mailer.js`, via API da [Resend](https://resend.com); ver "Configurar envio de e-mail" abaixo).
+  - Nos dois casos, 5 códigos de backup de uso único são gerados na ativação. Ativa/gerencia pelo painel "Minha Conta" > Segurança.
+  - WhatsApp não é uma opção: um link `wa.me` só abre uma conversa pra a pessoa mandar mensagem, não permite o servidor mandar uma automática — isso exigiria a API oficial do WhatsApp Business (conta comercial paga, via Meta ou um parceiro tipo Twilio/Zenvia).
 - Rotas principais da API:
   - `POST /api/orders` — cria um pedido (usado pelo checkout do site; exige cliente logado).
   - `POST /api/credit-leads` — cria uma solicitação de análise de crédito (usado pelo formulário em `index.html`; exige cliente logado).
@@ -82,6 +86,17 @@ A calculadora de dimensionamento e o configurador de kit vivem os dois em `loja.
   - `POST /api/customers/2fa/setup`, `POST /api/customers/2fa/confirm`, `POST /api/customers/2fa/disable` — protegidas por login de cliente.
   - `GET /api/admin/orders`, `GET /api/admin/orders/:id`, `PATCH /api/admin/orders/:id`, `GET /api/admin/stats` — todas protegidas por login.
   - `GET /api/admin/credit-leads`, `GET /api/admin/credit-leads/:id`, `PATCH /api/admin/credit-leads/:id`, `GET /api/admin/credit-leads/stats` — idem, para as solicitações de crédito.
+
+### Configurar envio de e-mail (2FA por e-mail)
+
+Sem isso configurado, o 2FA por e-mail continua funcionando em **modo de teste**: o código de verificação aparece no log do servidor (terminal, ou "Logs" no painel do Render) em vez de chegar numa caixa de entrada de verdade. Bom pra testar o fluxo; não serve pra cliente real usar.
+
+1. Crie uma conta grátis em [resend.com](https://resend.com) (o plano grátis cobre 100 e-mails/dia, 3.000/mês).
+2. No painel da Resend, vá em **API Keys** → **Create API Key** e copie a chave gerada.
+3. Em `backend/.env` (local) ou nas variáveis de ambiente do serviço no Render (produção), defina:
+   - `RESEND_API_KEY` — a chave copiada no passo 2.
+   - `MAIL_FROM` — quem aparece como remetente. Pra testar sem configurar mais nada, deixe o padrão `Marques <onboarding@resend.dev>` — mas repare que esse domínio de teste da Resend **só envia pro e-mail com que você criou a conta**. Pra mandar pra qualquer cliente de verdade, verifique um domínio próprio em **Domains** no painel da Resend e troque para algo como `Marques <verificacao@marquesenergiasolar.com.br>`.
+4. Reinicie o backend (local: pare e rode `npm start` de novo; Render: redeploy automático ao salvar a variável).
 
 ## Deploy em produção (GitHub Pages + Render + Supabase)
 

@@ -152,24 +152,43 @@
           <h2>Verificação em duas etapas</h2>
           <p class="account-sub">Peça um código do seu celular toda vez que você entrar na conta — protege mesmo se alguém descobrir sua senha.</p>
 
-          <!-- ---- desativada ---- -->
+          <!-- ---- desativada: escolher método ---- -->
           <div id="twoFaOffState">
             <p class="two-fa-status two-fa-status-off">
               <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
               Desativada
             </p>
-            <button type="button" class="btn btn-outline" id="twoFaStartBtn">Ativar verificação em duas etapas</button>
+            <p class="two-fa-step">Escolha como você quer receber o código a cada login:</p>
+            <div class="two-fa-method-choices">
+              <button type="button" class="two-fa-method-btn" id="twoFaStartAppBtn" data-method="app">
+                <svg class="icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                <span>App autenticador</span>
+                <small>Google Authenticator, Authy...</small>
+              </button>
+              <button type="button" class="two-fa-method-btn" id="twoFaStartEmailBtn" data-method="email">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg>
+                <span>E-mail</span>
+                <small>Código enviado pro seu e-mail cadastrado</small>
+              </button>
+            </div>
           </div>
 
           <!-- ---- configurando ---- -->
           <div id="twoFaSetupState" hidden>
             <div class="account-error" id="twoFaSetupError"></div>
-            <p class="two-fa-step"><strong>1.</strong> Abra um app autenticador (Google Authenticator, Authy, Microsoft Authenticator...). No celular, toque no link abaixo pra adicionar direto; no computador, digite a chave manualmente.</p>
-            <p><a href="#" id="twoFaOtpauthLink" class="btn btn-ghost" target="_blank" rel="noopener">Adicionar ao app autenticador</a></p>
-            <p class="two-fa-secret mono" id="twoFaSecretText"></p>
+
+            <div id="twoFaSetupAppInfo" hidden>
+              <p class="two-fa-step"><strong>1.</strong> Abra um app autenticador (Google Authenticator, Authy, Microsoft Authenticator...). No celular, toque no link abaixo pra adicionar direto; no computador, digite a chave manualmente.</p>
+              <p><a href="#" id="twoFaOtpauthLink" class="btn btn-ghost" target="_blank" rel="noopener">Adicionar ao app autenticador</a></p>
+              <p class="two-fa-secret mono" id="twoFaSecretText"></p>
+            </div>
+            <div id="twoFaSetupEmailInfo" hidden>
+              <p class="two-fa-step"><strong>1.</strong> Mandamos um código de 6 dígitos pro seu e-mail (<strong id="twoFaSetupEmailAddress"></strong>). Pode levar alguns minutos pra chegar.</p>
+            </div>
+
             <form id="twoFaConfirmForm">
               <div class="form-grid">
-                <label class="two-fa-code-label"><strong>2.</strong> Digite o código de 6 dígitos que apareceu no app
+                <label class="two-fa-code-label"><strong>2.</strong> <span id="twoFaConfirmCodeLabel">Digite o código de 6 dígitos que apareceu no app</span>
                   <input type="text" id="twoFaConfirmCode" name="code" inputmode="numeric" maxlength="6" required placeholder="000000" autocomplete="one-time-code">
                 </label>
               </div>
@@ -192,7 +211,7 @@
           <div id="twoFaOnState" hidden>
             <p class="two-fa-status two-fa-status-on">
               <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              Ativada
+              <span id="twoFaOnLabel">Ativada</span>
             </p>
             <button type="button" class="btn btn-outline" id="twoFaDisableStartBtn">Desativar</button>
 
@@ -402,15 +421,35 @@ function showTwoFaState(state) {
 
 function renderTwoFaStatus() {
   showTwoFaState(currentCustomer.twoFactorEnabled ? "on" : "off");
+  if (currentCustomer.twoFactorEnabled) {
+    document.getElementById("twoFaOnLabel").textContent =
+      currentCustomer.twoFactorMethod === "email" ? "Ativada por e-mail" : "Ativada por app autenticador";
+  }
 }
 
-document.getElementById("twoFaStartBtn").addEventListener("click", async () => {
-  const res = await CONTA.apiPost("/api/customers/2fa/setup");
+let pendingTwoFaMethod = "app";
+
+async function startTwoFaSetup(method) {
+  pendingTwoFaMethod = method;
+  const res = await CONTA.apiPost("/api/customers/2fa/setup", { method });
   if (!res.ok) return;
-  document.getElementById("twoFaSecretText").textContent = (res.secret.match(/.{1,4}/g) || [res.secret]).join(" ");
-  document.getElementById("twoFaOtpauthLink").href = res.otpauthUri;
+
+  document.getElementById("twoFaSetupAppInfo").hidden = method !== "app";
+  document.getElementById("twoFaSetupEmailInfo").hidden = method !== "email";
+  document.getElementById("twoFaConfirmCodeLabel").textContent =
+    method === "email" ? "Digite o código de 6 dígitos que chegou no seu e-mail" : "Digite o código de 6 dígitos que apareceu no app";
+
+  if (method === "app") {
+    document.getElementById("twoFaSecretText").textContent = (res.secret.match(/.{1,4}/g) || [res.secret]).join(" ");
+    document.getElementById("twoFaOtpauthLink").href = res.otpauthUri;
+  } else {
+    document.getElementById("twoFaSetupEmailAddress").textContent = currentCustomer.email;
+  }
   showTwoFaState("setup");
-});
+}
+
+document.getElementById("twoFaStartAppBtn").addEventListener("click", () => startTwoFaSetup("app"));
+document.getElementById("twoFaStartEmailBtn").addEventListener("click", () => startTwoFaSetup("email"));
 
 document.getElementById("twoFaConfirmForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -422,13 +461,14 @@ document.getElementById("twoFaConfirmForm").addEventListener("submit", async (e)
 
   try {
     const code = document.getElementById("twoFaConfirmCode").value.trim();
-    const res = await CONTA.apiPost("/api/customers/2fa/confirm", { code });
+    const res = await CONTA.apiPost("/api/customers/2fa/confirm", { method: pendingTwoFaMethod, code });
     if (!res.ok) {
       errorBox.textContent = res.error || "Código inválido.";
       errorBox.classList.add("show");
       return;
     }
     currentCustomer.twoFactorEnabled = true;
+    currentCustomer.twoFactorMethod = pendingTwoFaMethod;
     document.getElementById("twoFaConfirmForm").reset();
     document.getElementById("twoFaBackupCodesList").innerHTML = res.backupCodes
       .map((c) => `<span class="two-fa-backup-code mono">${c}</span>`)
@@ -445,7 +485,7 @@ document.getElementById("twoFaCancelSetupBtn").addEventListener("click", () => {
   showTwoFaState("off");
 });
 
-document.getElementById("twoFaBackupDoneBtn").addEventListener("click", () => showTwoFaState("on"));
+document.getElementById("twoFaBackupDoneBtn").addEventListener("click", () => renderTwoFaStatus());
 
 document.getElementById("twoFaDisableStartBtn").addEventListener("click", () => {
   document.getElementById("twoFaDisableForm").hidden = false;

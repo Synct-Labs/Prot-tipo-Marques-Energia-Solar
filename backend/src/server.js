@@ -371,8 +371,9 @@ async function handleApi(req, res, pathname) {
 
     if (record.two_factor_enabled) {
       // Login ainda não fecha: falta o código de verificação em duas etapas.
-      const pendingToken = customers.createPending2FALogin(record.id);
-      return sendJSON(res, 200, { ok: true, requires2FA: true, pendingToken });
+      // Se o método for "email", isso já dispara o envio do código agora.
+      const pendingToken = await customers.createPending2FALogin(record.id, record.two_factor_method, record.email);
+      return sendJSON(res, 200, { ok: true, requires2FA: true, pendingToken, method: record.two_factor_method });
     }
 
     const { token, expiresAt } = await customers.createSession(record.id);
@@ -389,8 +390,9 @@ async function handleApi(req, res, pathname) {
       return sendJSON(res, 429, { ok: false, error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." });
     }
     const body = await parseJSONBody(req);
-    const customerId = customers.consumePending2FALogin(String(body.pendingToken || ""));
-    if (!customerId) {
+    const pendingToken = String(body.pendingToken || "");
+    const pending = customers.peekPending2FALogin(pendingToken);
+    if (!pending) {
       return sendJSON(res, 401, {
         ok: false,
         error: "Sessão de verificação expirada. Faça login novamente.",
@@ -398,17 +400,18 @@ async function handleApi(req, res, pathname) {
       });
     }
 
-    const valid = await customers.verify2FACode(customerId, String(body.code || "").trim());
+    const valid = await customers.verify2FACode(pending, String(body.code || "").trim());
     if (!valid) {
       auth.registerFailedAttempt(ip);
-      // Gera um novo token pendente pra permitir tentar de novo sem repetir a senha.
-      const retryToken = customers.createPending2FALogin(customerId);
-      return sendJSON(res, 401, { ok: false, error: "Código inválido.", pendingToken: retryToken });
+      // Mantém o mesmo token pendente (e, se for por e-mail, o mesmo código)
+      // pra poder tentar de novo sem precisar reenviar e-mail nem repetir a senha.
+      return sendJSON(res, 401, { ok: false, error: "Código inválido.", pendingToken });
     }
 
+    customers.consumePending2FALogin(pendingToken);
     auth.clearAttempts(ip);
-    const record = await customers.findById(customerId);
-    const { token, expiresAt } = await customers.createSession(customerId);
+    const record = await customers.findById(pending.customerId);
+    const { token, expiresAt } = await customers.createSession(pending.customerId);
     return sendJSON(
       res,
       200,
@@ -421,17 +424,20 @@ async function handleApi(req, res, pathname) {
   if (pathname === "/api/customers/2fa/setup" && req.method === "POST") {
     const customer = await requireCustomer(req, res);
     if (!customer) return;
-    const { secret, otpauthUri } = await customers.start2FASetup(customer.id, customer.email);
-    return sendJSON(res, 200, { ok: true, secret, otpauthUri });
+    const body = await parseJSONBody(req);
+    const method = body.method === "email" ? "email" : "app";
+    const result = await customers.start2FASetup(customer.id, customer.email, method);
+    return sendJSON(res, 200, { ok: true, ...result });
   }
 
   if (pathname === "/api/customers/2fa/confirm" && req.method === "POST") {
     const customer = await requireCustomer(req, res);
     if (!customer) return;
     const body = await parseJSONBody(req);
-    const backupCodes = await customers.confirm2FA(customer.id, String(body.code || "").trim());
+    const method = body.method === "email" ? "email" : "app";
+    const backupCodes = await customers.confirm2FA(customer.id, method, String(body.code || "").trim());
     if (!backupCodes) {
-      return sendJSON(res, 400, { ok: false, error: "Código inválido. Confira o app autenticador e tente de novo." });
+      return sendJSON(res, 400, { ok: false, error: "Código inválido. Confira e tente de novo." });
     }
     return sendJSON(res, 200, { ok: true, backupCodes });
   }

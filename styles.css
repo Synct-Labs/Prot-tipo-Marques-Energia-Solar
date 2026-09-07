@@ -2974,6 +2974,28 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
   word-break: break-all;
 }
 .two-fa-code-label input{ max-width: 200px; letter-spacing: 0.1em; }
+.two-fa-method-choices{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.two-fa-method-btn{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 22px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-alt);
+  color: var(--white);
+  text-align: center;
+}
+.two-fa-method-btn:hover{ border-color: var(--border-orange); background: rgba(247,148,30,0.06); }
+.two-fa-method-btn .icon{ color: var(--orange); width: 28px; height: 28px; }
+.two-fa-method-btn span{ font-weight: 600; font-size: 0.92rem; }
+.two-fa-method-btn small{ color: var(--muted-2); font-size: 0.74rem; }
 .two-fa-backup-codes{
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));

@@ -58,8 +58,10 @@ async function initSchema() {
       nome                    TEXT NOT NULL,
       cpf                     TEXT,
       telefone                TEXT,
-      -- verificação em duas etapas (TOTP, tipo Google Authenticator)
+      -- verificação em duas etapas: por app autenticador (TOTP) ou por
+      -- código enviado por e-mail — 'app' ou 'email' em two_factor_method
       two_factor_enabled      BOOLEAN NOT NULL DEFAULT false,
+      two_factor_method       TEXT,
       two_factor_secret       TEXT,
       two_factor_backup_codes TEXT,
       created_at              TEXT NOT NULL,
@@ -145,6 +147,7 @@ async function initSchema() {
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id);
 
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS two_factor_method TEXT;
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS two_factor_secret TEXT;
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS two_factor_backup_codes TEXT;
   `);

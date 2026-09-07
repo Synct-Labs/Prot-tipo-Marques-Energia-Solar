@@ -12,6 +12,7 @@ const { pool } = require("./db");
 const config = require("./config");
 const auth = require("./auth");
 const totp = require("./totp");
+const mailer = require("./mailer");
 
 const SESSION_COOKIE_NAME = "mes_customer_session";
 
@@ -36,6 +37,7 @@ function toPublic(row) {
     cpf: row.cpf,
     telefone: row.telefone,
     twoFactorEnabled: !!row.two_factor_enabled,
+    twoFactorMethod: row.two_factor_method || null,
   };
 }
 
@@ -103,25 +105,56 @@ async function getCustomerBySession(token) {
    ====================================================================== */
 
 // Gera um novo segredo e guarda (ainda não ativa — só vira "ativado" depois
-// de confirmar com um código válido em confirm2FA).
-async function start2FASetup(customerId, email) {
-  const secret = totp.generateSecret();
-  await pool.query("UPDATE customers SET two_factor_secret = $1 WHERE id = $2", [secret, customerId]);
-  return { secret, otpauthUri: totp.generateOtpauthUri(secret, email) };
+// de confirmar com um código válido em confirm2FA). method: "app" ou "email".
+function generateEmailCode() {
+  return String(crypto.randomInt(0, 1000000)).padStart(6, "0");
 }
 
-// Confirma o setup com o primeiro código digitado; se bater, ativa o 2FA
-// e gera os códigos de backup (retornados em texto puro só essa vez).
-async function confirm2FA(customerId, code) {
-  const { rows } = await pool.query("SELECT two_factor_secret FROM customers WHERE id = $1", [customerId]);
-  const secret = rows[0] && rows[0].two_factor_secret;
-  if (!secret || !totp.verifyToken(secret, code)) return null;
+// Código de confirmação de setup por e-mail: guardado em memória (curto
+// prazo, poucos minutos), não no banco — mesmo raciocínio do login pendente.
+const pendingEmailSetups = new Map(); // customerId -> { codeHash, expiresAt }
+const EMAIL_CODE_TTL_MS = 10 * 60 * 1000;
+
+async function start2FASetup(customerId, email, method) {
+  if (method === "email") {
+    const code = generateEmailCode();
+    pendingEmailSetups.set(customerId, { codeHash: auth.hashPassword(code), expiresAt: Date.now() + EMAIL_CODE_TTL_MS });
+    await mailer.sendEmail({
+      to: email,
+      subject: "Seu código de verificação Marques",
+      text: `Seu código de verificação é: ${code}\nEle expira em 10 minutos.`,
+      html: mailer.verificationEmailHTML(code),
+    });
+    return { method: "email" };
+  }
+
+  const secret = totp.generateSecret();
+  await pool.query("UPDATE customers SET two_factor_secret = $1 WHERE id = $2", [secret, customerId]);
+  return { method: "app", secret, otpauthUri: totp.generateOtpauthUri(secret, email) };
+}
+
+// Confirma o setup com o primeiro código (do app ou do e-mail); se bater,
+// ativa o 2FA e gera os códigos de backup (retornados em texto puro só
+// essa vez — funcionam pra entrar independente do método escolhido).
+async function confirm2FA(customerId, method, code) {
+  let valid = false;
+
+  if (method === "email") {
+    const pending = pendingEmailSetups.get(customerId);
+    valid = !!pending && Date.now() <= pending.expiresAt && auth.verifyPassword(code, pending.codeHash);
+    if (valid) pendingEmailSetups.delete(customerId);
+  } else {
+    const { rows } = await pool.query("SELECT two_factor_secret FROM customers WHERE id = $1", [customerId]);
+    const secret = rows[0] && rows[0].two_factor_secret;
+    valid = !!secret && totp.verifyToken(secret, code);
+  }
+  if (!valid) return null;
 
   const backupCodes = totp.generateBackupCodes();
   const hashed = backupCodes.map((c) => auth.hashPassword(c));
   await pool.query(
-    "UPDATE customers SET two_factor_enabled = true, two_factor_backup_codes = $1 WHERE id = $2",
-    [JSON.stringify(hashed), customerId]
+    "UPDATE customers SET two_factor_enabled = true, two_factor_method = $1, two_factor_backup_codes = $2 WHERE id = $3",
+    [method, JSON.stringify(hashed), customerId]
   );
   return backupCodes;
 }
@@ -129,23 +162,30 @@ async function confirm2FA(customerId, code) {
 async function disable2FA(customerId) {
   await pool.query(
     `UPDATE customers
-     SET two_factor_enabled = false, two_factor_secret = NULL, two_factor_backup_codes = NULL
+     SET two_factor_enabled = false, two_factor_method = NULL, two_factor_secret = NULL, two_factor_backup_codes = NULL
      WHERE id = $1`,
     [customerId]
   );
 }
 
-// Aceita tanto o código de 6 dígitos do app quanto um código de backup
-// (uso único — some da lista assim que usado).
-async function verify2FACode(customerId, code) {
+// Aceita o código do app (TOTP), o código enviado por e-mail (guardado no
+// próprio login pendente — ver mais abaixo) ou um código de backup (uso
+// único, funciona pra qualquer método).
+async function verify2FACode(pendingEntry, code) {
+  const customerId = pendingEntry.customerId;
   const { rows } = await pool.query(
-    "SELECT two_factor_secret, two_factor_backup_codes FROM customers WHERE id = $1",
+    "SELECT two_factor_method, two_factor_secret, two_factor_backup_codes FROM customers WHERE id = $1",
     [customerId]
   );
   const row = rows[0];
   if (!row) return false;
 
-  if (row.two_factor_secret && totp.verifyToken(row.two_factor_secret, code)) return true;
+  if (row.two_factor_method === "app" && row.two_factor_secret && totp.verifyToken(row.two_factor_secret, code)) {
+    return true;
+  }
+  if (row.two_factor_method === "email" && pendingEntry.emailCode && pendingEntry.emailCode === String(code).trim()) {
+    return true;
+  }
 
   if (row.two_factor_backup_codes) {
     const hashes = JSON.parse(row.two_factor_backup_codes);
@@ -166,22 +206,46 @@ async function verify2FACode(customerId, code) {
    Depois de confirmar e-mail/senha de uma conta com 2FA ativo, o login
    fica "pendente" até o código ser digitado. Guardado em memória (não
    no banco) porque é uma janela curta (5 min) — se o servidor reiniciar
-   nesse meio-tempo, a pessoa só refaz o login, sem problema. */
-const pending2FALogins = new Map(); // token -> { customerId, expiresAt }
+   nesse meio-tempo, a pessoa só refaz o login, sem problema.
+   Pra método "email", o próprio código gerado fica aqui junto (não seria
+   prático reenviar e-mail a cada tentativa errada de digitar o código). */
+const pending2FALogins = new Map(); // token -> { customerId, expiresAt, emailCode? }
 const PENDING_2FA_TTL_MS = 5 * 60 * 1000;
 
-function createPending2FALogin(customerId) {
+async function createPending2FALogin(customerId, method, email) {
   const token = crypto.randomBytes(24).toString("hex");
-  pending2FALogins.set(token, { customerId, expiresAt: Date.now() + PENDING_2FA_TTL_MS });
+  const entry = { customerId, expiresAt: Date.now() + PENDING_2FA_TTL_MS };
+
+  if (method === "email") {
+    entry.emailCode = generateEmailCode();
+    await mailer.sendEmail({
+      to: email,
+      subject: "Seu código de login Marques",
+      text: `Seu código de login é: ${entry.emailCode}\nEle expira em 5 minutos.`,
+      html: mailer.verificationEmailHTML(entry.emailCode),
+    });
+  }
+
+  pending2FALogins.set(token, entry);
   return token;
 }
 
-function consumePending2FALogin(token) {
+// Não remove no simples "espiar" — só quando o código bate (consumePending2FALogin),
+// pra permitir tentar de novo sem precisar reenviar e-mail a cada erro.
+function peekPending2FALogin(token) {
   const entry = pending2FALogins.get(token);
   if (!entry) return null;
-  pending2FALogins.delete(token);
-  if (Date.now() > entry.expiresAt) return null;
-  return entry.customerId;
+  if (Date.now() > entry.expiresAt) {
+    pending2FALogins.delete(token);
+    return null;
+  }
+  return entry;
+}
+
+function consumePending2FALogin(token) {
+  const entry = peekPending2FALogin(token);
+  if (entry) pending2FALogins.delete(token);
+  return entry;
 }
 
 module.exports = {
@@ -200,5 +264,6 @@ module.exports = {
   disable2FA,
   verify2FACode,
   createPending2FALogin,
+  peekPending2FALogin,
   consumePending2FALogin,
 };
