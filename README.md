@@ -73,14 +73,17 @@ A calculadora de dimensionamento e o configurador de kit vivem os dois em `loja.
 - Autenticação de administrador: sessão por cookie `HttpOnly` (token opaco guardado no banco, senha com hash `scrypt`). Só existe um administrador por padrão (criado a partir do `.env` na primeira execução); é possível trocar a senha pelo próprio painel.
 - CORS: liberado apenas para as origens listadas em `CORS_ORIGIN` (backend/.env) — necessário porque em produção o site (GitHub Pages) e a API (Render) ficam em domínios diferentes.
 - Conta de cliente obrigatória: desde a v2, `POST /api/orders` (checkout) e `POST /api/credit-leads` (solicitação de crédito) exigem sessão de cliente logado — sem conta, o site manda pra `conta/entrar.html` antes de deixar comprar ou simular.
-- Verificação em duas etapas (2FA) opcional pra clientes, por **e-mail**: código de 6 dígitos enviado a cada login (`backend/src/mailer.js`, via API da [Resend](https://resend.com); ver "Configurar envio de e-mail" abaixo). 5 códigos de backup de uso único são gerados na ativação. Ativa/gerencia pelo painel "Minha Conta" > Segurança.
+- Verificação em duas etapas (2FA) opcional pra clientes:
+  - **Ativação sempre por e-mail** — código de 6 dígitos (`backend/src/mailer.js`, via API da [Resend](https://resend.com); ver "Configurar envio de e-mail" abaixo), pra provar que a pessoa tem acesso à caixa de entrada antes de ligar qualquer coisa.
+  - Depois de ativa, dá pra **trocar pro app autenticador** (TOTP compatível com Google Authenticator/Authy — `backend/src/totp.js`, implementação própria, sem dependência externa, validada contra o vetor de teste oficial do RFC 6238) em Minha Conta > Segurança, ou voltar pro e-mail quando quiser — cada troca pede confirmação pelo método de destino.
+  - 5 códigos de backup de uso único são gerados na ativação, funcionam com qualquer método.
   - WhatsApp não é uma opção: um link `wa.me` só abre uma conversa pra a pessoa mandar mensagem, não permite o servidor mandar uma automática — isso exigiria a API oficial do WhatsApp Business (conta comercial paga, via Meta ou um parceiro tipo Twilio/Zenvia).
 - Rotas principais da API:
   - `POST /api/orders` — cria um pedido (usado pelo checkout do site; exige cliente logado).
   - `POST /api/credit-leads` — cria uma solicitação de análise de crédito (usado pelo formulário em `index.html`; exige cliente logado).
   - `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`, `POST /api/auth/change-password`.
-  - `POST /api/customers/register`, `POST /api/customers/login` (retorna `requires2FA` se a conta tiver 2FA ativo), `POST /api/customers/login/2fa`, `POST /api/customers/logout`, `GET /api/customers/me`, `PATCH /api/customers/me`, `POST /api/customers/change-password`.
-  - `POST /api/customers/2fa/setup`, `POST /api/customers/2fa/confirm`, `POST /api/customers/2fa/disable` — protegidas por login de cliente.
+  - `POST /api/customers/register`, `POST /api/customers/login` (retorna `requires2FA` + `method` se a conta tiver 2FA ativo), `POST /api/customers/login/2fa`, `POST /api/customers/logout`, `GET /api/customers/me`, `PATCH /api/customers/me`, `POST /api/customers/change-password`.
+  - `POST /api/customers/2fa/setup`, `POST /api/customers/2fa/confirm` (ativação inicial, sempre e-mail), `POST /api/customers/2fa/switch/start`, `POST /api/customers/2fa/switch/confirm` (trocar de método), `POST /api/customers/2fa/disable` — todas protegidas por login de cliente.
   - `GET /api/admin/orders`, `GET /api/admin/orders/:id`, `PATCH /api/admin/orders/:id`, `GET /api/admin/stats` — todas protegidas por login.
   - `GET /api/admin/credit-leads`, `GET /api/admin/credit-leads/:id`, `PATCH /api/admin/credit-leads/:id`, `GET /api/admin/credit-leads/stats` — idem, para as solicitações de crédito.
 

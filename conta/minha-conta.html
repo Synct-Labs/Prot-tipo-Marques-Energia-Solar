@@ -192,9 +192,13 @@
           <div id="twoFaOnState" hidden>
             <p class="two-fa-status two-fa-status-on">
               <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              Ativada — código por e-mail
+              <span id="twoFaOnLabel">Ativada</span>
             </p>
-            <button type="button" class="btn btn-outline" id="twoFaDisableStartBtn">Desativar</button>
+            <div class="account-error" id="twoFaOnError"></div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-outline" id="twoFaSwitchStartBtn">Trocar método</button>
+              <button type="button" class="btn btn-outline" id="twoFaDisableStartBtn">Desativar</button>
+            </div>
 
             <form id="twoFaDisableForm" hidden style="margin-top: 16px;">
               <div class="account-error" id="twoFaDisableError"></div>
@@ -206,6 +210,32 @@
               <div style="margin-top: 14px; display: flex; gap: 10px;">
                 <button type="submit" class="btn btn-primary" id="twoFaDisableConfirmBtn">Desativar verificação em duas etapas</button>
                 <button type="button" class="btn btn-ghost" id="twoFaDisableCancelBtn">Cancelar</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- ---- trocando de método (só quando o 2FA já está ativo) ---- -->
+          <div id="twoFaSwitchState" hidden>
+            <div class="account-error" id="twoFaSwitchError"></div>
+
+            <div id="twoFaSwitchAppInfo" hidden>
+              <p class="two-fa-step"><strong>1.</strong> Abra um app autenticador (Google Authenticator, Authy, Microsoft Authenticator...). No celular, toque no link abaixo pra adicionar direto; no computador, digite a chave manualmente.</p>
+              <p><a href="#" id="twoFaSwitchOtpauthLink" class="btn btn-ghost" target="_blank" rel="noopener">Adicionar ao app autenticador</a></p>
+              <p class="two-fa-secret mono" id="twoFaSwitchSecretText"></p>
+            </div>
+            <div id="twoFaSwitchEmailInfo" hidden>
+              <p class="two-fa-step"><strong>1.</strong> Mandamos um código de 6 dígitos pro seu e-mail (<strong id="twoFaSwitchEmailAddress"></strong>).</p>
+            </div>
+
+            <form id="twoFaSwitchConfirmForm">
+              <div class="form-grid">
+                <label class="two-fa-code-label"><strong>2.</strong> <span id="twoFaSwitchCodeLabel">Digite o código</span>
+                  <input type="text" id="twoFaSwitchCode" name="code" inputmode="numeric" maxlength="6" required placeholder="000000" autocomplete="one-time-code">
+                </label>
+              </div>
+              <div style="margin-top: 16px; display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-primary" id="twoFaSwitchConfirmBtn">Confirmar troca</button>
+                <button type="button" class="btn btn-ghost" id="twoFaSwitchCancelBtn">Cancelar</button>
               </div>
             </form>
           </div>
@@ -398,10 +428,16 @@ function showTwoFaState(state) {
   document.getElementById("twoFaSetupState").hidden = state !== "setup";
   document.getElementById("twoFaBackupState").hidden = state !== "backup";
   document.getElementById("twoFaOnState").hidden = state !== "on";
+  document.getElementById("twoFaSwitchState").hidden = state !== "switch";
 }
 
 function renderTwoFaStatus() {
   showTwoFaState(currentCustomer.twoFactorEnabled ? "on" : "off");
+  if (currentCustomer.twoFactorEnabled) {
+    const isApp = currentCustomer.twoFactorMethod === "app";
+    document.getElementById("twoFaOnLabel").textContent = isApp ? "Ativada — código pelo app autenticador" : "Ativada — código por e-mail";
+    document.getElementById("twoFaSwitchStartBtn").textContent = isApp ? "Usar e-mail em vez do app" : "Usar app autenticador";
+  }
 }
 
 document.getElementById("twoFaStartBtn").addEventListener("click", async () => {
@@ -461,6 +497,74 @@ document.getElementById("twoFaCancelSetupBtn").addEventListener("click", () => {
 });
 
 document.getElementById("twoFaBackupDoneBtn").addEventListener("click", () => renderTwoFaStatus());
+
+/* ---- trocar método (só com 2FA já ativo) ---- */
+document.getElementById("twoFaSwitchStartBtn").addEventListener("click", async () => {
+  const errorBox = document.getElementById("twoFaOnError");
+  const btn = document.getElementById("twoFaSwitchStartBtn");
+  const originalLabel = btn.textContent;
+  errorBox.classList.remove("show");
+  const targetMethod = currentCustomer.twoFactorMethod === "app" ? "email" : "app";
+  btn.disabled = true;
+  btn.textContent = "Enviando...";
+
+  try {
+    const res = await CONTA.apiPost("/api/customers/2fa/switch/start", { targetMethod });
+    if (!res.ok) {
+      errorBox.textContent = res.error || "Não foi possível iniciar a troca agora. Tente novamente em instantes.";
+      errorBox.classList.add("show");
+      return;
+    }
+
+    document.getElementById("twoFaSwitchAppInfo").hidden = targetMethod !== "app";
+    document.getElementById("twoFaSwitchEmailInfo").hidden = targetMethod !== "email";
+    document.getElementById("twoFaSwitchCodeLabel").textContent =
+      targetMethod === "app"
+        ? "Digite o código de 6 dígitos que apareceu no app"
+        : "Digite o código de 6 dígitos que chegou no seu e-mail";
+
+    if (targetMethod === "app") {
+      document.getElementById("twoFaSwitchSecretText").textContent = (res.secret.match(/.{1,4}/g) || [res.secret]).join(" ");
+      document.getElementById("twoFaSwitchOtpauthLink").href = res.otpauthUri;
+    } else {
+      document.getElementById("twoFaSwitchEmailAddress").textContent = currentCustomer.email;
+    }
+    showTwoFaState("switch");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+  }
+});
+
+document.getElementById("twoFaSwitchCancelBtn").addEventListener("click", () => {
+  document.getElementById("twoFaSwitchConfirmForm").reset();
+  showTwoFaState("on");
+});
+
+document.getElementById("twoFaSwitchConfirmForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("twoFaSwitchError");
+  const btn = document.getElementById("twoFaSwitchConfirmBtn");
+  errorBox.classList.remove("show");
+  btn.disabled = true;
+  btn.textContent = "Confirmando...";
+
+  try {
+    const code = document.getElementById("twoFaSwitchCode").value.trim();
+    const res = await CONTA.apiPost("/api/customers/2fa/switch/confirm", { code });
+    if (!res.ok) {
+      errorBox.textContent = res.error || "Código inválido.";
+      errorBox.classList.add("show");
+      return;
+    }
+    currentCustomer.twoFactorMethod = res.method;
+    document.getElementById("twoFaSwitchConfirmForm").reset();
+    renderTwoFaStatus();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Confirmar troca";
+  }
+});
 
 document.getElementById("twoFaDisableStartBtn").addEventListener("click", () => {
   document.getElementById("twoFaDisableForm").hidden = false;

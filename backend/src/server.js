@@ -370,10 +370,10 @@ async function handleApi(req, res, pathname) {
     auth.clearAttempts(ip);
 
     if (record.two_factor_enabled) {
-      // Login ainda não fecha: já disparamos o e-mail com o código de
-      // verificação, falta a pessoa digitar ele.
-      const pendingToken = await customers.createPending2FALogin(record.id, record.email);
-      return sendJSON(res, 200, { ok: true, requires2FA: true, pendingToken });
+      // Login ainda não fecha: falta o código de verificação em duas etapas.
+      // Método "email" já dispara o envio do código agora; "app" não precisa.
+      const pendingToken = await customers.createPending2FALogin(record.id, record.two_factor_method, record.email);
+      return sendJSON(res, 200, { ok: true, requires2FA: true, pendingToken, method: record.two_factor_method });
     }
 
     const { token, expiresAt } = await customers.createSession(record.id);
@@ -437,6 +437,33 @@ async function handleApi(req, res, pathname) {
       return sendJSON(res, 400, { ok: false, error: "Código inválido. Confira e tente de novo." });
     }
     return sendJSON(res, 200, { ok: true, backupCodes });
+  }
+
+  // Trocar o método (só com 2FA já ativo — a ativação inicial é sempre por e-mail).
+  if (pathname === "/api/customers/2fa/switch/start" && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    if (!customer.two_factor_enabled) {
+      return sendJSON(res, 400, { ok: false, error: "Ative a verificação em duas etapas por e-mail primeiro." });
+    }
+    const body = await parseJSONBody(req);
+    const targetMethod = body.targetMethod === "app" ? "app" : "email";
+    if (targetMethod === customer.two_factor_method) {
+      return sendJSON(res, 400, { ok: false, error: "Esse já é o método ativo." });
+    }
+    const result = await customers.startMethodSwitch(customer.id, customer.email, targetMethod);
+    return sendJSON(res, 200, { ok: true, ...result });
+  }
+
+  if (pathname === "/api/customers/2fa/switch/confirm" && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const body = await parseJSONBody(req);
+    const newMethod = await customers.confirmMethodSwitch(customer.id, String(body.code || "").trim());
+    if (!newMethod) {
+      return sendJSON(res, 400, { ok: false, error: "Código inválido. Confira e tente de novo." });
+    }
+    return sendJSON(res, 200, { ok: true, method: newMethod });
   }
 
   if (pathname === "/api/customers/2fa/disable" && req.method === "POST") {

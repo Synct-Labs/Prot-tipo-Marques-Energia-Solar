@@ -12,6 +12,7 @@ const { pool } = require("./db");
 const config = require("./config");
 const auth = require("./auth");
 const mailer = require("./mailer");
+const totp = require("./totp");
 
 const SESSION_COOKIE_NAME = "mes_customer_session";
 
@@ -100,7 +101,12 @@ async function getCustomerBySession(token) {
 }
 
 /* ======================================================================
-   VERIFICAÇÃO EM DUAS ETAPAS (2FA) — sempre por e-mail
+   VERIFICAÇÃO EM DUAS ETAPAS (2FA)
+   ---------------------------------------------------------------------
+   A ativação inicial é sempre por e-mail (precisa provar que tem acesso
+   à caixa de entrada antes de mexer em qualquer coisa). Depois de ativa,
+   a pessoa pode trocar pro app autenticador (ou voltar pro e-mail) nas
+   configurações — ver startMethodSwitch/confirmMethodSwitch mais abaixo.
    ====================================================================== */
 function generateEmailCode() {
   return String(crypto.randomInt(0, 1000000)).padStart(6, "0");
@@ -151,31 +157,93 @@ async function confirm2FA(customerId, code) {
 async function disable2FA(customerId) {
   await pool.query(
     `UPDATE customers
-     SET two_factor_enabled = false, two_factor_method = NULL, two_factor_backup_codes = NULL
+     SET two_factor_enabled = false, two_factor_method = NULL, two_factor_secret = NULL, two_factor_backup_codes = NULL
      WHERE id = $1`,
     [customerId]
   );
 }
 
-// Aceita o código enviado por e-mail (guardado no próprio login pendente,
-// ver mais abaixo) ou um código de backup (uso único).
-async function verify2FACode(pendingEntry, code) {
-  const customerId = pendingEntry.customerId;
-  if (pendingEntry.emailCode && pendingEntry.emailCode === String(code).trim()) return true;
+/* ---------------------- TROCAR MÉTODO (só com 2FA já ativo) ----------------------
+   Mesma ideia do setup inicial (código pendente + confirmação), mas pra
+   trocar entre e-mail e app depois que a verificação já está ligada. */
+const pendingMethodSwitches = new Map(); // customerId -> { targetMethod, secret? , codeHash?, expiresAt }
 
-  const { rows } = await pool.query("SELECT two_factor_backup_codes FROM customers WHERE id = $1", [customerId]);
-  const row = rows[0];
-  if (!row || !row.two_factor_backup_codes) return false;
+async function startMethodSwitch(customerId, email, targetMethod) {
+  if (targetMethod === "app") {
+    const secret = totp.generateSecret();
+    pendingMethodSwitches.set(customerId, { targetMethod: "app", secret, expiresAt: Date.now() + EMAIL_CODE_TTL_MS });
+    return { secret, otpauthUri: totp.generateOtpauthUri(secret, email) };
+  }
 
-  const hashes = JSON.parse(row.two_factor_backup_codes);
-  const idx = hashes.findIndex((h) => auth.verifyPassword(code, h));
-  if (idx > -1) {
-    hashes.splice(idx, 1);
-    await pool.query("UPDATE customers SET two_factor_backup_codes = $1 WHERE id = $2", [
-      JSON.stringify(hashes),
+  const code = generateEmailCode();
+  pendingMethodSwitches.set(customerId, {
+    targetMethod: "email",
+    codeHash: auth.hashPassword(code),
+    expiresAt: Date.now() + EMAIL_CODE_TTL_MS,
+  });
+  await mailer.sendEmail({
+    to: email,
+    subject: "Código pra trocar o método de verificação — Marques",
+    text: `Seu código é: ${code}\nEle expira em 10 minutos.`,
+    html: mailer.verificationEmailHTML(code),
+  });
+  return { method: "email" };
+}
+
+async function confirmMethodSwitch(customerId, code) {
+  const pending = pendingMethodSwitches.get(customerId);
+  if (!pending || Date.now() > pending.expiresAt) return null;
+
+  const valid =
+    pending.targetMethod === "app"
+      ? totp.verifyToken(pending.secret, code)
+      : auth.verifyPassword(code, pending.codeHash);
+  if (!valid) return null;
+
+  pendingMethodSwitches.delete(customerId);
+  if (pending.targetMethod === "app") {
+    await pool.query("UPDATE customers SET two_factor_method = 'app', two_factor_secret = $1 WHERE id = $2", [
+      pending.secret,
       customerId,
     ]);
+  } else {
+    await pool.query("UPDATE customers SET two_factor_method = 'email', two_factor_secret = NULL WHERE id = $1", [
+      customerId,
+    ]);
+  }
+  return pending.targetMethod;
+}
+
+// Aceita o código do app (TOTP) ou do e-mail (guardado no próprio login
+// pendente, ver mais abaixo), conforme o método ativo da conta — ou um
+// código de backup (uso único, funciona pra qualquer método).
+async function verify2FACode(pendingEntry, code) {
+  const customerId = pendingEntry.customerId;
+  const { rows } = await pool.query(
+    "SELECT two_factor_method, two_factor_secret, two_factor_backup_codes FROM customers WHERE id = $1",
+    [customerId]
+  );
+  const row = rows[0];
+  if (!row) return false;
+
+  if (row.two_factor_method === "app" && row.two_factor_secret && totp.verifyToken(row.two_factor_secret, code)) {
     return true;
+  }
+  if (row.two_factor_method === "email" && pendingEntry.emailCode && pendingEntry.emailCode === String(code).trim()) {
+    return true;
+  }
+
+  if (row.two_factor_backup_codes) {
+    const hashes = JSON.parse(row.two_factor_backup_codes);
+    const idx = hashes.findIndex((h) => auth.verifyPassword(code, h));
+    if (idx > -1) {
+      hashes.splice(idx, 1);
+      await pool.query("UPDATE customers SET two_factor_backup_codes = $1 WHERE id = $2", [
+        JSON.stringify(hashes),
+        customerId,
+      ]);
+      return true;
+    }
   }
   return false;
 }
@@ -190,16 +258,22 @@ async function verify2FACode(pendingEntry, code) {
 const pending2FALogins = new Map(); // token -> { customerId, expiresAt, emailCode }
 const PENDING_2FA_TTL_MS = 5 * 60 * 1000;
 
-async function createPending2FALogin(customerId, email) {
+async function createPending2FALogin(customerId, method, email) {
   const token = crypto.randomBytes(24).toString("hex");
-  const emailCode = generateEmailCode();
-  await mailer.sendEmail({
-    to: email,
-    subject: "Seu código de login Marques",
-    text: `Seu código de login é: ${emailCode}\nEle expira em 5 minutos.`,
-    html: mailer.verificationEmailHTML(emailCode),
-  });
-  pending2FALogins.set(token, { customerId, emailCode, expiresAt: Date.now() + PENDING_2FA_TTL_MS });
+  const entry = { customerId, expiresAt: Date.now() + PENDING_2FA_TTL_MS };
+
+  if (method === "email") {
+    entry.emailCode = generateEmailCode();
+    await mailer.sendEmail({
+      to: email,
+      subject: "Seu código de login Marques",
+      text: `Seu código de login é: ${entry.emailCode}\nEle expira em 5 minutos.`,
+      html: mailer.verificationEmailHTML(entry.emailCode),
+    });
+  }
+  // método "app": nada pra enviar, a pessoa já tem o código no app dela.
+
+  pending2FALogins.set(token, entry);
   return token;
 }
 
@@ -235,6 +309,8 @@ module.exports = {
   start2FASetup,
   confirm2FA,
   disable2FA,
+  startMethodSwitch,
+  confirmMethodSwitch,
   verify2FACode,
   createPending2FALogin,
   peekPending2FALogin,
