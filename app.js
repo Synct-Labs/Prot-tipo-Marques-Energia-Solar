@@ -13,6 +13,12 @@
    Definida em api-config.js, carregado antes deste arquivo. */
 const API_BASE = window.MES_API_BASE || "";
 
+/* Evita que o navegador tente "adivinhar" a posição de rolagem ao usar
+   voltar/avançar entre as views (hash routing): cada troca de view já
+   força scrollTo(0) no navigate() abaixo, então a restauração automática
+   do navegador só atrapalharia. */
+if("scrollRestoration" in history) history.scrollRestoration = "manual";
+
 /* ---------------------- ÍCONES (estilo line-icon, tipo lucide) ---------------------- */
 const ICONS = {
   kits: `<svg class="icon" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/></svg>`,
