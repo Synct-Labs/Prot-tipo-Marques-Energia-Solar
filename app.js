@@ -126,10 +126,15 @@ const PRODUCTS = [
       correnteMax:"9,13 A", dimensoes:"1870 x 880 x 30 mm", peso:"15,6 kg", garantia:"15 anos (produto)" } },
   { id:"pn2", cat:"paineis", brand:"TSUN", sku:"RIO600W-144BIF-2278", embVenda:"1 unidade", subcategoria:"Bifacial", facetValue:"500–600 Wp",
     name:"Painel Solar Bifacial 600W", price:718.91,
+    // Mesma foto do pn3: irmão de linha (TSUN RIO bifacial N-Type preto), não achamos
+    // foto de revenda específica da variante 600W/144 células.
+    image:"assets/products/tsun-mftb-bifacial-630w.webp",
     specs:{ potencia:"600 Wp", tipo:"N-Type Monocristalina Bifacial", eficiencia:"23,2%", tensaoMax:"44,45 V",
       correnteMax:"13,50 A", dimensoes:"2278 x 1134 x 30 mm", peso:"32 kg", garantia:"12 anos (produto) / 30 anos (linear)" } },
   { id:"pn3", cat:"paineis", brand:"TSUN", sku:"TS630S8E-132GANT", embVenda:"1 unidade", subcategoria:"Bifacial", facetValue:"Acima de 600 Wp",
     name:"Painel Solar Bifacial 630W N-Type", price:730.80,
+    // Mesmo módulo/foto usado no kit1 e kit2 — é exatamente o mesmo modelo (132 células, N-Type, 630W).
+    image:"assets/products/tsun-mftb-bifacial-630w.webp",
     specs:{ potencia:"630 Wp", tipo:"N-Type Monocristalina Bifacial (132 células)", eficiencia:"23,7%", tensaoMax:"42,17 V",
       correnteMax:"14,94 A", dimensoes:"2382 x 1134 x 30 mm", peso:"33,5 kg", garantia:"12 anos (produto) / 30 anos (linear)" } },
   { id:"pn4", cat:"paineis", brand:"Jinko Solar", sku:"JKM620N-66HL4M-BDV", embVenda:"1 unidade", subcategoria:"Bifacial TOPCon", facetValue:"Acima de 600 Wp",
