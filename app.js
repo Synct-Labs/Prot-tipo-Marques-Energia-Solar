@@ -1,10 +1,11 @@
 /* =====================================================================
    MARQUES ENERGIA SOLAR: LOJA
-   Dados de catálogo são PLACEHOLDER (o cliente ainda vai fornecer o
-   catálogo real). As marcas usadas (Deye, Growatt, Canadian Solar,
-   Romagnole etc.) são marcas reais do setor, usadas aqui apenas como
-   exemplo de como o filtro por marca funcionaria; a linha de produtos
-   real que a Marques Energia Solar vai revender ainda será definida.
+   Painéis, inversores, baterias e controladores de carga têm preço e
+   ficha técnica reais, cotados na Apex Energia Solar (revenda de
+   Cuiabá-MT) em dezembro/2026 — servem de referência de mercado até a
+   Marques Energia Solar definir sua própria linha/fornecedor. Cabos e
+   estrutura de fixação ainda são PLACEHOLDER. Os 2 kits prontos (kit1,
+   kit2) são orçamento real da própria Marques.
    Não há integração de pagamento real; ver seção CHECKOUT / PAYMENT
    INTEGRATION POINT mais abaixo.
    ===================================================================== */
@@ -26,6 +27,8 @@ const ICONS = {
   inversores: `<svg class="icon" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>`,
   cabos: `<svg class="icon" viewBox="0 0 24 24"><path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
   estrutura: `<svg class="icon" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 1 0-5.4 5.4L2 19l3 3 7.3-7.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2-2 2.8-2.8z"/></svg>`,
+  baterias: `<svg class="icon" viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2"/><line x1="23" y1="13" x2="23" y2="11"/></svg>`,
+  controlador: `<svg class="icon" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>`,
 };
 
 const ICON_TRASH = `<svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
@@ -61,6 +64,14 @@ const CATEGORIES = {
       ["material","Material"], ["capacidade","Capacidade/Uso"], ["fixacao","Tipo de fixação"],
       ["resistencia","Resistência"], ["garantia","Garantia"]
     ] },
+  baterias:   { label: "Baterias",                          crumbCategory: "Bateria Estacionária/Lítio", facetLabel: "Tecnologia", primarySpec: "capacidade", specFields: [
+      ["tensao","Tensão"], ["capacidade","Capacidade"], ["tecnologia","Tecnologia"],
+      ["ciclos","Vida útil"], ["dimensoes","Dimensões"], ["peso","Peso"], ["garantia","Garantia"]
+    ] },
+  controlador:{ label: "Controlador de Carga",               crumbCategory: "Controlador de Carga",   facetLabel: "Tipo", primarySpec: "corrente", specFields: [
+      ["tipo","Tipo de carregamento"], ["corrente","Corrente nominal"], ["tensaoSistema","Tensão do sistema"],
+      ["eficiencia","Eficiência"], ["protecoes","Proteções"], ["dimensoes","Dimensões"], ["garantia","Garantia"]
+    ] },
 };
 
 const FACET_ORDER = {
@@ -69,6 +80,8 @@ const FACET_ORDER = {
   inversores: ["Até 3 kW", "3–5 kW", "5–10 kW", "Acima de 10 kW"],
   cabos: ["4 mm²", "6 mm²", "10 mm²", "Conectores"],
   estrutura: ["Telhado", "Solo/Laje", "Acessórios"],
+  baterias: ["Chumbo-Ácido (Estacionária)", "Lítio (LiFePO4)"],
+  controlador: ["PWM", "MPPT"],
 };
 
 /* ---------------------- CATÁLOGO (DADOS DE EXEMPLO, exceto "KITS PRONTOS" que são orçamentos reais) ---------------------- */
@@ -97,57 +110,73 @@ const PRODUCTS = [
       { brand:"Solis", name:"Inversor de Corrente Monofásico 1MPPT 220V 3kW", sku:"INVSO-MO-220V-3KW", qty:1, image:"assets/products/solis-invso-mo-220v-3kw.png" },
     ] },
 
-  // ---------- PAINÉIS SOLARES ----------
-  { id:"pn1", cat:"paineis", brand:"Canadian Solar", sku:"PS-MC-450W", embVenda:"1 unidade", subcategoria:"Monocristalino", facetValue:"400–500 Wp",
-    name:"Painel Solar Monocristalino 450W", price:799.00,
-    specs:{ potencia:"450 Wp", tipo:"Monocristalino PERC", eficiencia:"21,2%", tensaoMax:"41,5 V",
-      correnteMax:"10,85 A", dimensoes:"2094 x 1038 x 35 mm", peso:"22,5 kg", garantia:"25 anos (performance) / 12 anos (produto)" } },
-  { id:"pn2", cat:"paineis", brand:"Jinko Solar", sku:"PS-MC-550W", embVenda:"1 unidade", subcategoria:"Monocristalino", facetValue:"500–600 Wp",
-    name:"Painel Solar Monocristalino 550W", price:949.00,
-    specs:{ potencia:"550 Wp", tipo:"Monocristalino PERC Half-Cell", eficiencia:"21,4%", tensaoMax:"49,5 V",
-      correnteMax:"11,11 A", dimensoes:"2278 x 1134 x 35 mm", peso:"27,5 kg", garantia:"25 anos (performance) / 12 anos (produto)" } },
-  { id:"pn3", cat:"paineis", brand:"BYD", sku:"PS-BF-600W", embVenda:"1 unidade", subcategoria:"Bifacial", facetValue:"500–600 Wp",
-    name:"Painel Solar Bifacial 600W", price:1249.00,
-    specs:{ potencia:"600 Wp", tipo:"Bifacial Monocristalino (ganho até 25%)", eficiencia:"22,1%", tensaoMax:"51,2 V",
-      correnteMax:"11,7 A", dimensoes:"2384 x 1303 x 35 mm", peso:"31,8 kg", garantia:"30 anos (performance) / 15 anos (produto)" } },
-  { id:"pn4", cat:"paineis", brand:"Risen Energy", sku:"PS-PL-340W", embVenda:"1 unidade", subcategoria:"Policristalino", facetValue:"Até 400 Wp",
-    name:"Painel Solar Policristalino 340W", price:549.00,
-    specs:{ potencia:"340 Wp", tipo:"Policristalino", eficiencia:"17,4%", tensaoMax:"38,2 V",
-      correnteMax:"8,9 A", dimensoes:"1956 x 992 x 40 mm", peso:"19,5 kg", garantia:"25 anos (performance) / 10 anos (produto)" } },
-  { id:"pn5", cat:"paineis", brand:"JA Solar", sku:"PS-MC-500W", embVenda:"1 unidade", subcategoria:"Monocristalino", facetValue:"500–600 Wp",
-    name:"Painel Solar Monocristalino 500W", price:869.00,
-    specs:{ potencia:"500 Wp", tipo:"Monocristalino Half-Cell", eficiencia:"20,8%", tensaoMax:"45,8 V",
-      correnteMax:"10,9 A", dimensoes:"2172 x 1116 x 35 mm", peso:"24,9 kg", garantia:"25 anos (performance) / 12 anos (produto)" } },
-  { id:"pn6", cat:"paineis", brand:"Trina Solar", sku:"PS-TC-665W", embVenda:"1 unidade", subcategoria:"Monocristalino TOPCon", facetValue:"Acima de 600 Wp",
-    name:"Painel Solar Monocristalino TOPCon 665W", price:1399.00, isLaunch:true,
-    specs:{ potencia:"665 Wp", tipo:"Monocristalino TOPCon", eficiencia:"22,3%", tensaoMax:"55,3 V",
-      correnteMax:"12,03 A", dimensoes:"2465 x 1134 x 35 mm", peso:"34,2 kg", garantia:"30 anos (performance) / 15 anos (produto)" } },
+  // ---------- PAINÉIS SOLARES (preços/specs reais, cotados na Apex Energia Solar em 12/2026) ----------
+  { id:"pn1", cat:"paineis", brand:"ZTROON", sku:"ZTP-360MI", embVenda:"1 unidade", subcategoria:"Monocristalino", facetValue:"Até 400 Wp",
+    name:"Painel Solar Monocristalino 360W (Off-Grid)", price:733.96,
+    specs:{ potencia:"360 Wp", tipo:"Monocristalino PERC", eficiencia:"21,90%", tensaoMax:"39,44 V",
+      correnteMax:"9,13 A", dimensoes:"1870 x 880 x 30 mm", peso:"15,6 kg", garantia:"15 anos (produto)" } },
+  { id:"pn2", cat:"paineis", brand:"TSUN", sku:"RIO600W-144BIF-2278", embVenda:"1 unidade", subcategoria:"Bifacial", facetValue:"500–600 Wp",
+    name:"Painel Solar Bifacial 600W", price:718.91,
+    specs:{ potencia:"600 Wp", tipo:"N-Type Monocristalina Bifacial", eficiencia:"23,2%", tensaoMax:"44,45 V",
+      correnteMax:"13,50 A", dimensoes:"2278 x 1134 x 30 mm", peso:"32 kg", garantia:"12 anos (produto) / 30 anos (linear)" } },
+  { id:"pn3", cat:"paineis", brand:"TSUN", sku:"TS630S8E-132GANT", embVenda:"1 unidade", subcategoria:"Bifacial", facetValue:"Acima de 600 Wp",
+    name:"Painel Solar Bifacial 630W N-Type", price:730.80,
+    specs:{ potencia:"630 Wp", tipo:"N-Type Monocristalina Bifacial (132 células)", eficiencia:"23,7%", tensaoMax:"42,17 V",
+      correnteMax:"14,94 A", dimensoes:"2382 x 1134 x 30 mm", peso:"33,5 kg", garantia:"12 anos (produto) / 30 anos (linear)" } },
+  { id:"pn4", cat:"paineis", brand:"Jinko Solar", sku:"JKM620N-66HL4M-BDV", embVenda:"1 unidade", subcategoria:"Bifacial TOPCon", facetValue:"Acima de 600 Wp",
+    name:"Painel Solar Bifacial TOPCon 620W", price:1119.23, isLaunch:true,
+    specs:{ potencia:"620 Wp", tipo:"N-Type TOPCon Monocristalina Bifacial", eficiencia:"23%", tensaoMax:"40,74 V",
+      correnteMax:"15,22 A", dimensoes:"2382 x 1134 x 30 mm", peso:"32,5 kg", garantia:"15 anos (produto) / 30 anos (linear)" } },
+  { id:"pn5", cat:"paineis", brand:"Renepv", sku:"ZY700G12HNHB-132", embVenda:"1 unidade", subcategoria:"Bifacial", facetValue:"Acima de 600 Wp",
+    name:"Painel Solar Bifacial 700W", price:980.00,
+    specs:{ potencia:"700 Wp", tipo:"Monocristalino Bifacial (vidro duplo)", eficiencia:"22,50%", tensaoMax:"41,78 V",
+      correnteMax:"16,76 A", dimensoes:"2384 x 1303 x 33 mm", peso:"37,2 kg", garantia:"12 anos (produto) / 30 anos (linear)" } },
 
-  // ---------- INVERSORES ----------
-  { id:"iv1", cat:"inversores", brand:"Growatt", sku:"INV-OG-3K-M", embVenda:"1 unidade", subcategoria:"On Grid", facetValue:"Até 3 kW", powerKw:3,
-    name:"Inversor String 3kW Monofásico", price:2399.00,
-    specs:{ potencia:"3 kW", mppt:"2 MPPT", tensaoSaida:"220V Monofásico", eficiencia:"97,6%",
-      comunicacao:"Wi-Fi + App de monitoramento", protecao:"IP65", garantia:"5 anos (extensível até 10)" } },
-  { id:"iv2", cat:"inversores", brand:"Deye", sku:"INV-OG-5K-M", embVenda:"1 unidade", subcategoria:"On Grid", facetValue:"3–5 kW", powerKw:5,
-    name:"Inversor String 5kW Monofásico", price:3299.00,
-    specs:{ potencia:"5 kW", mppt:"2 MPPT", tensaoSaida:"220V Monofásico", eficiencia:"98,0%",
-      comunicacao:"Wi-Fi + App de monitoramento", protecao:"IP65", garantia:"5 anos (extensível até 10)" } },
-  { id:"iv3", cat:"inversores", brand:"Sungrow", sku:"INV-OG-8K-T", embVenda:"1 unidade", subcategoria:"On Grid", facetValue:"5–10 kW", powerKw:8,
-    name:"Inversor String 8kW Trifásico", price:5799.00,
-    specs:{ potencia:"8 kW", mppt:"2 MPPT", tensaoSaida:"380V Trifásico", eficiencia:"98,3%",
-      comunicacao:"Wi-Fi + RS485", protecao:"IP65", garantia:"5 anos (extensível até 10)" } },
-  { id:"iv4", cat:"inversores", brand:"Huawei", sku:"INV-OG-10K-T", embVenda:"1 unidade", subcategoria:"On Grid", facetValue:"5–10 kW", powerKw:10,
-    name:"Inversor String 10kW Trifásico", price:6999.00,
-    specs:{ potencia:"10 kW", mppt:"3 MPPT", tensaoSaida:"380V Trifásico", eficiencia:"98,4%",
-      comunicacao:"Wi-Fi + RS485 + 4G (opcional)", protecao:"IP65", garantia:"5 anos (extensível até 10)" } },
-  { id:"iv5", cat:"inversores", brand:"Solis", sku:"INV-MIC-600W", embVenda:"1 kit (4 microinversores)", subcategoria:"Microinversor", facetValue:"Até 3 kW", powerKw:2.4,
-    name:"Kit Microinversor 600W (4 unidades)", price:2199.00,
-    specs:{ potencia:"600 W por unidade", mppt:"1 MPPT por painel", tensaoSaida:"220V Monofásico", eficiencia:"96,7%",
-      comunicacao:"Monitoramento individual por painel via app", protecao:"IP67", garantia:"12 anos (extensível até 25)" } },
-  { id:"iv6", cat:"inversores", brand:"Auxsol", sku:"INV-HY-5K-M", embVenda:"1 unidade", subcategoria:"Híbrido", facetValue:"3–5 kW", powerKw:5,
-    name:"Inversor Híbrido 5kW (compatível c/ bateria)", price:7499.00, isLaunch:true,
-    specs:{ potencia:"5 kW", mppt:"2 MPPT + entrada bateria 48V", tensaoSaida:"220V Monofásico", eficiencia:"97,8%",
-      comunicacao:"Wi-Fi + App (função backup de energia)", protecao:"IP65", garantia:"5 anos (extensível até 10)" } },
+  // ---------- INVERSORES (preços/specs reais, cotados na Apex Energia Solar em 12/2026) ----------
+  { id:"iv1", cat:"inversores", brand:"Sungrow", sku:"SG2K-S", embVenda:"1 unidade", subcategoria:"On Grid", facetValue:"Até 3 kW", powerKw:2,
+    name:"Inversor String 2kW Monofásico", price:2300.00,
+    specs:{ potencia:"2 kW", mppt:"1 MPPT", tensaoSaida:"220V Monofásico", eficiencia:"98,2%",
+      comunicacao:"-", protecao:"IP65", garantia:"7 anos" } },
+  { id:"iv2", cat:"inversores", brand:"Canadian Solar", sku:"CSI-5K-S22003-E", embVenda:"1 unidade", subcategoria:"On Grid", facetValue:"3–5 kW", powerKw:5,
+    name:"Inversor String 5kW Monofásico", price:4600.00,
+    specs:{ potencia:"5 kW", mppt:"2 MPPT", tensaoSaida:"220V Monofásico", eficiencia:"98,1%",
+      comunicacao:"Wi-Fi + monitoramento em nuvem", protecao:"IP65", garantia:"10 anos" } },
+  { id:"iv3", cat:"inversores", brand:"Fronius", sku:"Primo 3.0-1", embVenda:"1 unidade", subcategoria:"On Grid", facetValue:"Até 3 kW", powerKw:3,
+    name:"Inversor String 3kW Monofásico Primo", price:6342.50,
+    specs:{ potencia:"3 kW", mppt:"2 MPPT", tensaoSaida:"220V Monofásico", eficiencia:"98,0% (máx.) / 96,1% (europeia)",
+      comunicacao:"-", protecao:"IP65", garantia:"5 anos" } },
+  { id:"iv4", cat:"inversores", brand:"Canadian Solar", sku:"CSI-9K-S22002-ED", embVenda:"1 unidade", subcategoria:"On Grid", facetValue:"5–10 kW", powerKw:9,
+    name:"Inversor String 9kW Monofásico", price:7420.00,
+    specs:{ potencia:"9 kW", mppt:"2 MPPT", tensaoSaida:"220V Monofásico", eficiencia:"98,1%",
+      comunicacao:"Wi-Fi + monitoramento em nuvem", protecao:"IP65", garantia:"10 anos" } },
+  { id:"iv5", cat:"inversores", brand:"Canadian Solar", sku:"CSI-15KTL-GI-LFL", embVenda:"1 unidade", subcategoria:"On Grid", facetValue:"Acima de 10 kW", powerKw:15,
+    name:"Inversor String 15kW Trifásico", price:5375.27,
+    specs:{ potencia:"15 kW", mppt:"2 MPPT", tensaoSaida:"220V Trifásico", eficiencia:"97%",
+      comunicacao:"-", protecao:"-", garantia:"5 anos" } },
+  { id:"iv6", cat:"inversores", brand:"Deye", sku:"SUN-5K-SG04LP1-EU", embVenda:"1 unidade", subcategoria:"Híbrido", facetValue:"3–5 kW", powerKw:5,
+    name:"Inversor Híbrido 5kW (compatível c/ bateria)", price:10751.63, isLaunch:true,
+    specs:{ potencia:"5 kW", mppt:"2 MPPT + entrada bateria 48V (40–60V)", tensaoSaida:"220V Monofásico", eficiencia:"97,6%",
+      comunicacao:"Wi-Fi + RS485 + CAN (BMS)", protecao:"IP65", garantia:"5 anos" } },
+
+  // ---------- BATERIAS (preços/specs reais, cotados na Apex Energia Solar em 12/2026) ----------
+  { id:"bt1", cat:"baterias", brand:"Moura", sku:"12MN2000", embVenda:"1 unidade", subcategoria:"Chumbo-Carbono (Estacionária)", facetValue:"Chumbo-Ácido (Estacionária)",
+    name:"Bateria Estacionária Moura 105Ah 12V", price:1112.00,
+    specs:{ tensao:"12V", capacidade:"105 Ah (C120) / 95 Ah (C10)", tecnologia:"Chumbo-Carbono (PbC), selada, uso exclusivo solar",
+      ciclos:"Mais de 450 ciclos", dimensoes:"330 x 172 x 214 mm", peso:"26 kg", garantia:"2 anos" } },
+  { id:"bt2", cat:"baterias", brand:"Epever", sku:"LFP1.28KWH12.8V-P20L1", embVenda:"1 unidade", subcategoria:"Lítio (LiFePO4)", facetValue:"Lítio (LiFePO4)",
+    name:"Bateria de Lítio LiFePO4 100Ah 12,8V", price:3547.31, isLaunch:true,
+    specs:{ tensao:"12,8V", capacidade:"100 Ah (1.280 Wh)", tecnologia:"LiFePO4 com BMS integrado",
+      ciclos:"≥ 4.000 ciclos", dimensoes:"166 x 180 x 260 mm", peso:"12,5 kg", garantia:"5 anos" } },
+
+  // ---------- CONTROLADOR DE CARGA (preços/specs reais, cotados na Apex Energia Solar em 12/2026) ----------
+  { id:"cc1", cat:"controlador", brand:"Epever", sku:"LS3024EU", embVenda:"1 unidade", subcategoria:"PWM", facetValue:"PWM",
+    name:"Controlador de Carga PWM 30A 12/24V", price:279.00,
+    specs:{ tipo:"PWM", corrente:"30 A", tensaoSistema:"12V/24V (auto reconhecimento)", eficiencia:"-",
+      protecoes:"Sobrecarga, curto-circuito, polaridade reversa, descarga excessiva", dimensoes:"178 x 95,5 x 41,5 mm", garantia:"2 anos" } },
+  { id:"cc2", cat:"controlador", brand:"Epever", sku:"XTRA 3210N", embVenda:"1 unidade", subcategoria:"MPPT", facetValue:"MPPT",
+    name:"Controlador de Carga MPPT 30A 12/24V", price:890.00,
+    specs:{ tipo:"MPPT", corrente:"30 A (carga e descarga)", tensaoSistema:"12V/24V", eficiencia:"98,6%",
+      protecoes:"Sobrecarga, curto-circuito, polaridade reversa, descarga excessiva, compensação de temperatura", dimensoes:"255 x 185 x 67,8 mm", garantia:"2 anos" } },
 
   // ---------- KITS DE CABOS / FIOS ----------
   { id:"cb1", cat:"cabos", brand:"Nexans", sku:"CB-SOL-6MM-50", embVenda:"1 kit (par de rolos)", subcategoria:"Cabo Solar", facetValue:"6 mm²",

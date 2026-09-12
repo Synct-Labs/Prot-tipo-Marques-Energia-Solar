@@ -47,7 +47,7 @@ O site é dividido em **duas páginas HTML independentes** (não é mais uma SPA
 ### `loja.html` — Loja (SPA por hash, dentro da própria página)
 - Home da loja com identidade visual da marca, calculadora de dimensionamento, propostas de valor, produtos em destaque, depoimentos e FAQ.
 - Calculadora de dimensionamento: consumo (kWh ou valor da conta) → potência recomendada em **kWp**, usando a fórmula `consumo (kWh) ÷ 119`; o botão "Montar kit com essa potência" já abre o configurador com a quantidade de painéis sugerida.
-- Catálogo com 25 produtos em 5 categorias: **kits prontos** (2 kits com orçamento real — os únicos produtos reais do catálogo por enquanto, o resto é placeholder), painéis solares, inversores, kits de cabos/fios, parafusos e estrutura de fixação.
+- Catálogo com 30 produtos em 7 categorias: **kits prontos** (2 kits com orçamento real), **painéis solares** (5), **inversores** (6), **baterias** (2) e **controlador de carga** (2) — estas quatro últimas com preço e ficha técnica reais, cotados num concorrente (Apex Energia Solar) em dezembro/2026, servindo de referência de mercado até a Marques definir fornecedor próprio. **Kits de cabos/fios** e **parafusos e estrutura de fixação** ainda são placeholder.
 - Comparação lado a lado (2–3 produtos da mesma categoria).
 - Carrinho funcional (adicionar/remover/qtd/total).
 - Configurador "Monte seu Projeto" (wizard guiado de kit completo, com kWp calculado no resumo).
@@ -149,7 +149,7 @@ Depois disso, checkout, formulário de crédito e login do admin funcionam de ve
 - Arquivos do SQLite antigo (`backend/data/mes.db` e `mes.db-journal`) removidos do Git e ignorados daqui pra frente.
 
 ### ⚠️ Decisões/contas que só você pode resolver
-1. **Catálogo real de produtos** — os 2 kits prontos (`kit1`, `kit2` em `app.js`) já são orçamento real (TSUN + Solis); o restante dos itens (painéis, inversores, cabos e estrutura avulsos), preços, SKUs e fotos ainda são de exemplo. Este é o maior gap entre "parece pronto" e "é real": sem completar isso, boa parte dos pedidos feitos na loja hoje ainda seria sobre produtos fictícios.
+1. **Catálogo real de produtos** — os 2 kits prontos (`kit1`, `kit2`) já eram orçamento real (TSUN + Solis); painéis, inversores, baterias e controlador de carga agora usam preço e ficha técnica reais de um concorrente (Apex Energia Solar, cotado em 12/2026) como referência de mercado, mas ainda não são o fornecedor/margem que a Marques vai efetivamente usar. Cabos e estrutura de fixação continuam de exemplo. Falta: (a) decidir fornecedor e margem de revenda pra cada item, (b) fotos próprias (ver item 10), (c) refazer "estrutura" como peça avulsa (trilho/terminal/parafuso) em vez de "kit pra 6 painéis" — é assim que o mercado vende.
 2. **Domínio próprio** — hoje o site vive em `synct-labs.github.io` e a API em `onrender.com`. Se quiser `marquesenergiasolar.com.br` (aparece hoje só como texto no rodapé), é preciso registrar o domínio e configurar DNS (CNAME pro GitHub Pages + domínio customizado no Render).
 3. **Supabase no plano gratuito pausa o projeto após ~7 dias sem nenhuma atividade** — isso derrubaria login do admin e o site inteiro até alguém reativar manualmente no painel do Supabase. Se o site vai ficar "no ar de verdade" recebendo pouco tráfego no início, vale considerar o plano pago (US$25/mês) ou algum ping periódico pra manter o projeto ativo.
 4. **Render no plano gratuito "dorme" após ~15 min sem uso** (primeira requisição demora 30-50s pra responder). Plano pago (~US$7/mês) elimina isso.
@@ -158,6 +158,7 @@ Depois disso, checkout, formulário de crédito e login do admin funcionam de ve
 7. **E-mail/WhatsApp automático** avisando a equipe quando entra um pedido novo ou uma solicitação de crédito nova — hoje só aparece no painel admin, alguém precisa checar manualmente.
 8. **Backup do banco** — Supabase faz backup automático nos planos pagos; no gratuito, vale exportar o schema/dados periodicamente.
 9. **Fotos dos kits prontos (`assets/products/`) são de sites de revenda, não do fabricante** — a do inversor Solis bate com o modelo exato (S6-GR1P3K-M); a do módulo TSUN é da variante de 620W da mesma linha "RIO" bifacial preta (não achamos foto de revenda específica da variante 630W). Vale confirmar com o fornecedor/distribuidor se pode usar essas imagens comercialmente, ou pedir fotos oficiais direto da TSUN/Solis.
+10. **Preço dos kits prontos pode estar abaixo do mercado** — o próprio site da Apex Energia Solar (concorrente em Cuiabá-MT) afirma que "um sistema que gera cerca de 500 kWh por mês pode custar em torno de R$ 20.000,00"; o `kit2` (500 kWh/mês) está em R$ 11.280. Vale revisar a margem antes de divulgar os kits pra valer.
 
 ## Estrutura
 
