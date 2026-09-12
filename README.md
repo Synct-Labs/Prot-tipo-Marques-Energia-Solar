@@ -73,10 +73,7 @@ A calculadora de dimensionamento e o configurador de kit vivem os dois em `loja.
 - Autenticação de administrador: sessão por cookie `HttpOnly` (token opaco guardado no banco, senha com hash `scrypt`). Só existe um administrador por padrão (criado a partir do `.env` na primeira execução); é possível trocar a senha pelo próprio painel.
 - CORS: liberado apenas para as origens listadas em `CORS_ORIGIN` (backend/.env) — necessário porque em produção o site (GitHub Pages) e a API (Render) ficam em domínios diferentes.
 - Conta de cliente obrigatória: desde a v2, `POST /api/orders` (checkout) e `POST /api/credit-leads` (solicitação de crédito) exigem sessão de cliente logado — sem conta, o site manda pra `conta/entrar.html` antes de deixar comprar ou simular.
-- Verificação em duas etapas (2FA) opcional pra clientes, com dois métodos à escolha:
-  - **App autenticador** — TOTP compatível com Google Authenticator/Authy/Microsoft Authenticator (implementação própria em `backend/src/totp.js`, sem dependência externa, validada contra o vetor de teste oficial do RFC 6238).
-  - **E-mail** — código de 6 dígitos enviado por e-mail a cada login (`backend/src/mailer.js`, via API da [Resend](https://resend.com); ver "Configurar envio de e-mail" abaixo).
-  - Nos dois casos, 5 códigos de backup de uso único são gerados na ativação. Ativa/gerencia pelo painel "Minha Conta" > Segurança.
+- Verificação em duas etapas (2FA) opcional pra clientes, por **e-mail**: código de 6 dígitos enviado a cada login (`backend/src/mailer.js`, via API da [Resend](https://resend.com); ver "Configurar envio de e-mail" abaixo). 5 códigos de backup de uso único são gerados na ativação. Ativa/gerencia pelo painel "Minha Conta" > Segurança.
   - WhatsApp não é uma opção: um link `wa.me` só abre uma conversa pra a pessoa mandar mensagem, não permite o servidor mandar uma automática — isso exigiria a API oficial do WhatsApp Business (conta comercial paga, via Meta ou um parceiro tipo Twilio/Zenvia).
 - Rotas principais da API:
   - `POST /api/orders` — cria um pedido (usado pelo checkout do site; exige cliente logado).

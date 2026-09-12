@@ -370,10 +370,10 @@ async function handleApi(req, res, pathname) {
     auth.clearAttempts(ip);
 
     if (record.two_factor_enabled) {
-      // Login ainda não fecha: falta o código de verificação em duas etapas.
-      // Se o método for "email", isso já dispara o envio do código agora.
-      const pendingToken = await customers.createPending2FALogin(record.id, record.two_factor_method, record.email);
-      return sendJSON(res, 200, { ok: true, requires2FA: true, pendingToken, method: record.two_factor_method });
+      // Login ainda não fecha: já disparamos o e-mail com o código de
+      // verificação, falta a pessoa digitar ele.
+      const pendingToken = await customers.createPending2FALogin(record.id, record.email);
+      return sendJSON(res, 200, { ok: true, requires2FA: true, pendingToken });
     }
 
     const { token, expiresAt } = await customers.createSession(record.id);
@@ -424,18 +424,15 @@ async function handleApi(req, res, pathname) {
   if (pathname === "/api/customers/2fa/setup" && req.method === "POST") {
     const customer = await requireCustomer(req, res);
     if (!customer) return;
-    const body = await parseJSONBody(req);
-    const method = body.method === "email" ? "email" : "app";
-    const result = await customers.start2FASetup(customer.id, customer.email, method);
-    return sendJSON(res, 200, { ok: true, ...result });
+    await customers.start2FASetup(customer.id, customer.email);
+    return sendJSON(res, 200, { ok: true });
   }
 
   if (pathname === "/api/customers/2fa/confirm" && req.method === "POST") {
     const customer = await requireCustomer(req, res);
     if (!customer) return;
     const body = await parseJSONBody(req);
-    const method = body.method === "email" ? "email" : "app";
-    const backupCodes = await customers.confirm2FA(customer.id, method, String(body.code || "").trim());
+    const backupCodes = await customers.confirm2FA(customer.id, String(body.code || "").trim());
     if (!backupCodes) {
       return sendJSON(res, 400, { ok: false, error: "Código inválido. Confira e tente de novo." });
     }

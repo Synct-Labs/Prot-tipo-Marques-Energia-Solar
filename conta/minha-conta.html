@@ -150,45 +150,26 @@
 
         <div class="account-card" id="twoFaCard">
           <h2>Verificação em duas etapas</h2>
-          <p class="account-sub">Peça um código do seu celular toda vez que você entrar na conta — protege mesmo se alguém descobrir sua senha.</p>
+          <p class="account-sub">Peça um código enviado pro seu e-mail toda vez que você entrar na conta — protege mesmo se alguém descobrir sua senha.</p>
 
-          <!-- ---- desativada: escolher método ---- -->
+          <!-- ---- desativada ---- -->
           <div id="twoFaOffState">
             <p class="two-fa-status two-fa-status-off">
               <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
               Desativada
             </p>
-            <p class="two-fa-step">Escolha como você quer receber o código a cada login:</p>
-            <div class="two-fa-method-choices">
-              <button type="button" class="two-fa-method-btn" id="twoFaStartAppBtn" data-method="app">
-                <svg class="icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                <span>App autenticador</span>
-                <small>Google Authenticator, Authy...</small>
-              </button>
-              <button type="button" class="two-fa-method-btn" id="twoFaStartEmailBtn" data-method="email">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg>
-                <span>E-mail</span>
-                <small>Código enviado pro seu e-mail cadastrado</small>
-              </button>
-            </div>
+            <div class="account-error" id="twoFaOffError"></div>
+            <button type="button" class="btn btn-outline" id="twoFaStartBtn">Ativar verificação em duas etapas</button>
           </div>
 
           <!-- ---- configurando ---- -->
           <div id="twoFaSetupState" hidden>
             <div class="account-error" id="twoFaSetupError"></div>
-
-            <div id="twoFaSetupAppInfo" hidden>
-              <p class="two-fa-step"><strong>1.</strong> Abra um app autenticador (Google Authenticator, Authy, Microsoft Authenticator...). No celular, toque no link abaixo pra adicionar direto; no computador, digite a chave manualmente.</p>
-              <p><a href="#" id="twoFaOtpauthLink" class="btn btn-ghost" target="_blank" rel="noopener">Adicionar ao app autenticador</a></p>
-              <p class="two-fa-secret mono" id="twoFaSecretText"></p>
-            </div>
-            <div id="twoFaSetupEmailInfo" hidden>
-              <p class="two-fa-step"><strong>1.</strong> Mandamos um código de 6 dígitos pro seu e-mail (<strong id="twoFaSetupEmailAddress"></strong>). Pode levar alguns minutos pra chegar.</p>
-            </div>
+            <p class="two-fa-step"><strong>1.</strong> Mandamos um código de 6 dígitos pro seu e-mail (<strong id="twoFaSetupEmailAddress"></strong>). Pode levar alguns minutos pra chegar.</p>
 
             <form id="twoFaConfirmForm">
               <div class="form-grid">
-                <label class="two-fa-code-label"><strong>2.</strong> <span id="twoFaConfirmCodeLabel">Digite o código de 6 dígitos que apareceu no app</span>
+                <label class="two-fa-code-label"><strong>2.</strong> Digite o código de 6 dígitos que chegou no seu e-mail
                   <input type="text" id="twoFaConfirmCode" name="code" inputmode="numeric" maxlength="6" required placeholder="000000" autocomplete="one-time-code">
                 </label>
               </div>
@@ -202,7 +183,7 @@
           <!-- ---- códigos de backup (mostrados uma única vez) ---- -->
           <div id="twoFaBackupState" hidden>
             <div class="account-success show">Verificação em duas etapas ativada.</div>
-            <p class="two-fa-step">Guarde esses códigos de backup num lugar seguro. Cada um funciona <strong>uma única vez</strong>, caso você perca acesso ao app autenticador — eles não vão aparecer de novo.</p>
+            <p class="two-fa-step">Guarde esses códigos de backup num lugar seguro. Cada um funciona <strong>uma única vez</strong>, caso você perca acesso ao seu e-mail — eles não vão aparecer de novo.</p>
             <div class="two-fa-backup-codes" id="twoFaBackupCodesList"></div>
             <button type="button" class="btn btn-primary" id="twoFaBackupDoneBtn">Já salvei os códigos</button>
           </div>
@@ -211,7 +192,7 @@
           <div id="twoFaOnState" hidden>
             <p class="two-fa-status two-fa-status-on">
               <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              <span id="twoFaOnLabel">Ativada</span>
+              Ativada — código por e-mail
             </p>
             <button type="button" class="btn btn-outline" id="twoFaDisableStartBtn">Desativar</button>
 
@@ -421,35 +402,29 @@ function showTwoFaState(state) {
 
 function renderTwoFaStatus() {
   showTwoFaState(currentCustomer.twoFactorEnabled ? "on" : "off");
-  if (currentCustomer.twoFactorEnabled) {
-    document.getElementById("twoFaOnLabel").textContent =
-      currentCustomer.twoFactorMethod === "email" ? "Ativada por e-mail" : "Ativada por app autenticador";
-  }
 }
 
-let pendingTwoFaMethod = "app";
+document.getElementById("twoFaStartBtn").addEventListener("click", async () => {
+  const errorBox = document.getElementById("twoFaOffError");
+  const btn = document.getElementById("twoFaStartBtn");
+  errorBox.classList.remove("show");
+  btn.disabled = true;
+  btn.textContent = "Enviando código...";
 
-async function startTwoFaSetup(method) {
-  pendingTwoFaMethod = method;
-  const res = await CONTA.apiPost("/api/customers/2fa/setup", { method });
-  if (!res.ok) return;
-
-  document.getElementById("twoFaSetupAppInfo").hidden = method !== "app";
-  document.getElementById("twoFaSetupEmailInfo").hidden = method !== "email";
-  document.getElementById("twoFaConfirmCodeLabel").textContent =
-    method === "email" ? "Digite o código de 6 dígitos que chegou no seu e-mail" : "Digite o código de 6 dígitos que apareceu no app";
-
-  if (method === "app") {
-    document.getElementById("twoFaSecretText").textContent = (res.secret.match(/.{1,4}/g) || [res.secret]).join(" ");
-    document.getElementById("twoFaOtpauthLink").href = res.otpauthUri;
-  } else {
+  try {
+    const res = await CONTA.apiPost("/api/customers/2fa/setup");
+    if (!res.ok) {
+      errorBox.textContent = res.error || "Não foi possível enviar o código agora. Tente novamente em instantes.";
+      errorBox.classList.add("show");
+      return;
+    }
     document.getElementById("twoFaSetupEmailAddress").textContent = currentCustomer.email;
+    showTwoFaState("setup");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Ativar verificação em duas etapas";
   }
-  showTwoFaState("setup");
-}
-
-document.getElementById("twoFaStartAppBtn").addEventListener("click", () => startTwoFaSetup("app"));
-document.getElementById("twoFaStartEmailBtn").addEventListener("click", () => startTwoFaSetup("email"));
+});
 
 document.getElementById("twoFaConfirmForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -461,14 +436,14 @@ document.getElementById("twoFaConfirmForm").addEventListener("submit", async (e)
 
   try {
     const code = document.getElementById("twoFaConfirmCode").value.trim();
-    const res = await CONTA.apiPost("/api/customers/2fa/confirm", { method: pendingTwoFaMethod, code });
+    const res = await CONTA.apiPost("/api/customers/2fa/confirm", { code });
     if (!res.ok) {
       errorBox.textContent = res.error || "Código inválido.";
       errorBox.classList.add("show");
       return;
     }
     currentCustomer.twoFactorEnabled = true;
-    currentCustomer.twoFactorMethod = pendingTwoFaMethod;
+    currentCustomer.twoFactorMethod = "email";
     document.getElementById("twoFaConfirmForm").reset();
     document.getElementById("twoFaBackupCodesList").innerHTML = res.backupCodes
       .map((c) => `<span class="two-fa-backup-code mono">${c}</span>`)
