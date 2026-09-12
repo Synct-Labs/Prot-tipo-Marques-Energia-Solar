@@ -146,6 +146,7 @@ Depois disso, checkout, formulário de crédito e login do admin funcionam de ve
 - Meta tags Open Graph / Twitter Card em `index.html` e `loja.html` (prévia correta ao compartilhar no WhatsApp/redes).
 - Política de Privacidade (`privacidade.html`) e Termos de Uso (`termos.html`), com checkbox de consentimento LGPD nos formulários de crédito e checkout.
 - Copy do checkout/confirmação ajustada: não fala mais em "protótipo" pro cliente final, e explica com clareza que o pagamento é combinado por contato (Pix/cartão/boleto) — condizente com o fato de ainda não haver gateway de pagamento real conectado.
+- Arquivos do SQLite antigo (`backend/data/mes.db` e `mes.db-journal`) removidos do Git e ignorados daqui pra frente.
 
 ### ⚠️ Decisões/contas que só você pode resolver
 1. **Catálogo real de produtos** — os 2 kits prontos (`kit1`, `kit2` em `app.js`) já são orçamento real (TSUN + Solis); o restante dos itens (painéis, inversores, cabos e estrutura avulsos), preços, SKUs e fotos ainda são de exemplo. Este é o maior gap entre "parece pronto" e "é real": sem completar isso, boa parte dos pedidos feitos na loja hoje ainda seria sobre produtos fictícios.
@@ -156,8 +157,7 @@ Depois disso, checkout, formulário de crédito e login do admin funcionam de ve
 6. **Cálculo de frete real** (hoje o checkout mostra "A combinar").
 7. **E-mail/WhatsApp automático** avisando a equipe quando entra um pedido novo ou uma solicitação de crédito nova — hoje só aparece no painel admin, alguém precisa checar manualmente.
 8. **Backup do banco** — Supabase faz backup automático nos planos pagos; no gratuito, vale exportar o schema/dados periodicamente.
-9. Dois arquivos do SQLite antigo (`backend/data/mes.db` e `mes.db-journal`) ficaram versionados no Git por engano antes da migração pro Postgres — não afetam o funcionamento, mas valem uma limpeza: `git rm -r backend/data && git commit` (não consegui remover por aqui por causa de uma trava no `.git` local — rode esse comando quando puder).
-10. **Fotos dos kits prontos (`assets/products/`) são de sites de revenda, não do fabricante** — a do inversor Solis bate com o modelo exato (S6-GR1P3K-M); a do módulo TSUN é da variante de 620W da mesma linha "RIO" bifacial preta (não achamos foto de revenda específica da variante 630W). Vale confirmar com o fornecedor/distribuidor se pode usar essas imagens comercialmente, ou pedir fotos oficiais direto da TSUN/Solis.
+9. **Fotos dos kits prontos (`assets/products/`) são de sites de revenda, não do fabricante** — a do inversor Solis bate com o modelo exato (S6-GR1P3K-M); a do módulo TSUN é da variante de 620W da mesma linha "RIO" bifacial preta (não achamos foto de revenda específica da variante 630W). Vale confirmar com o fornecedor/distribuidor se pode usar essas imagens comercialmente, ou pedir fotos oficiais direto da TSUN/Solis.
 
 ## Estrutura
 
