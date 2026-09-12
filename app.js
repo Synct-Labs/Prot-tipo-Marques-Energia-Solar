@@ -1,11 +1,11 @@
 /* =====================================================================
    MARQUES ENERGIA SOLAR: LOJA
-   Painéis, inversores, baterias e controladores de carga têm preço e
-   ficha técnica reais, cotados na Apex Energia Solar (revenda de
-   Cuiabá-MT) em dezembro/2026 — servem de referência de mercado até a
-   Marques Energia Solar definir sua própria linha/fornecedor. Cabos e
-   estrutura de fixação ainda são PLACEHOLDER. Os 2 kits prontos (kit1,
-   kit2) são orçamento real da própria Marques.
+   Painéis, inversores, baterias, controladores de carga, cabos/conectores
+   e estrutura de fixação têm preço e ficha técnica reais, cotados na Apex
+   Energia Solar (revenda de Cuiabá-MT) em dezembro/2026 — servem de
+   referência de mercado até a Marques Energia Solar definir sua própria
+   linha/fornecedor. Os 2 kits prontos (kit1, kit2) são orçamento real da
+   própria Marques, com preço revisado a partir dessa mesma referência.
    Não há integração de pagamento real; ver seção CHECKOUT / PAYMENT
    INTEGRATION POINT mais abaixo.
    ===================================================================== */
@@ -56,11 +56,11 @@ const CATEGORIES = {
       ["eficiencia","Eficiência máxima"], ["comunicacao","Comunicação"],
       ["protecao","Grau de proteção"], ["garantia","Garantia"]
     ] },
-  cabos:      { label: "Kits de Cabos/Fios",               crumbCategory: "Cabos e Conectores",     facetLabel: "Bitola", primarySpec: "bitola", specFields: [
+  cabos:      { label: "Cabos e Conectores",               crumbCategory: "Cabos e Conectores",     facetLabel: "Tipo", primarySpec: "bitola", specFields: [
       ["bitola","Bitola"], ["comprimento","Comprimento"], ["isolacao","Isolação"],
       ["tensaoMax","Tensão máxima"], ["resistencia","Resistência"]
     ] },
-  estrutura:  { label: "Parafusos e Estrutura",            crumbCategory: "Estrutura de Fixação",   facetLabel: "Aplicação", primarySpec: "capacidade", specFields: [
+  estrutura:  { label: "Parafusos e Estrutura",            crumbCategory: "Estrutura de Fixação",   facetLabel: "Tipo de peça", primarySpec: "capacidade", specFields: [
       ["material","Material"], ["capacidade","Capacidade/Uso"], ["fixacao","Tipo de fixação"],
       ["resistencia","Resistência"], ["garantia","Garantia"]
     ] },
@@ -78,17 +78,23 @@ const FACET_ORDER = {
   kits: ["Até 400 kWh/mês", "400–700 kWh/mês", "700–1000 kWh/mês", "Acima de 1000 kWh/mês"],
   paineis: ["Até 400 Wp", "400–500 Wp", "500–600 Wp", "Acima de 600 Wp"],
   inversores: ["Até 3 kW", "3–5 kW", "5–10 kW", "Acima de 10 kW"],
-  cabos: ["4 mm²", "6 mm²", "10 mm²", "Conectores"],
-  estrutura: ["Telhado", "Solo/Laje", "Acessórios"],
+  cabos: ["6 mm²", "Conectores", "Proteção"],
+  estrutura: ["Trilhos", "Fixação"],
   baterias: ["Chumbo-Ácido (Estacionária)", "Lítio (LiFePO4)"],
   controlador: ["PWM", "MPPT"],
 };
 
-/* ---------------------- CATÁLOGO (DADOS DE EXEMPLO, exceto "KITS PRONTOS" que são orçamentos reais) ---------------------- */
+/* ---------------------- CATÁLOGO (preço/specs reais — ver comentário no topo do arquivo) ---------------------- */
 const PRODUCTS = [
   // ---------- KITS PRONTOS (orçamentos reais) ----------
   { id:"kit1", cat:"kits", brand:"TSUN + Solis", sku:"KIT-300-TSUN-SOLIS", embVenda:"1 kit completo (módulos + inversor)", subcategoria:"Kit Residencial", facetValue:"Até 400 kWh/mês",
-    name:"Kit Solar Completo 300 kWh/mês — 2,52 kWp", price:9486.00,
+    // Preço revisado em 12/2026: equipamento (4x painel TSUN 630W a R$730,80 + inversor
+    // ~3kW estimado em ~R$3.000, ambos cotados na Apex Energia Solar) fica em ~R$5.900.
+    // Num sistema instalado, equipamento costuma representar ~45-50% do total (o resto é
+    // estrutura, cabo, projeto/ART, mão de obra e margem) — daí o preço final em ~R$12.900.
+    // Referência de mercado: a própria Apex divulga que um sistema de ~500 kWh/mês (a faixa
+    // do kit2) gira em torno de R$20.000. Ajuste livremente conforme a margem que você quiser praticar.
+    name:"Kit Solar Completo 300 kWh/mês — 2,52 kWp", price:12900.00,
     // Foto do módulo é do irmão de linha 620W (mesma série TSUN RIO bifacial N-Type
     // preta) — não achamos foto de revenda específica da variante 630W/132 células.
     image:"assets/products/tsun-mftb-bifacial-630w.webp",
@@ -99,7 +105,10 @@ const PRODUCTS = [
       { brand:"Solis", name:"Inversor de Corrente Monofásico 1MPPT 220V 3kW", sku:"INVSO-MO-220V-3KW", qty:1, image:"assets/products/solis-invso-mo-220v-3kw.png" },
     ] },
   { id:"kit2", cat:"kits", brand:"TSUN + Solis", sku:"KIT-500-TSUN-SOLIS", embVenda:"1 kit completo (módulos + inversor)", subcategoria:"Kit Residencial", facetValue:"400–700 kWh/mês",
-    name:"Kit Solar Completo 500 kWh/mês — 4,41 kWp", price:11280.00,
+    // Preço revisado em 12/2026: mesmo raciocínio do kit1 (equipamento ~R$8.100 / ~45-50%
+    // do total), aproximado à referência que a própria Apex Energia Solar divulga pra essa
+    // faixa de consumo (~500 kWh/mês): "em torno de R$20.000". Ajuste conforme sua margem.
+    name:"Kit Solar Completo 500 kWh/mês — 4,41 kWp", price:18900.00,
     // Mesma observação do kit1: foto de estoque da linha TSUN RIO bifacial (620W),
     // usada como aproximação visual até termos foto real da variante 144 células.
     image:"assets/products/tsun-mftb-bifacial-630w.webp",
@@ -178,61 +187,58 @@ const PRODUCTS = [
     specs:{ tipo:"MPPT", corrente:"30 A (carga e descarga)", tensaoSistema:"12V/24V", eficiencia:"98,6%",
       protecoes:"Sobrecarga, curto-circuito, polaridade reversa, descarga excessiva, compensação de temperatura", dimensoes:"255 x 185 x 67,8 mm", garantia:"2 anos" } },
 
-  // ---------- KITS DE CABOS / FIOS ----------
-  { id:"cb1", cat:"cabos", brand:"Nexans", sku:"CB-SOL-6MM-50", embVenda:"1 kit (par de rolos)", subcategoria:"Cabo Solar", facetValue:"6 mm²",
-    name:"Kit Cabo Solar 6mm² (50m + 50m)", price:389.00,
-    specs:{ bitola:"6 mm²", comprimento:"50m preto + 50m vermelho", isolacao:"XLPE",
-      tensaoMax:"1,8 kV DC", resistencia:"UV e intempéries, -40°C a 90°C" } },
-  { id:"cb2", cat:"cabos", brand:"Prysmian", sku:"CB-SOL-4MM-30", embVenda:"1 kit (par de rolos)", subcategoria:"Cabo Solar", facetValue:"4 mm²",
-    name:"Kit Cabo Solar 4mm² (30m + 30m)", price:259.00,
-    specs:{ bitola:"4 mm²", comprimento:"30m preto + 30m vermelho", isolacao:"XLPE",
-      tensaoMax:"1,8 kV DC", resistencia:"UV e intempéries, -40°C a 90°C" } },
-  { id:"cb3", cat:"cabos", brand:"Stäubli", sku:"CN-MC4-10PR", embVenda:"10 pares", subcategoria:"Conectores", facetValue:"Conectores",
-    name:"Par de Conectores MC4 (10 pares)", price:129.00,
-    specs:{ bitola:"Compatível 2,5 a 6 mm²", comprimento:"-", isolacao:"Corpo em PC/PA, IP67",
-      tensaoMax:"1000 V DC / 30 A", resistencia:"Vedação IP67" } },
-  { id:"cb4", cat:"cabos", brand:"Nexans", sku:"CB-KIT-6MM-5K", embVenda:"1 kit completo", subcategoria:"Cabo Solar", facetValue:"6 mm²",
-    name:"Kit Completo 6mm² p/ Instalação até 5kW", price:549.00,
-    specs:{ bitola:"6 mm²", comprimento:"40m preto + 40m vermelho", isolacao:"XLPE + fita autofusão inclusa",
-      tensaoMax:"1,8 kV DC", resistencia:"6 pares de conectores MC4 inclusos, IP67" } },
-  { id:"cb5", cat:"cabos", brand:"Prysmian", sku:"CB-GND-10MM", embVenda:"1 unidade (rolo 20m)", subcategoria:"Aterramento", facetValue:"10 mm²",
-    name:"Cabo de Aterramento 10mm² (20m)", price:179.00,
-    specs:{ bitola:"10 mm²", comprimento:"20m", isolacao:"Cobre nu",
-      tensaoMax:"-", resistencia:"Uso em aterramento de estrutura" } },
-  { id:"cb6", cat:"cabos", brand:"Nexans", sku:"CB-SOL-4MM-35", embVenda:"1 kit (par de rolos)", subcategoria:"Cabo Solar", facetValue:"4 mm²",
-    name:"Kit Cabo Solar 4mm² Vermelho/Preto (35m + 35m): padrão Monte seu Kit", price:299.00,
-    specs:{ bitola:"4 mm²", comprimento:"35m vermelho + 35m preto", isolacao:"XLPE",
-      tensaoMax:"1,8 kV DC", resistencia:"UV e intempéries, -40°C a 90°C" } },
-  { id:"cb7", cat:"cabos", brand:"Stäubli", sku:"CN-MC4-PAR", embVenda:"1 par", subcategoria:"Conectores", facetValue:"Conectores",
-    name:"Conector Fotovoltaico MC4 (par avulso)", price:19.90,
-    specs:{ bitola:"Compatível 2,5 a 6 mm²", comprimento:"-", isolacao:"Corpo em PC/PA, IP67",
-      tensaoMax:"1000 V DC / 30 A", resistencia:"Vedação IP67" } },
+  // ---------- CABOS, CONECTORES E PROTEÇÃO (preços/specs reais, cotados na Apex Energia Solar em 12/2026) ----------
+  { id:"cb1", cat:"cabos", brand:"-", sku:"000190", embVenda:"venda por metro", subcategoria:"Cabo Solar", facetValue:"6 mm²",
+    name:"Cabo Solar Preto 6mm² 1,8kV (metro)", price:9.50,
+    specs:{ bitola:"6 mm²", comprimento:"Venda por metro (corte sob medida)", isolacao:"Dupla camada, resistente a UV/óleo/abrasão",
+      tensaoMax:"1,8 kV DC", resistencia:"Condutor de cobre estanhado flexível, -40°C a 90°C" } },
+  { id:"cb2", cat:"cabos", brand:"-", sku:"000191", embVenda:"venda por metro", subcategoria:"Cabo Solar", facetValue:"6 mm²",
+    name:"Cabo Solar Vermelho 6mm² 1,8kV (metro)", price:9.50,
+    specs:{ bitola:"6 mm²", comprimento:"Venda por metro (corte sob medida)", isolacao:"Dupla camada, resistente a UV/óleo/abrasão",
+      tensaoMax:"1,8 kV DC", resistencia:"Condutor de cobre estanhado flexível, -40°C a 90°C" } },
+  { id:"cb3", cat:"cabos", brand:"Victron Energy", sku:"MC4", embVenda:"1 par (macho-fêmea)", subcategoria:"Conectores", facetValue:"Conectores",
+    name:"Conector Fotovoltaico MC4 (par avulso)", price:32.68,
+    specs:{ bitola:"Compatível 2,5 a 6 mm²", comprimento:"6 cm", isolacao:"Contato em cobre estanhado",
+      tensaoMax:"1000 V DC / 30 A", resistencia:"-40°C a 90°C, 30g o par" } },
+  { id:"cb4", cat:"cabos", brand:"Soprano", sku:"SHB2 DC-C016A", embVenda:"1 unidade", subcategoria:"Proteção", facetValue:"Proteção",
+    name:"Disjuntor CC 16A 500V", price:122.01,
+    specs:{ bitola:"-", comprimento:"-", isolacao:"-",
+      tensaoMax:"500 V DC / 16 A", resistencia:"Proteção de circuitos CC (sistemas solares e banco de baterias)" } },
+  { id:"cb5", cat:"cabos", brand:"Embrastec", sku:"4E-2S-20A-1040V", embVenda:"1 unidade", subcategoria:"Proteção", facetValue:"Proteção",
+    name:"String Box 4E/2S 20A 1040VCC", price:1160.10,
+    specs:{ bitola:"4 entradas / 2 saídas", comprimento:"41 x 31 x 15 cm", isolacao:"Caixa ABS anti-chama (UL94 V0), IP65",
+      tensaoMax:"1040 V DC / 20 A", resistencia:"DPS integrado, -40°C a 80°C, 3,5 kg" } },
+  { id:"cb6", cat:"cabos", brand:"Canadian Solar", sku:"CSI-GI-DCBOX-42E", embVenda:"1 unidade", subcategoria:"Proteção", facetValue:"Proteção",
+    name:"String Box 8E/8S", price:1826.88,
+    specs:{ bitola:"8 entradas / 8 saídas", comprimento:"-", isolacao:"-",
+      tensaoMax:"-", resistencia:"Seccionamento e proteção para arranjos de maior porte" } },
 
-  // ---------- PARAFUSOS E ESTRUTURA DE FIXAÇÃO ----------
-  { id:"es1", cat:"estrutura", brand:"Romagnole", sku:"ST-TC-6P", embVenda:"1 kit (6 painéis)", subcategoria:"Telhado", facetValue:"Telhado",
-    name:"Kit Estrutura para Telha Cerâmica (6 painéis)", price:899.00,
-    specs:{ material:"Alumínio anodizado", capacidade:"Até 6 painéis", fixacao:"Trilhos + ganchos + parafusos inox",
-      resistencia:"Ventos até 150 km/h", garantia:"12 anos" } },
-  { id:"es2", cat:"estrutura", brand:"Romagnole", sku:"ST-TM-6P", embVenda:"1 kit (6 painéis)", subcategoria:"Telhado", facetValue:"Telhado",
-    name:"Kit Estrutura para Telha Metálica (6 painéis)", price:799.00,
-    specs:{ material:"Alumínio anodizado", capacidade:"Até 6 painéis", fixacao:"Parafuso autobrocante + vedação EPDM",
-      resistencia:"Ventos até 150 km/h", garantia:"12 anos" } },
-  { id:"es3", cat:"estrutura", brand:"K2 Systems", sku:"ST-SL-6P", embVenda:"1 kit (6 painéis)", subcategoria:"Solo/Laje", facetValue:"Solo/Laje",
-    name:"Kit Estrutura para Laje/Solo (6 painéis)", price:1299.00, isLaunch:true,
-    specs:{ material:"Alumínio (estrutura triangular)", capacidade:"Até 6 painéis", fixacao:"Base de concreto ou chumbador, inclinação ajustável 10-30°",
-      resistencia:"Ventos até 150 km/h", garantia:"12 anos" } },
-  { id:"es4", cat:"estrutura", brand:"K2 Systems", sku:"ST-RAIL-210", embVenda:"1 unidade", subcategoria:"Acessórios", facetValue:"Acessórios",
-    name:"Trilho de Alumínio 2,1m (unidade)", price:89.00,
-    specs:{ material:"Liga de alumínio 6005-T5 anodizado", capacidade:"Carga máx. 400 kg/m²", fixacao:"Encaixe universal com grampos",
-      resistencia:"Anticorrosivo", garantia:"12 anos" } },
-  { id:"es5", cat:"estrutura", brand:"Ciser", sku:"ST-BOLT-A2-100", embVenda:"1 kit (100 unidades)", subcategoria:"Acessórios", facetValue:"Acessórios",
-    name:"Kit Parafusos Inox A2 (100 unidades)", price:149.00,
-    specs:{ material:"Aço inox A2", capacidade:"Rosca autobrocante M6, uso geral", fixacao:"Inclui arruelas de vedação",
-      resistencia:"Resistente à corrosão", garantia:"-" } },
-  { id:"es6", cat:"estrutura", brand:"Romagnole", sku:"ST-CLAMP-20", embVenda:"1 kit (20 peças)", subcategoria:"Acessórios", facetValue:"Acessórios",
-    name:"Kit Grampos Final e Intermediário (20 peças)", price:219.00,
-    specs:{ material:"Alumínio", capacidade:"10 finais + 10 intermediários", fixacao:"Compatível molduras 30-46mm",
+  // ---------- PARAFUSOS E ESTRUTURA DE FIXAÇÃO (peça avulsa, preços reais Apex Energia Solar em 12/2026 —
+  //            o mercado (inclusive a Apex) não vende "kit pra N painéis" fechado, só peça a peça) ----------
+  { id:"es1", cat:"estrutura", brand:"Alumax", sku:"-", embVenda:"1 unidade", subcategoria:"Trilhos", facetValue:"Trilhos",
+    name:"Perfil de Alumínio 2,4m (trilho suspenso)", price:59.90,
+    specs:{ material:"Alumínio estrutural anodizado/escovado", capacidade:"2,4m por peça, vendido individualmente", fixacao:"Compatível com grampos finais e intermediários (35mm)",
+      resistencia:"Anticorrosivo, não enferruja", garantia:"-" } },
+  { id:"es2", cat:"estrutura", brand:"Alumax", sku:"-", embVenda:"1 unidade", subcategoria:"Trilhos", facetValue:"Trilhos",
+    name:"Minitrilho 30cm (complemento/vão curto)", price:17.90,
+    specs:{ material:"Alumínio anodizado", capacidade:"30cm por peça, complemento de vãos curtos", fixacao:"Compatível com grampos finais e intermediários (35mm)",
       resistencia:"Anticorrosivo", garantia:"-" } },
+  { id:"es3", cat:"estrutura", brand:"Alumax", sku:"-", embVenda:"1 unidade", subcategoria:"Trilhos", facetValue:"Trilhos",
+    name:"Emenda de Junção entre Trilhos", price:5.54,
+    specs:{ material:"Alumínio", capacidade:"Une 2 trilhos de 2,4m para vãos maiores", fixacao:"Encaixe de junção",
+      resistencia:"Anticorrosivo", garantia:"-" } },
+  { id:"es4", cat:"estrutura", brand:"Alumax", sku:"-", embVenda:"1 unidade", subcategoria:"Fixação", facetValue:"Fixação",
+    name:"Terminal Final 35mm (grampo de borda)", price:8.50,
+    specs:{ material:"Alumínio", capacidade:"Fixa a borda externa do módulo (moldura até 35mm)", fixacao:"Grampo final de trilho",
+      resistencia:"Anticorrosivo", garantia:"-" } },
+  { id:"es5", cat:"estrutura", brand:"Alumax", sku:"-", embVenda:"1 unidade", subcategoria:"Fixação", facetValue:"Fixação",
+    name:"Terminal Intermediário 35mm (grampo entre painéis)", price:9.50,
+    specs:{ material:"Alumínio", capacidade:"Fixa entre 2 módulos adjacentes (moldura até 35mm)", fixacao:"Grampo intermediário de trilho",
+      resistencia:"Anticorrosivo", garantia:"-" } },
+  { id:"es6", cat:"estrutura", brand:"Alumax", sku:"-", embVenda:"1 unidade", subcategoria:"Fixação", facetValue:"Fixação",
+    name:"Parafuso Estrutural (Fibrocimento/Base Metálica)", price:23.95,
+    specs:{ material:"Aço resistente à corrosão", capacidade:"Fixação de trilho em telhado de fibrocimento c/ estrutura metálica", fixacao:"Rosca autobrocante",
+      resistencia:"Resistente à corrosão, uso externo", garantia:"-" } },
 ];
 
 /* ---------------------- ESTADO DA APLICAÇÃO ---------------------- */
@@ -249,20 +255,20 @@ const state = {
     step: 0,
     paineis: { id: null, qty: 6 },
     inversor: { id: null },
-    cabo: { id: "cb6", qty: 1 },
-    conector: { id: "cb7", qty: 2 },
+    cabo: { id: "cb1", qty: 30 },
+    conector: { id: "cb3", qty: 2 },
     estrutura: { id: null },
   },
 };
 
-const FEATURED_IDS = ["kit1", "kit2", "pn1", "iv2", "cb1", "es1"];
+const FEATURED_IDS = ["kit1", "kit2", "pn3", "iv2", "bt2", "cc2"];
 
 /* ---------------------- CONFIGURADOR (MONTE SEU PROJETO) ---------------------- */
 const WIZARD_STEPS = [
   { key:"paineis",   cat:"paineis",    label:"Painéis",    title:"Escolha o Painel Solar",       sub:"Selecione o modelo e a quantidade de painéis do seu projeto." },
   { key:"inversor",  cat:"inversores", label:"Inversor",   title:"Escolha o Inversor",            sub:"Selecione o inversor compatível com a potência do projeto." },
   { key:"cabos",     label:"Cabos",      title:"Cabos e Conectores",              sub:"Já incluímos o padrão recomendado para a maioria das instalações. Ajuste as quantidades se precisar de mais." },
-  { key:"estrutura", cat:"estrutura",  label:"Estrutura",  title:"Escolha a Estrutura de Fixação", sub:"Selecione a estrutura conforme o tipo de telhado ou solo." },
+  { key:"estrutura", cat:"estrutura",  label:"Estrutura",  title:"Escolha a Peça de Fixação", sub:"Estrutura é vendida por peça (trilho, terminal, parafuso). Selecionamos um item de referência — ajuste as quantidades no carrinho conforme o seu telhado." },
   { key:"resumo",    label:"Resumo",   title:"Resumo do Projeto",              sub:"Confira os itens selecionados antes de adicionar ao carrinho." },
 ];
 
@@ -271,6 +277,12 @@ function formatBRL(value){
   return value.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
 }
 function getProduct(id){ return PRODUCTS.find(p => p.id === id); }
+function unidadePreco(p){
+  const emb = String(p.embVenda || "").toLowerCase();
+  if(emb.includes("metro")) return "metro";
+  if(emb.includes("par")) return "par";
+  return "unidade";
+}
 function $(sel, root=document){ return root.querySelector(sel); }
 function $all(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
 
@@ -960,8 +972,8 @@ function renderWizardCabosHTML(){
       <div class="wizard-fixed-item-body">
         <span class="product-brand">${cabo.brand}</span>
         <h4>${cabo.name}</h4>
-        <p class="wizard-fixed-item-note">Padrão: 35 metros de cabo vermelho + 35 metros de cabo preto (4mm²), suficiente para a maioria dos projetos residenciais.</p>
-        <span class="wizard-option-price">${formatBRL(cabo.price)} / kit</span>
+        <p class="wizard-fixed-item-note">Padrão: 30 metros de cabo solar 6mm² — ajuste a quantidade conforme a distância do seu projeto (lembre de somar o cabo vermelho e o preto à parte, no catálogo).</p>
+        <span class="wizard-option-price">${formatBRL(cabo.price)} / metro</span>
       </div>
       <div class="qty-control">
         <button type="button" id="caboQtyMinus">${ICON_MINUS}</button>
@@ -1206,7 +1218,7 @@ function renderCart(){
         <div class="cart-item-info">
           <span class="cart-item-cat">${CATEGORIES[p.cat].label}</span>
           <span class="cart-item-name">${p.name}</span>
-          <span class="cart-item-price">${formatBRL(p.price)} / unidade</span>
+          <span class="cart-item-price">${formatBRL(p.price)} / ${unidadePreco(p)}</span>
         </div>
         <div class="cart-item-controls">
           <div class="qty-control">
@@ -1283,6 +1295,41 @@ async function renderCheckout(){
   $("#checkoutTotal").textContent = formatBRL(total);
 }
 
+/* ---------------------- ESTIMATIVA DE FRETE POR ZONA ----------------------
+   Não existe integração com transportadora/Correios aqui — é uma faixa
+   estimada por zona a partir de Cuiabá-MT (sede da Marques), pra dar uma
+   noção de custo já no checkout em vez de só "A combinar". O valor exato
+   é sempre confirmado pela equipe no contato pós-pedido (mesma lógica já
+   usada pra forma de pagamento). Avaliamos usar o calculador de frete da
+   Apex Energia Solar como referência, mas ele está fora do ar no site
+   deles (não retorna resultado nem pra CEP válido) — não deu pra basear
+   nada nele. */
+const FRETE_ZONAS = {
+  MT: { label: "Cuiabá-MT e região", texto: "R$ 0 – R$ 150 (estimativa)" },
+  VIZINHOS: { label: "Estados vizinhos", texto: "R$ 300 – R$ 600 (estimativa)", ufs: ["MS","GO","RO","PA","TO","AC","RR","DF"] },
+  DEMAIS: { label: "Demais estados", texto: "R$ 600 – R$ 1.200 (estimativa)" },
+};
+
+function estimarFrete(uf){
+  const ufNorm = String(uf || "").trim().toUpperCase();
+  if(!ufNorm) return null;
+  if(ufNorm === "MT") return FRETE_ZONAS.MT;
+  if(FRETE_ZONAS.VIZINHOS.ufs.includes(ufNorm)) return FRETE_ZONAS.VIZINHOS;
+  return FRETE_ZONAS.DEMAIS;
+}
+
+function atualizarFreteEstimado(uf){
+  const el = $("#checkoutFreteValor");
+  if(!el) return;
+  const zona = estimarFrete(uf);
+  if(!zona){
+    el.textContent = "A combinar";
+    return;
+  }
+  el.textContent = zona.texto;
+  el.title = `Estimativa para ${zona.label}. Peso e volume do pedido podem mudar o valor — nossa equipe confirma o frete exato no contato.`;
+}
+
 /* ---------------------- BUSCA DE CEP (autopreenchimento) ----------------------
    Usa a API pública e gratuita ViaCEP (viacep.com.br) para preencher cidade,
    estado, rua e bairro a partir do CEP. Os campos continuam editáveis
@@ -1293,6 +1340,7 @@ async function buscarEnderecoPorCep(rawCep){
 
   if(cep.length !== 8){
     if(statusEl) statusEl.hidden = true;
+    atualizarFreteEstimado(null);
     return;
   }
 
@@ -1311,6 +1359,7 @@ async function buscarEnderecoPorCep(rawCep){
         statusEl.className = "field-hint field-hint-error";
         statusEl.textContent = "CEP não encontrado. Preencha o endereço manualmente.";
       }
+      atualizarFreteEstimado(null);
       return;
     }
 
@@ -1322,6 +1371,7 @@ async function buscarEnderecoPorCep(rawCep){
     if(estadoEl) estadoEl.value = data.uf || estadoEl.value;
     if(ruaEl) ruaEl.value = data.logradouro || ruaEl.value;
     if(bairroEl) bairroEl.value = data.bairro || bairroEl.value;
+    atualizarFreteEstimado(data.uf);
 
     if(statusEl){
       statusEl.className = "field-hint field-hint-ok";
