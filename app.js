@@ -363,8 +363,8 @@ function showToast(msg){
    DIMENSIONAMENTO (calculadora de kWp)
    ====================================================================== */
 const KWH_PER_KWP_MONTH = 119; // geração média mensal (kWh) por kWp instalado no Brasil
-const TARIFA_MEDIA_KWH = 0.85; // usada só para converter conta em R$ -> kWh
-const POTENCIA_PAINEL_REFERENCIA_WP = 450; // referência para estimar qtd. de painéis
+const TARIFA_MEDIA_KWH = 1.19; // usada só para converter conta em R$ -> kWh
+const POTENCIA_PAINEL_REFERENCIA_WP = 610; // referência para estimar qtd. de painéis
 
 function calcSizing(){
   const billVal = parseFloat($("#sizingBillInput").value);
