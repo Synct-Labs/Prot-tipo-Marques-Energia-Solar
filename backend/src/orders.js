@@ -34,6 +34,7 @@ function rowToOrder(row) {
       complemento: row.endereco_complemento,
     },
     pagamento: row.pagamento,
+    parcelas: row.parcelas,
     itens: JSON.parse(row.itens_json),
     subtotal: row.subtotal,
     total: row.total,
@@ -53,9 +54,9 @@ async function createOrder(payload, customerId = null) {
     `INSERT INTO orders (
       order_number, status, customer_id, customer_nome, customer_cpf, customer_email, customer_telefone,
       endereco_cep, endereco_cidade, endereco_estado, endereco_rua, endereco_numero,
-      endereco_bairro, endereco_complemento, pagamento, itens_json, subtotal, total,
+      endereco_bairro, endereco_complemento, pagamento, parcelas, itens_json, subtotal, total,
       created_at, updated_at
-    ) VALUES ($1, 'novo', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+    ) VALUES ($1, 'novo', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
     RETURNING id`,
     [
       tempNumber,
@@ -72,6 +73,8 @@ async function createOrder(payload, customerId = null) {
       payload.bairro || "",
       payload.complemento || "",
       payload.pagamento || "",
+      // Só faz sentido parcelar no cartão; Pix/boleto ficam null (à vista).
+      payload.pagamento === "cartao" ? payload.parcelas || 1 : null,
       JSON.stringify(payload.itens || []),
       payload.subtotal,
       payload.total,

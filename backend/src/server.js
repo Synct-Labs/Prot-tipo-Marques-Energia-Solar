@@ -121,6 +121,12 @@ function validateOrderPayload(body) {
   if (typeof body.subtotal !== "number" || typeof body.total !== "number") {
     return "Subtotal/total do pedido em formato inválido.";
   }
+
+  if (body.parcelas !== undefined && body.parcelas !== null) {
+    if (!Number.isInteger(body.parcelas) || body.parcelas < 1 || body.parcelas > 10) {
+      return "Número de parcelas inválido (aceita de 1 a 10).";
+    }
+  }
   return null;
 }
 

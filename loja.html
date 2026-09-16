@@ -630,15 +630,20 @@
                 <svg class="icon" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg> Pix
               </label>
               <label class="payment-mock-option">
-                <input type="radio" name="pagamento" value="cartao">
-                <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> Cartão de Crédito
+                <input type="radio" name="pagamento" value="cartao" id="checkoutPagamentoCartao">
+                <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> Cartão de Crédito <span class="payment-mock-hint">em até 10x sem juros</span>
               </label>
               <label class="payment-mock-option">
                 <input type="radio" name="pagamento" value="boleto">
                 <svg class="icon" viewBox="0 0 24 24"><line x1="4" y1="4" x2="4" y2="20"/><line x1="8" y1="4" x2="8" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="15" y1="4" x2="15" y2="20"/><line x1="19" y1="4" x2="19" y2="20"/></svg> Boleto
               </label>
             </div>
-            <p class="payment-preference-note">Sua preferência acima ajuda nossa equipe a já chegar com a forma de pagamento combinada no contato.</p>
+            <div class="payment-installments" id="checkoutInstallmentsBox" hidden>
+              <label>Parcelas no cartão
+                <select name="parcelas" id="checkoutParcelasSelect"></select>
+              </label>
+            </div>
+            <p class="payment-preference-note">Sua preferência acima ajuda nossa equipe a já chegar com a forma de pagamento (e parcelamento, se for cartão) combinada no contato.</p>
           </div>
         </fieldset>
 
@@ -655,6 +660,7 @@
         <div class="summary-row"><span>Frete</span><span id="checkoutFreteValor">A combinar</span></div>
         <p class="field-hint">Estimativa por região a partir de Cuiabá-MT. O valor exato (peso/volume) é confirmado pela nossa equipe no contato.</p>
         <div class="summary-row summary-total"><span>Total</span><span id="checkoutTotal">R$ 0,00</span></div>
+        <p class="checkout-parcelamento" id="checkoutParcelamento"></p>
         <button type="submit" class="btn btn-primary btn-block" id="checkoutSubmitBtn">Finalizar Pedido</button>
         <p class="checkout-error" id="checkoutError" style="display:none;"></p>
         <p class="checkout-note">Nenhuma cobrança é feita ao finalizar. Nossa equipe combina o pagamento com você em seguida.</p>

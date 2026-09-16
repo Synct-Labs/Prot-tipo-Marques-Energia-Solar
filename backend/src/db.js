@@ -91,6 +91,7 @@ async function initSchema() {
       endereco_bairro      TEXT,
       endereco_complemento TEXT,
       pagamento            TEXT,
+      parcelas             INTEGER,
       itens_json           TEXT NOT NULL,
       subtotal             DOUBLE PRECISION NOT NULL,
       total                DOUBLE PRECISION NOT NULL,
@@ -144,6 +145,7 @@ async function initSchema() {
     ALTER TABLE admins ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'funcionario';
 
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id);
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS parcelas INTEGER;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id);
 
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN NOT NULL DEFAULT false;

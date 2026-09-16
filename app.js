@@ -427,6 +427,23 @@ function unidadePreco(p){
 function $(sel, root=document){ return root.querySelector(sel); }
 function $all(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
 
+/* ---------------------- PARCELAMENTO (cartão de crédito) ----------------------
+   Regra de negócio: até 10x sem juros no cartão — mesmo padrão praticado
+   pela maioria das revendas do setor. É só divisão simples do total, sem
+   juros/taxas embutidos aqui; quando o gateway de pagamento real entrar
+   (ver PONTO DE INTEGRAÇÃO DE PAGAMENTO, na seção CHECKOUT), ele que passa
+   a tratar taxa de antecipação/adquirência por fora — o número de parcelas
+   escolhido pelo cliente já é capturado no checkout e enviado no pedido
+   (campo "parcelas"), pronto pra ser repassado direto pra API do gateway. */
+const MAX_PARCELAS_SEM_JUROS = 10;
+
+function valorParcela(total, parcelas){
+  return total / parcelas;
+}
+function formatParcelamento(total, parcelas = MAX_PARCELAS_SEM_JUROS){
+  return `${parcelas}x de ${formatBRL(valorParcela(total, parcelas))} sem juros`;
+}
+
 function showToast(msg){
   let toast = $(".toast");
   if(!toast){
@@ -775,7 +792,7 @@ function renderProductCard(p){
       </div>
     </a>
     <div class="product-body product-body-price">
-      <div class="product-price">${formatBRL(p.price)}<small>à vista (parcelamento a definir)</small></div>
+      <div class="product-price">${formatBRL(p.price)}<small>ou ${formatParcelamento(p.price)}</small></div>
     </div>
     <div class="product-actions">
       <a href="#produto/${p.id}" class="btn btn-ghost">+ detalhes</a>
@@ -952,7 +969,7 @@ function renderProductPage(){
   $("#productLaunchTag").style.display = p.isLaunch ? "inline-flex" : "none";
   $("#productTitle").textContent = p.name;
   $("#productMeta").innerHTML = `<span>SKU: ${p.sku}</span><span>Emb. venda: ${p.embVenda}</span>`;
-  $("#productPagePrice").innerHTML = `${formatBRL(p.price)}<small>à vista (parcelamento a definir)</small>`;
+  $("#productPagePrice").innerHTML = `${formatBRL(p.price)}<small>ou ${formatParcelamento(p.price)}</small>`;
   $("#productAddCartBtn").dataset.id = p.id;
 
   $("#specsHighlight").innerHTML = cat.specFields.map(([key,label]) => `
@@ -1434,7 +1451,32 @@ async function renderCheckout(){
   const total = cartTotalValue();
   $("#checkoutSubtotal").textContent = formatBRL(total);
   $("#checkoutTotal").textContent = formatBRL(total);
+  $("#checkoutParcelamento").textContent = `ou ${formatParcelamento(total)} no cartão`;
+  popularParcelasCheckout(total);
 }
+
+/* ---------------------- PARCELAS NO CHECKOUT ----------------------
+   Preenche o <select> de parcelas com base no total atual do carrinho e
+   mostra/esconde esse campo conforme a forma de pagamento escolhida.
+   O valor selecionado aqui (1 a 10x) é o que vai no payload do pedido —
+   ver PONTO DE INTEGRAÇÃO DE PAGAMENTO, mais abaixo. */
+function popularParcelasCheckout(total){
+  const select = $("#checkoutParcelasSelect");
+  if(!select) return;
+  select.innerHTML = Array.from({ length: MAX_PARCELAS_SEM_JUROS }, (_, i) => i + 1)
+    .map(n => `<option value="${n}">${n === 1 ? `1x de ${formatBRL(total)} (à vista)` : formatParcelamento(total, n)}</option>`)
+    .join("");
+}
+
+function atualizarVisibilidadeParcelas(){
+  const cartaoSelecionado = $("#checkoutPagamentoCartao")?.checked;
+  const box = $("#checkoutInstallmentsBox");
+  if(box) box.hidden = !cartaoSelecionado;
+}
+
+$all('input[name="pagamento"]').forEach(radio => {
+  radio.addEventListener("change", atualizarVisibilidadeParcelas);
+});
 
 /* ---------------------- ESTIMATIVA DE FRETE POR ZONA ----------------------
    Não existe integração com transportadora/Correios aqui — é uma faixa
@@ -1559,6 +1601,9 @@ $("#checkoutForm").addEventListener("submit", async (e) => {
     bairro: formData.get("bairro"),
     complemento: formData.get("complemento") || "",
     pagamento: formData.get("pagamento"),
+    // Só faz sentido no cartão — Pix/boleto são à vista (ver formatParcelamento/
+    // MAX_PARCELAS_SEM_JUROS, mais acima).
+    parcelas: formData.get("pagamento") === "cartao" ? Number(formData.get("parcelas")) || 1 : null,
     itens: state.cart.map(item => {
       const p = getProduct(item.id);
       return { id: p.id, nome: p.name, marca: p.brand, preco: p.price, qty: item.qty };
@@ -1570,10 +1615,21 @@ $("#checkoutForm").addEventListener("submit", async (e) => {
   /* =====================================================================
      PONTO DE INTEGRAÇÃO DE PAGAMENTO (produção)
      ---------------------------------------------------------------------
-     O pedido já é persistido de verdade no backend (ver backend/). Falta
-     apenas conectar aqui o gateway de pagamento escolhido pelo cliente
-     (Mercado Pago / PagSeguro / Stripe) para processar Pix, cartão ou
-     boleto antes de confirmar o pedido como pago.
+     O pedido já é persistido de verdade no backend (ver backend/), e o
+     payload acima já sai "engatilhado" pro gateway: `payload.pagamento`
+     (pix/cartao/boleto) e `payload.parcelas` (1 a 10, só preenchido no
+     cartão — ver MAX_PARCELAS_SEM_JUROS lá em cima) são exatamente os dois
+     dados que qualquer gateway (Mercado Pago / PagSeguro / Stripe) pede
+     pra abrir uma cobrança parcelada. Falta só:
+       1. Antes do fetch abaixo, chamar o SDK/API do gateway escolhido
+          passando { valor: payload.total, parcelas: payload.parcelas,
+          metodo: payload.pagamento, ... dados do cliente/cartão } e
+          aguardar a confirmação (ou o token/QR code, no caso de Pix).
+       2. Só então confirmar o pedido aqui (ou marcar como "confirmado"
+          já na criação, em vez de "novo" — ver VALID_STATUSES em
+          backend/src/orders.js).
+     Nenhuma cobrança real acontece hoje — o pedido é só registrado como
+     "novo" e a equipe fecha o pagamento por fora.
      ===================================================================== */
 
   try {
