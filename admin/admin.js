@@ -78,6 +78,15 @@ window.MES = (function(){
     return `<select class="admin-status-select" data-lead-id="${leadId}">${opts}</select>`;
   }
 
+  /* ---- status: contratos de empréstimo ---- */
+  const LOAN_CONTRACT_STATUS_LABELS = { ativo: "Ativo", quitado: "Quitado", cancelado: "Cancelado" };
+  const LOAN_CONTRACT_STATUS_ORDER = ["ativo", "quitado", "cancelado"];
+  const LOAN_INSTALLMENT_STATUS_LABELS = { pendente: "Pendente", pago: "Pago" };
+
+  /* ---- status: contratos de participação nos lucros ---- */
+  const PROFIT_SHARE_STATUS_LABELS = { ativo: "Ativo", encerrado: "Encerrado" };
+  const PROFIT_SHARE_STATUS_ORDER = ["ativo", "encerrado"];
+
   function showToast(msg){
     let toast = document.querySelector(".admin-toast");
     if(!toast){
@@ -114,9 +123,11 @@ window.MES = (function(){
   function applyCompanyNav(admin){
     const ordersLink = document.querySelector('.admin-nav-link[href="dashboard.html"]');
     const leadsLink  = document.querySelector('.admin-nav-link[href="credit-leads.html"]');
+    const payLink    = document.querySelector('.admin-nav-link[href="marques-pay.html"]');
     const staffLink  = document.querySelector('.admin-nav-link[href="equipe.html"]');
     if(ordersLink) ordersLink.style.display = hasCompanyAccess(admin, "energia_solar") ? "" : "none";
     if(leadsLink)  leadsLink.style.display  = hasCompanyAccess(admin, "promotora") ? "" : "none";
+    if(payLink)    payLink.style.display    = hasCompanyAccess(admin, "promotora") ? "" : "none";
     if(staffLink)  staffLink.style.display  = admin.role === "owner" ? "" : "none";
 
     const label = document.getElementById("adminUserLabel");
@@ -157,6 +168,8 @@ window.MES = (function(){
     statusBadge, statusSelectHTML,
     LEAD_STATUS_LABELS, LEAD_STATUS_ORDER,
     leadStatusBadge, leadStatusSelectHTML,
+    LOAN_CONTRACT_STATUS_LABELS, LOAN_CONTRACT_STATUS_ORDER, LOAN_INSTALLMENT_STATUS_LABELS,
+    PROFIT_SHARE_STATUS_LABELS, PROFIT_SHARE_STATUS_ORDER,
     COMPANY_LABELS, ROLE_LABELS, hasCompanyAccess, landingPageFor, applyCompanyNav,
     showToast, requireAuth, logout,
   };

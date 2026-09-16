@@ -28,6 +28,18 @@ async function findById(id) {
   return rows[0] || null;
 }
 
+// Busca usada pelo admin pra encontrar o cliente ao cadastrar um contrato
+// de empréstimo/participação nos lucros — por nome ou e-mail, resultado
+// enxuto (sem senha/2FA/endereço).
+async function searchCustomers(q) {
+  const like = `%${String(q || "").trim()}%`;
+  const { rows } = await pool.query(
+    "SELECT id, nome, email, cpf FROM customers WHERE nome ILIKE $1 OR email ILIKE $1 ORDER BY nome LIMIT 15",
+    [like]
+  );
+  return rows;
+}
+
 function toPublic(row) {
   if (!row) return null;
   return {
@@ -322,6 +334,7 @@ module.exports = {
   SESSION_COOKIE_NAME,
   findByEmail,
   findById,
+  searchCustomers,
   toPublic,
   register,
   updateProfile,

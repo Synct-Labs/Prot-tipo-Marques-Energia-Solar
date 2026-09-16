@@ -141,6 +141,65 @@ async function initSchema() {
       created_at           TEXT NOT NULL,
       updated_at           TEXT NOT NULL
     );
+
+    -- Empréstimos/financiamentos contratados com a Marques (ex: Financiamento
+    -- Solar, Crédito CLT) — aparece em "Meus Boletos" no Marques Pay. O admin
+    -- cadastra o contrato (título, valor da parcela, quantas parcelas) e o
+    -- sistema já gera todas as parcelas (loan_installments) de uma vez, com
+    -- vencimento mensal a partir da primeira parcela.
+    CREATE TABLE IF NOT EXISTS loan_contracts (
+      id             SERIAL PRIMARY KEY,
+      customer_id    INTEGER NOT NULL REFERENCES customers(id),
+      titulo         TEXT NOT NULL,
+      valor_parcela  DOUBLE PRECISION NOT NULL,
+      total_parcelas INTEGER NOT NULL,
+      status         TEXT NOT NULL DEFAULT 'ativo',
+      created_at     TEXT NOT NULL,
+      updated_at     TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS loan_installments (
+      id          SERIAL PRIMARY KEY,
+      contract_id INTEGER NOT NULL REFERENCES loan_contracts(id),
+      numero      INTEGER NOT NULL,
+      vencimento  TEXT NOT NULL,
+      valor       DOUBLE PRECISION NOT NULL,
+      status      TEXT NOT NULL DEFAULT 'pendente',
+      pago_em     TEXT,
+      created_at  TEXT NOT NULL,
+      updated_at  TEXT NOT NULL
+    );
+
+    -- Contrato de participação nos lucros — aparece em "Participação nos
+    -- Lucros" no Marques Pay. Diferente do empréstimo, os repasses não têm
+    -- data/valor fixos de antemão (dependem do lucro do período), então o
+    -- admin lança cada um manualmente conforme o pagamento é feito (por
+    -- fora do site), anexando o comprovante.
+    CREATE TABLE IF NOT EXISTS profit_share_contracts (
+      id              SERIAL PRIMARY KEY,
+      customer_id     INTEGER NOT NULL REFERENCES customers(id),
+      numero_contrato TEXT NOT NULL,
+      percentual      DOUBLE PRECISION NOT NULL,
+      periodicidade   TEXT,
+      data_inicio     TEXT NOT NULL,
+      status          TEXT NOT NULL DEFAULT 'ativo',
+      created_at      TEXT NOT NULL,
+      updated_at      TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS profit_share_payments (
+      id                SERIAL PRIMARY KEY,
+      contract_id       INTEGER NOT NULL REFERENCES profit_share_contracts(id),
+      valor             DOUBLE PRECISION NOT NULL,
+      data_pagamento    TEXT NOT NULL,
+      observacao        TEXT,
+      -- comprovante fica salvo direto no banco (bytea) — sem storage externo,
+      -- suficiente pra um recibo/print de comprovante de transferência.
+      comprovante_dados BYTEA,
+      comprovante_tipo  TEXT,
+      comprovante_nome  TEXT,
+      created_at        TEXT NOT NULL
+    );
   `);
 
   // Colunas novas em bancos que já existiam antes desta versão (o

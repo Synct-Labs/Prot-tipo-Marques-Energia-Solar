@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Marques Pay | Painel de Administrador | Marques</title>
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<header class="admin-topbar">
+  <div class="admin-brand">
+    <img src="../logo-mark-128.png" alt="Marques">
+    <span>Painel de Administrador</span>
+  </div>
+  <nav class="admin-nav">
+    <a href="dashboard.html" class="admin-nav-link">Pedidos</a>
+    <a href="credit-leads.html" class="admin-nav-link">Solicitações de Crédito</a>
+    <a href="marques-pay.html" class="admin-nav-link active">Marques Pay</a>
+    <a href="equipe.html" class="admin-nav-link">Equipe</a>
+  </nav>
+  <div class="admin-topbar-right">
+    <span class="admin-user" id="adminUserLabel"></span>
+    <button class="admin-btn admin-btn-ghost" id="logoutBtn">Sair</button>
+  </div>
+</header>
+
+<main class="admin-main">
+  <div class="admin-container">
+
+    <div class="admin-subtabs">
+      <button type="button" class="admin-subtab active" data-subtab="emprestimos">Empréstimos</button>
+      <button type="button" class="admin-subtab" data-subtab="participacao">Participação nos Lucros</button>
+    </div>
+
+    <!-- ========================= EMPRÉSTIMOS ========================= -->
+    <div class="admin-subpanel active" data-subpanel="emprestimos">
+
+      <div class="admin-toolbar">
+        <h2 style="font-size:1.15rem;">Empréstimos e financiamentos</h2>
+        <div class="admin-toolbar-filters">
+          <input type="text" id="loanSearchInput" placeholder="Buscar por cliente ou título">
+          <button class="admin-btn admin-btn-ghost" id="newLoanBtn">+ Novo empréstimo</button>
+        </div>
+      </div>
+
+      <div class="admin-table-wrap" id="newLoanCard" style="display:none; padding:22px; margin-bottom:20px;">
+        <div class="admin-error" id="newLoanError"></div>
+        <form id="newLoanForm">
+          <div class="admin-field admin-customer-picker">
+            <label for="nlCustomerSearch">Cliente (nome ou e-mail)</label>
+            <input type="text" id="nlCustomerSearch" autocomplete="off" required placeholder="Digite pra buscar...">
+            <div class="admin-customer-results" id="nlCustomerResults"></div>
+            <p class="admin-customer-picked" id="nlCustomerPicked"></p>
+            <input type="hidden" id="nlCustomerId">
+          </div>
+          <div class="admin-field">
+            <label for="nlTitulo">Título do contrato</label>
+            <input type="text" id="nlTitulo" required placeholder="Ex: Financiamento Solar">
+          </div>
+          <div class="admin-field">
+            <label for="nlValorParcela">Valor de cada parcela (R$)</label>
+            <input type="number" id="nlValorParcela" required min="0.01" step="0.01" placeholder="452.30">
+          </div>
+          <div class="admin-field">
+            <label for="nlTotalParcelas">Total de parcelas</label>
+            <input type="number" id="nlTotalParcelas" required min="1" max="360" step="1" placeholder="48">
+          </div>
+          <div class="admin-field">
+            <label for="nlDataPrimeira">Vencimento da 1ª parcela</label>
+            <input type="date" id="nlDataPrimeira" required>
+          </div>
+          <p class="admin-note" style="margin:0 0 16px;">As demais parcelas são geradas automaticamente, uma por mês, a partir dessa data.</p>
+          <div style="display:flex; gap:10px;">
+            <button type="submit" class="admin-btn" id="newLoanSubmitBtn" style="width:auto;">Criar contrato</button>
+            <button type="button" class="admin-btn admin-btn-ghost" id="cancelNewLoanBtn">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Título</th>
+              <th>Parcelas</th>
+              <th>Valor da parcela</th>
+              <th>Status</th>
+              <th>Criado em</th>
+            </tr>
+          </thead>
+          <tbody id="loanContractsTableBody">
+            <tr><td colspan="6" class="admin-loading">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========================= PARTICIPAÇÃO NOS LUCROS ========================= -->
+    <div class="admin-subpanel" data-subpanel="participacao">
+
+      <div class="admin-toolbar">
+        <h2 style="font-size:1.15rem;">Contratos de participação nos lucros</h2>
+        <div class="admin-toolbar-filters">
+          <input type="text" id="psSearchInput" placeholder="Buscar por cliente ou nº do contrato">
+          <button class="admin-btn admin-btn-ghost" id="newPsBtn">+ Novo contrato</button>
+        </div>
+      </div>
+
+      <div class="admin-table-wrap" id="newPsCard" style="display:none; padding:22px; margin-bottom:20px;">
+        <div class="admin-error" id="newPsError"></div>
+        <form id="newPsForm">
+          <div class="admin-field admin-customer-picker">
+            <label for="npCustomerSearch">Cliente (nome ou e-mail)</label>
+            <input type="text" id="npCustomerSearch" autocomplete="off" required placeholder="Digite pra buscar...">
+            <div class="admin-customer-results" id="npCustomerResults"></div>
+            <p class="admin-customer-picked" id="npCustomerPicked"></p>
+            <input type="hidden" id="npCustomerId">
+          </div>
+          <div class="admin-field">
+            <label for="npNumero">Número do contrato</label>
+            <input type="text" id="npNumero" required placeholder="Ex: PL-2026-014">
+          </div>
+          <div class="admin-field">
+            <label for="npPercentual">Percentual de participação (%)</label>
+            <input type="number" id="npPercentual" required min="0.01" max="100" step="0.01" placeholder="2.5">
+          </div>
+          <div class="admin-field">
+            <label for="npPeriodicidade">Periodicidade (texto livre)</label>
+            <input type="text" id="npPeriodicidade" placeholder="Ex: Mensal, todo dia 5">
+          </div>
+          <div class="admin-field">
+            <label for="npDataInicio">Início do contrato</label>
+            <input type="date" id="npDataInicio" required>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button type="submit" class="admin-btn" id="newPsSubmitBtn" style="width:auto;">Criar contrato</button>
+            <button type="button" class="admin-btn admin-btn-ghost" id="cancelNewPsBtn">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Contrato</th>
+              <th>Percentual</th>
+              <th>Início</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="psContractsTableBody">
+            <tr><td colspan="5" class="admin-loading">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="../api-config.js"></script>
+<script src="admin.js"></script>
+<script>
+const API_BASE = window.MES_API_BASE || "";
+let allLoanContracts = [];
+let allPsContracts = [];
+const openLoanDetails = {};   // contractId -> installments[] já carregadas
+const openPsDetails = {};     // contractId -> payments[] já carregadas
+
+/* ---------------------- SUB-ABAS ---------------------- */
+document.querySelectorAll(".admin-subtab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".admin-subtab").forEach(b => b.classList.toggle("active", b === btn));
+    document.querySelectorAll(".admin-subpanel").forEach(p => p.classList.toggle("active", p.dataset.subpanel === btn.dataset.subtab));
+  });
+});
+
+/* ---------------------- BUSCA DE CLIENTE (reutilizável) ---------------------- */
+function attachCustomerPicker(searchInput, resultsBox, hiddenIdInput, pickedLabel){
+  let timer = null;
+  searchInput.addEventListener("input", () => {
+    hiddenIdInput.value = "";
+    pickedLabel.classList.remove("show");
+    clearTimeout(timer);
+    const q = searchInput.value.trim();
+    if(q.length < 2){ resultsBox.classList.remove("show"); return; }
+    timer = setTimeout(async () => {
+      const res = await MES.apiGet(`/api/admin/customers/search?q=${encodeURIComponent(q)}`);
+      if(!res.ok || !res.customers.length){
+        resultsBox.innerHTML = `<div class="admin-customer-result-item" style="cursor:default;">Nenhum cliente encontrado.</div>`;
+        resultsBox.classList.add("show");
+        return;
+      }
+      resultsBox.innerHTML = res.customers.map(c => `
+        <div class="admin-customer-result-item" data-id="${c.id}" data-nome="${c.nome}" data-email="${c.email}">
+          ${c.nome}<span>${c.email}</span>
+        </div>`).join("");
+      resultsBox.classList.add("show");
+    }, 300);
+  });
+
+  resultsBox.addEventListener("click", (e) => {
+    const item = e.target.closest(".admin-customer-result-item[data-id]");
+    if(!item) return;
+    hiddenIdInput.value = item.dataset.id;
+    searchInput.value = item.dataset.nome;
+    pickedLabel.textContent = `Selecionado: ${item.dataset.nome} (${item.dataset.email})`;
+    pickedLabel.classList.add("show");
+    resultsBox.classList.remove("show");
+  });
+
+  document.addEventListener("click", (e) => {
+    if(!resultsBox.contains(e.target) && e.target !== searchInput) resultsBox.classList.remove("show");
+  });
+}
+
+attachCustomerPicker(
+  document.getElementById("nlCustomerSearch"),
+  document.getElementById("nlCustomerResults"),
+  document.getElementById("nlCustomerId"),
+  document.getElementById("nlCustomerPicked")
+);
+attachCustomerPicker(
+  document.getElementById("npCustomerSearch"),
+  document.getElementById("npCustomerResults"),
+  document.getElementById("npCustomerId"),
+  document.getElementById("npCustomerPicked")
+);
+
+/* ========================================================================
+   EMPRÉSTIMOS
+   ======================================================================== */
+function loanContractStatusSelectHTML(currentStatus, contractId){
+  const opts = MES.LOAN_CONTRACT_STATUS_ORDER.map(s =>
+    `<option value="${s}" ${s === currentStatus ? "selected" : ""}>${MES.LOAN_CONTRACT_STATUS_LABELS[s]}</option>`
+  ).join("");
+  return `<select class="admin-status-select loan-contract-status-select" data-contract-id="${contractId}">${opts}</select>`;
+}
+
+function loanInstallmentsTableHTML(contractId){
+  const list = openLoanDetails[contractId];
+  if(!list) return `<p class="admin-loading">Carregando parcelas...</p>`;
+  return `
+    <table class="admin-mini-table">
+      <thead><tr><th>Parcela</th><th>Vencimento</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        ${list.map(inst => `
+          <tr>
+            <td>${inst.numero}/${list.length}</td>
+            <td>${inst.vencimento.split("-").reverse().join("/")}</td>
+            <td>${MES.formatBRL(inst.valor)}</td>
+            <td><span class="status-badge status-${inst.status}">${MES.LOAN_INSTALLMENT_STATUS_LABELS[inst.status]}</span>${inst.pagoEm ? ` <span class="admin-note" style="display:inline;">em ${inst.pagoEm.split("-").reverse().join("/")}</span>` : ""}</td>
+            <td><button type="button" class="admin-btn admin-btn-ghost toggle-installment-btn" style="width:auto; padding:5px 10px; font-size:.76rem;" data-id="${inst.id}" data-status="${inst.status}">${inst.status === "pago" ? "Marcar pendente" : "Marcar pago"}</button></td>
+          </tr>`).join("")}
+      </tbody>
+    </table>`;
+}
+
+function loanDetailHTML(contract){
+  return `
+    <div class="admin-detail-block" style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+      <div><h4>Status do contrato</h4>${loanContractStatusSelectHTML(contract.status, contract.id)}</div>
+    </div>
+    <div class="admin-detail-block" style="grid-column: 1 / -1;" data-installments-for="${contract.id}">
+      <h4>Parcelas</h4>
+      ${loanInstallmentsTableHTML(contract.id)}
+    </div>`;
+}
+
+function renderLoanContracts(list){
+  const tbody = document.getElementById("loanContractsTableBody");
+  if(list.length === 0){
+    tbody.innerHTML = `<tr><td colspan="6" class="admin-empty">Nenhum empréstimo cadastrado ainda.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(c => `
+    <tr class="admin-order-row" data-id="${c.id}" data-kind="loan">
+      <td data-label="Cliente">${c.customer.nome}</td>
+      <td data-label="Título">${c.titulo}</td>
+      <td data-label="Parcelas">${c.totalParcelas}x</td>
+      <td data-label="Valor da parcela">${MES.formatBRL(c.valorParcela)}</td>
+      <td data-label="Status"><span class="status-badge status-${c.status}">${MES.LOAN_CONTRACT_STATUS_LABELS[c.status]}</span></td>
+      <td data-label="Criado em">${MES.formatDate(c.createdAt)}</td>
+    </tr>
+    <tr class="admin-order-detail" data-detail-for="loan-${c.id}">
+      <td colspan="6"><div class="admin-order-detail-inner" id="loanDetailInner-${c.id}">${loanDetailHTML(c)}</div></td>
+    </tr>`).join("");
+}
+
+function applyLoanFilters(){
+  const q = document.getElementById("loanSearchInput").value.trim().toLowerCase();
+  let list = allLoanContracts;
+  if(q){
+    list = list.filter(c =>
+      c.customer.nome.toLowerCase().includes(q) ||
+      c.customer.email.toLowerCase().includes(q) ||
+      c.titulo.toLowerCase().includes(q)
+    );
+  }
+  renderLoanContracts(list);
+}
+
+async function loadLoanContracts(){
+  document.getElementById("loanContractsTableBody").innerHTML = `<tr><td colspan="6" class="admin-loading">Carregando...</td></tr>`;
+  const res = await MES.apiGet("/api/admin/loans/contracts");
+  if(!res.ok){ MES.showToast(res.error || "Erro ao carregar empréstimos."); return; }
+  allLoanContracts = res.contracts;
+  applyLoanFilters();
+}
+
+document.getElementById("newLoanBtn").addEventListener("click", () => document.getElementById("newLoanCard").style.display = "block");
+document.getElementById("cancelNewLoanBtn").addEventListener("click", () => {
+  document.getElementById("newLoanCard").style.display = "none";
+  document.getElementById("newLoanForm").reset();
+  document.getElementById("nlCustomerPicked").classList.remove("show");
+});
+
+document.getElementById("newLoanForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("newLoanError");
+  const btn = document.getElementById("newLoanSubmitBtn");
+  errorBox.classList.remove("show");
+
+  const customerId = document.getElementById("nlCustomerId").value;
+  if(!customerId){
+    errorBox.textContent = "Busque e selecione o cliente na lista.";
+    errorBox.classList.add("show");
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = "Criando...";
+  try{
+    const res = await MES.apiPost("/api/admin/loans/contracts", {
+      customerId: Number(customerId),
+      titulo: document.getElementById("nlTitulo").value.trim(),
+      valorParcela: Number(document.getElementById("nlValorParcela").value),
+      totalParcelas: Number(document.getElementById("nlTotalParcelas").value),
+      dataPrimeiraParcela: document.getElementById("nlDataPrimeira").value,
+    });
+    if(!res.ok){
+      errorBox.textContent = res.error || "Não foi possível criar o contrato.";
+      errorBox.classList.add("show");
+      return;
+    }
+    document.getElementById("newLoanForm").reset();
+    document.getElementById("newLoanCard").style.display = "none";
+    document.getElementById("nlCustomerPicked").classList.remove("show");
+    MES.showToast("Contrato de empréstimo criado.");
+    loadLoanContracts();
+  } finally {
+    btn.disabled = false; btn.textContent = "Criar contrato";
+  }
+});
+
+document.getElementById("loanSearchInput").addEventListener("input", applyLoanFilters);
+
+document.getElementById("loanContractsTableBody").addEventListener("click", async (e) => {
+  const toggleBtn = e.target.closest(".toggle-installment-btn");
+  if(toggleBtn){
+    const id = toggleBtn.dataset.id;
+    const newStatus = toggleBtn.dataset.status === "pago" ? "pendente" : "pago";
+    const res = await MES.apiPatch(`/api/admin/loans/installments/${id}`, { status: newStatus });
+    if(!res.ok){ MES.showToast(res.error || "Erro ao atualizar parcela."); return; }
+    const contractRow = toggleBtn.closest(".admin-order-detail-inner");
+    const contractId = contractRow.id.replace("loanDetailInner-", "");
+    const detailRes = await MES.apiGet(`/api/admin/loans/contracts/${contractId}`);
+    if(detailRes.ok){
+      openLoanDetails[contractId] = detailRes.installments;
+      document.querySelector(`[data-installments-for="${contractId}"]`).innerHTML =
+        `<h4>Parcelas</h4>${loanInstallmentsTableHTML(contractId)}`;
+    }
+    MES.showToast("Parcela atualizada.");
+    return;
+  }
+
+  if(e.target.closest("select") || e.target.closest("button")) return;
+  const row = e.target.closest(".admin-order-row");
+  if(!row) return;
+  const id = row.dataset.id;
+  const detail = document.querySelector(`.admin-order-detail[data-detail-for="loan-${id}"] .admin-order-detail-inner`);
+  if(!detail) return;
+  const willOpen = !detail.classList.contains("open");
+  detail.classList.toggle("open");
+  if(willOpen && !openLoanDetails[id]){
+    const res = await MES.apiGet(`/api/admin/loans/contracts/${id}`);
+    if(res.ok){
+      openLoanDetails[id] = res.installments;
+      const box = detail.querySelector(`[data-installments-for="${id}"]`);
+      if(box) box.innerHTML = `<h4>Parcelas</h4>${loanInstallmentsTableHTML(id)}`;
+    }
+  }
+});
+
+document.getElementById("loanContractsTableBody").addEventListener("change", async (e) => {
+  const select = e.target.closest(".loan-contract-status-select");
+  if(!select) return;
+  const id = select.dataset.contractId;
+  const res = await MES.apiPatch(`/api/admin/loans/contracts/${id}`, { status: select.value });
+  if(!res.ok){ MES.showToast(res.error || "Erro ao atualizar status."); return; }
+  MES.showToast("Status do contrato atualizado.");
+  const idx = allLoanContracts.findIndex(c => String(c.id) === String(id));
+  if(idx > -1) allLoanContracts[idx] = res.contract;
+  applyLoanFilters();
+});
+
+/* ========================================================================
+   PARTICIPAÇÃO NOS LUCROS
+   ======================================================================== */
+function psContractStatusSelectHTML(currentStatus, contractId){
+  const opts = MES.PROFIT_SHARE_STATUS_ORDER.map(s =>
+    `<option value="${s}" ${s === currentStatus ? "selected" : ""}>${MES.PROFIT_SHARE_STATUS_LABELS[s]}</option>`
+  ).join("");
+  return `<select class="admin-status-select ps-contract-status-select" data-contract-id="${contractId}">${opts}</select>`;
+}
+
+function psPaymentsTableHTML(contractId){
+  const list = openPsDetails[contractId];
+  if(!list) return `<p class="admin-loading">Carregando repasses...</p>`;
+  if(list.length === 0) return `<p class="admin-note" style="margin:8px 0 0;">Nenhum repasse lançado ainda.</p>`;
+  return `
+    <table class="admin-mini-table">
+      <thead><tr><th>Data</th><th>Valor</th><th>Observação</th><th>Comprovante</th></tr></thead>
+      <tbody>
+        ${list.map(p => `
+          <tr>
+            <td>${p.dataPagamento.split("-").reverse().join("/")}</td>
+            <td>${MES.formatBRL(p.valor)}</td>
+            <td>${p.observacao || "-"}</td>
+            <td>${p.temComprovante ? `<a href="${API_BASE}/api/admin/profit-share/payments/${p.id}/comprovante" target="_blank" rel="noopener">Ver</a>` : "-"}</td>
+          </tr>`).join("")}
+      </tbody>
+    </table>`;
+}
+
+function psDetailHTML(contract){
+  return `
+    <div class="admin-detail-block" style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+      <div><h4>Status do contrato</h4>${psContractStatusSelectHTML(contract.status, contract.id)}</div>
+      <div><h4>Periodicidade</h4><p style="margin:0;">${contract.periodicidade || "-"}</p></div>
+    </div>
+    <div class="admin-detail-block" style="grid-column: 1 / -1;" data-payments-for="${contract.id}">
+      <h4>Repasses lançados</h4>
+      ${psPaymentsTableHTML(contract.id)}
+      <form class="admin-payment-form" data-contract-id="${contract.id}">
+        <div class="admin-field">
+          <label>Valor (R$)</label>
+          <input type="number" class="ps-pay-valor" min="0.01" step="0.01" required style="width:110px;">
+        </div>
+        <div class="admin-field">
+          <label>Data do repasse</label>
+          <input type="date" class="ps-pay-data" required>
+        </div>
+        <div class="admin-field">
+          <label>Observação (opcional)</label>
+          <input type="text" class="ps-pay-obs" placeholder="Ex: referente a agosto/2026" style="width:200px;">
+        </div>
+        <div class="admin-field">
+          <label>Comprovante (opcional)</label>
+          <input type="file" class="ps-pay-file" accept="image/*,application/pdf">
+        </div>
+        <button type="submit" class="admin-btn" style="width:auto;">Lançar repasse</button>
+      </form>
+      <div class="admin-error ps-pay-error" data-contract-id="${contract.id}"></div>
+    </div>`;
+}
+
+function renderPsContracts(list){
+  const tbody = document.getElementById("psContractsTableBody");
+  if(list.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">Nenhum contrato de participação nos lucros cadastrado ainda.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(c => `
+    <tr class="admin-order-row" data-id="${c.id}" data-kind="ps">
+      <td data-label="Cliente">${c.customer.nome}</td>
+      <td data-label="Contrato">${c.numeroContrato}</td>
+      <td data-label="Percentual">${String(c.percentual).replace(".", ",")}%</td>
+      <td data-label="Início">${c.dataInicio.split("-").reverse().join("/")}</td>
+      <td data-label="Status"><span class="status-badge status-${c.status}">${MES.PROFIT_SHARE_STATUS_LABELS[c.status]}</span></td>
+    </tr>
+    <tr class="admin-order-detail" data-detail-for="ps-${c.id}">
+      <td colspan="5"><div class="admin-order-detail-inner" id="psDetailInner-${c.id}">${psDetailHTML(c)}</div></td>
+    </tr>`).join("");
+}
+
+function applyPsFilters(){
+  const q = document.getElementById("psSearchInput").value.trim().toLowerCase();
+  let list = allPsContracts;
+  if(q){
+    list = list.filter(c =>
+      c.customer.nome.toLowerCase().includes(q) ||
+      c.customer.email.toLowerCase().includes(q) ||
+      c.numeroContrato.toLowerCase().includes(q)
+    );
+  }
+  renderPsContracts(list);
+}
+
+async function loadPsContracts(){
+  document.getElementById("psContractsTableBody").innerHTML = `<tr><td colspan="5" class="admin-loading">Carregando...</td></tr>`;
+  const res = await MES.apiGet("/api/admin/profit-share/contracts");
+  if(!res.ok){ MES.showToast(res.error || "Erro ao carregar contratos."); return; }
+  allPsContracts = res.contracts;
+  applyPsFilters();
+}
+
+document.getElementById("newPsBtn").addEventListener("click", () => document.getElementById("newPsCard").style.display = "block");
+document.getElementById("cancelNewPsBtn").addEventListener("click", () => {
+  document.getElementById("newPsCard").style.display = "none";
+  document.getElementById("newPsForm").reset();
+  document.getElementById("npCustomerPicked").classList.remove("show");
+});
+
+document.getElementById("newPsForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("newPsError");
+  const btn = document.getElementById("newPsSubmitBtn");
+  errorBox.classList.remove("show");
+
+  const customerId = document.getElementById("npCustomerId").value;
+  if(!customerId){
+    errorBox.textContent = "Busque e selecione o cliente na lista.";
+    errorBox.classList.add("show");
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = "Criando...";
+  try{
+    const res = await MES.apiPost("/api/admin/profit-share/contracts", {
+      customerId: Number(customerId),
+      numeroContrato: document.getElementById("npNumero").value.trim(),
+      percentual: Number(document.getElementById("npPercentual").value),
+      periodicidade: document.getElementById("npPeriodicidade").value.trim(),
+      dataInicio: document.getElementById("npDataInicio").value,
+    });
+    if(!res.ok){
+      errorBox.textContent = res.error || "Não foi possível criar o contrato.";
+      errorBox.classList.add("show");
+      return;
+    }
+    document.getElementById("newPsForm").reset();
+    document.getElementById("newPsCard").style.display = "none";
+    document.getElementById("npCustomerPicked").classList.remove("show");
+    MES.showToast("Contrato de participação nos lucros criado.");
+    loadPsContracts();
+  } finally {
+    btn.disabled = false; btn.textContent = "Criar contrato";
+  }
+});
+
+document.getElementById("psSearchInput").addEventListener("input", applyPsFilters);
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById("psContractsTableBody").addEventListener("submit", async (e) => {
+  const form = e.target.closest(".admin-payment-form");
+  if(!form) return;
+  e.preventDefault();
+  const contractId = form.dataset.contractId;
+  const errorBox = document.querySelector(`.ps-pay-error[data-contract-id="${contractId}"]`);
+  errorBox.classList.remove("show");
+
+  const file = form.querySelector(".ps-pay-file").files[0];
+  const payload = {
+    valor: Number(form.querySelector(".ps-pay-valor").value),
+    dataPagamento: form.querySelector(".ps-pay-data").value,
+    observacao: form.querySelector(".ps-pay-obs").value.trim(),
+  };
+  if(file){
+    if(file.size > 4 * 1024 * 1024){
+      errorBox.textContent = "Comprovante muito grande (máximo 4MB).";
+      errorBox.classList.add("show");
+      return;
+    }
+    payload.comprovanteBase64 = await fileToBase64(file);
+    payload.comprovanteTipo = file.type;
+    payload.comprovanteNome = file.name;
+  }
+
+  const submitBtn = form.querySelector("button[type=submit]");
+  submitBtn.disabled = true; submitBtn.textContent = "Lançando...";
+  try{
+    const res = await MES.apiPost(`/api/admin/profit-share/contracts/${contractId}/payments`, payload);
+    if(!res.ok){
+      errorBox.textContent = res.error || "Não foi possível lançar o repasse.";
+      errorBox.classList.add("show");
+      return;
+    }
+    openPsDetails[contractId] = res.payments;
+    // Reconstrói o bloco inteiro (mais simples que só religar os listeners do form).
+    const contract = allPsContracts.find(c => String(c.id) === String(contractId));
+    document.getElementById(`psDetailInner-${contractId}`).innerHTML = psDetailHTML(contract);
+    document.querySelector(`.admin-order-detail[data-detail-for="ps-${contractId}"] .admin-order-detail-inner`).classList.add("open");
+    MES.showToast("Repasse lançado.");
+  } finally {
+    submitBtn.disabled = false; submitBtn.textContent = "Lançar repasse";
+  }
+});
+
+document.getElementById("psContractsTableBody").addEventListener("click", async (e) => {
+  if(e.target.closest("form") || e.target.closest("select") || e.target.closest("a") || e.target.closest("input")) return;
+  const row = e.target.closest(".admin-order-row");
+  if(!row) return;
+  const id = row.dataset.id;
+  const detail = document.querySelector(`.admin-order-detail[data-detail-for="ps-${id}"] .admin-order-detail-inner`);
+  if(!detail) return;
+  const willOpen = !detail.classList.contains("open");
+  detail.classList.toggle("open");
+  if(willOpen && !openPsDetails[id]){
+    const res = await MES.apiGet(`/api/admin/profit-share/contracts/${id}`);
+    if(res.ok){
+      openPsDetails[id] = res.payments;
+      const box = detail.querySelector(`[data-payments-for="${id}"]`);
+      if(box){
+        const contract = allPsContracts.find(c => String(c.id) === String(id));
+        document.getElementById(`psDetailInner-${id}`).innerHTML = psDetailHTML(contract);
+        detail.classList.add("open");
+      }
+    }
+  }
+});
+
+document.getElementById("psContractsTableBody").addEventListener("change", async (e) => {
+  const select = e.target.closest(".ps-contract-status-select");
+  if(!select) return;
+  const id = select.dataset.contractId;
+  const res = await MES.apiPatch(`/api/admin/profit-share/contracts/${id}`, { status: select.value });
+  if(!res.ok){ MES.showToast(res.error || "Erro ao atualizar status."); return; }
+  MES.showToast("Status do contrato atualizado.");
+  const idx = allPsContracts.findIndex(c => String(c.id) === String(id));
+  if(idx > -1) allPsContracts[idx] = res.contract;
+  applyPsFilters();
+});
+
+/* ---------------------- INIT ---------------------- */
+async function init(){
+  const admin = await MES.requireAuth("promotora");
+  if(!admin) return;
+  await Promise.all([loadLoanContracts(), loadPsContracts()]);
+}
+
+document.getElementById("logoutBtn").addEventListener("click", () => MES.logout());
+
+init();
+</script>
+</body>
+</html>

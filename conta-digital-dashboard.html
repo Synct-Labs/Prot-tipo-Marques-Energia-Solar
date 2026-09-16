@@ -31,9 +31,9 @@
         <span class="pay-bell-dot">1</span>
       </button>
       <div class="pay-user-menu">
-        <div class="pay-user-avatar" style="background:linear-gradient(135deg, var(--orange-light), var(--orange-deep)); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; color:#1a1200;">L</div>
+        <div class="pay-user-avatar" id="payUserAvatar" style="background:linear-gradient(135deg, var(--orange-light), var(--orange-deep)); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; color:#1a1200;">L</div>
         <div class="pay-user-menu-text">
-          <small>Olá, Leonardo</small>
+          <small id="payUserGreetingSmall">Olá, Leonardo</small>
           <strong>Cliente Marques Pay</strong>
         </div>
         <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -93,13 +93,13 @@
 
     <!-- ===================== CONTEÚDO ===================== -->
     <main class="pay-main">
-      <span class="pay-preview-tag">Protótipo — mostra como o painel vai funcionar. Nenhuma conta, saldo ou movimentação aqui é real.</span>
+      <span class="pay-preview-tag">"Meus Boletos" e "Participação nos Lucros" mostram dados reais da sua conta. Saldo, cartão, extrato geral e metas ainda são só protótipo — mostram como vai funcionar.</span>
 
       <!-- ---------- INÍCIO ---------- -->
       <div class="pay-panel active" data-panel="inicio">
         <div class="pay-main-head">
           <div>
-            <h1>Olá, Leonardo!</h1>
+            <h1 id="payGreetingName">Olá!</h1>
             <p>Sua conta, seus empréstimos e sua participação nos lucros, em um só lugar.</p>
           </div>
           <button class="btn btn-primary" type="button" data-goto="boletos">
@@ -121,8 +121,8 @@
             <div class="pay-stat-icon is-red"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
             <div class="pay-stat-body">
               <span>Total a pagar este mês</span>
-              <strong>R$ 762,30</strong>
-              <div class="pay-stat-trend">2 boletos pendentes</div>
+              <strong id="statBoletosValor">R$ 0,00</strong>
+              <div class="pay-stat-trend" id="statBoletosTrend">Carregando...</div>
             </div>
           </div>
           <div class="pay-stat-card">
@@ -136,9 +136,9 @@
           <div class="pay-stat-card">
             <div class="pay-stat-icon is-orange"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg></div>
             <div class="pay-stat-body">
-              <span>Próxima participação nos lucros</span>
-              <strong>R$ 640,00</strong>
-              <div class="pay-stat-trend">Prevista para 05/10/2026</div>
+              <span id="statPsLabel">Participação nos lucros</span>
+              <strong id="statPsValor">R$ 0,00</strong>
+              <div class="pay-stat-trend" id="statPsTrend">Carregando...</div>
             </div>
           </div>
         </div>
@@ -243,19 +243,8 @@
             <div class="pay-card">
               <div class="pay-card-head"><h2>Próximos boletos</h2><a class="pay-card-link" href="#" data-goto="boletos">Ver todos →</a></div>
               <p class="pay-card-sub">Só os boletos dos seus empréstimos com a Marques.</p>
-              <div class="pay-boletos-list">
-                <div class="pay-boleto-row">
-                  <span class="pay-boleto-icon" style="background:rgba(247,148,30,0.15); color:var(--orange);"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></span>
-                  <div class="pay-boleto-body"><strong>Financiamento Solar</strong><span>Parcela 4/48 · Vencimento: 10/09/2026</span></div>
-                  <span class="pay-boleto-value">R$ 452,30</span>
-                  <button class="pay-boleto-pay-btn" type="button">Pagar</button>
-                </div>
-                <div class="pay-boleto-row">
-                  <span class="pay-boleto-icon" style="background:rgba(167,139,250,0.15); color:#A78BFA;"><svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
-                  <div class="pay-boleto-body"><strong>Crédito CLT</strong><span>Parcela 4/24 · Vencimento: 18/09/2026</span></div>
-                  <span class="pay-boleto-value">R$ 310,00</span>
-                  <button class="pay-boleto-pay-btn" type="button">Pagar</button>
-                </div>
+              <div class="pay-boletos-list" id="proximosBoletosList">
+                <p class="pay-empty-note">Carregando...</p>
               </div>
             </div>
 
@@ -284,33 +273,8 @@
       <div class="pay-panel" data-panel="boletos">
         <div class="pay-main-head"><div><h1>Meus Boletos</h1><p>Só os boletos dos empréstimos e financiamentos contratados com a Marques — nada de contas de terceiros.</p></div></div>
         <div class="pay-card">
-          <div class="pay-boletos-list">
-            <div class="pay-boleto-row">
-              <span class="pay-boleto-icon" style="background:rgba(247,148,30,0.15); color:var(--orange);"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></span>
-              <div class="pay-boleto-body"><strong>Financiamento Solar</strong><span>Parcela 4/48 · Vencimento: 10/09/2026</span></div>
-              <span class="account-status-badge">Pendente</span>
-              <span class="pay-boleto-value">R$ 452,30</span>
-              <button class="pay-boleto-pay-btn" type="button">Pagar</button>
-            </div>
-            <div class="pay-boleto-row">
-              <span class="pay-boleto-icon" style="background:rgba(167,139,250,0.15); color:#A78BFA;"><svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
-              <div class="pay-boleto-body"><strong>Crédito CLT</strong><span>Parcela 4/24 · Vencimento: 18/09/2026</span></div>
-              <span class="account-status-badge">Pendente</span>
-              <span class="pay-boleto-value">R$ 310,00</span>
-              <button class="pay-boleto-pay-btn" type="button">Pagar</button>
-            </div>
-            <div class="pay-boleto-row">
-              <span class="pay-boleto-icon" style="background:rgba(52,211,153,0.15); color:var(--success);"><svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
-              <div class="pay-boleto-body"><strong>Financiamento Solar</strong><span>Parcela 3/48 · Pago em 10/08/2026</span></div>
-              <span class="account-status-badge status-success">Pago</span>
-              <span class="pay-boleto-value">R$ 452,30</span>
-            </div>
-            <div class="pay-boleto-row">
-              <span class="pay-boleto-icon" style="background:rgba(52,211,153,0.15); color:var(--success);"><svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
-              <div class="pay-boleto-body"><strong>Crédito CLT</strong><span>Parcela 3/24 · Pago em 18/08/2026</span></div>
-              <span class="account-status-badge status-success">Pago</span>
-              <span class="pay-boleto-value">R$ 310,00</span>
-            </div>
+          <div class="pay-boletos-list" id="meusBoletosList">
+            <p class="pay-empty-note">Carregando...</p>
           </div>
         </div>
       </div>
@@ -319,38 +283,14 @@
       <div class="pay-panel" data-panel="participacao-lucros">
         <div class="pay-main-head"><div><h1>Participação nos Lucros</h1><p>Extrato do seu contrato de participação nos lucros da Marques. Cada repasse é lançado pela nossa equipe e vem com comprovante.</p></div></div>
 
-        <div class="pay-card" style="margin-bottom:20px;">
-          <div class="pay-card-head"><h2>Seu contrato</h2><span class="account-status-badge status-success">Ativo</span></div>
-          <div class="pay-contract-grid">
-            <div><span>Nº do contrato</span><strong>PL-2026-014</strong></div>
-            <div><span>Início</span><strong>10/03/2026</strong></div>
-            <div><span>Participação</span><strong>2,5% dos lucros líquidos</strong></div>
-            <div><span>Repasse</span><strong>Mensal, todo dia 5</strong></div>
-          </div>
-          <p class="pay-empty-note" style="margin-top:14px;">Contrato cadastrado e atualizado pela equipe Marques. Alguma dúvida sobre os valores? Fale com a gente pelo WhatsApp.</p>
+        <div class="pay-card" style="margin-bottom:20px;" id="psContractCard">
+          <p class="pay-empty-note">Carregando...</p>
         </div>
 
         <div class="pay-card">
           <div class="pay-card-head"><h2>Repasses recebidos</h2></div>
-          <div class="pay-boletos-list">
-            <div class="pay-boleto-row">
-              <span class="pay-boleto-icon" style="background:rgba(52,211,153,0.15); color:var(--success);"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg></span>
-              <div class="pay-boleto-body"><strong>Repasse de Participação nos Lucros</strong><span>Lançado pela Marques · 05/09/2026</span></div>
-              <span class="pay-boleto-value" style="color:var(--success);">+ R$ 640,00</span>
-              <button class="pay-boleto-pay-btn pay-comprovante-btn" type="button">Ver comprovante</button>
-            </div>
-            <div class="pay-boleto-row">
-              <span class="pay-boleto-icon" style="background:rgba(52,211,153,0.15); color:var(--success);"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg></span>
-              <div class="pay-boleto-body"><strong>Repasse de Participação nos Lucros</strong><span>Lançado pela Marques · 05/08/2026</span></div>
-              <span class="pay-boleto-value" style="color:var(--success);">+ R$ 580,00</span>
-              <button class="pay-boleto-pay-btn pay-comprovante-btn" type="button">Ver comprovante</button>
-            </div>
-            <div class="pay-boleto-row">
-              <span class="pay-boleto-icon" style="background:rgba(52,211,153,0.15); color:var(--success);"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg></span>
-              <div class="pay-boleto-body"><strong>Repasse de Participação nos Lucros</strong><span>Lançado pela Marques · 05/07/2026</span></div>
-              <span class="pay-boleto-value" style="color:var(--success);">+ R$ 610,00</span>
-              <button class="pay-boleto-pay-btn pay-comprovante-btn" type="button">Ver comprovante</button>
-            </div>
+          <div class="pay-boletos-list" id="psPaymentsList">
+            <p class="pay-empty-note">Carregando...</p>
           </div>
         </div>
       </div>
@@ -486,6 +426,8 @@
   </div>
 </div>
 
+<script src="api-config.js"></script>
+<script src="account-widget.js"></script>
 <script src="conta-digital-dashboard.js"></script>
 </body>
 </html>

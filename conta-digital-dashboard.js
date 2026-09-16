@@ -1,6 +1,12 @@
 /* =====================================================================
-   MARQUES PAY — PRÉVIA DO PAINEL (DESKTOP)
-   Protótipo estático: troca de painel só no front-end, sem dados reais.
+   MARQUES PAY — PAINEL (DESKTOP)
+   ---------------------------------------------------------------------
+   A maior parte da tela ainda é protótipo estático (saldo, cartão,
+   extrato geral, metas) — precisaria de um parceiro bancário de verdade
+   pra virar real. "Meus Boletos" (empréstimos) e "Participação nos
+   Lucros" são as exceções: dados reais, puxados do backend, ligados à
+   conta do cliente logado (mesmo login da loja/crédito). Ver
+   PARTICIPAÇÃO/EMPRÉSTIMOS mais abaixo.
    ===================================================================== */
 function goToPayPanel(panel) {
   document.querySelectorAll(".pay-panel").forEach(el => el.classList.remove("active"));
@@ -25,3 +31,183 @@ document.addEventListener("click", (e) => {
 document.querySelectorAll(".pay-toggle").forEach(toggle => {
   toggle.addEventListener("click", () => toggle.classList.toggle("is-on"));
 });
+
+/* ======================================================================
+   EMPRÉSTIMOS E PARTICIPAÇÃO NOS LUCROS (dados reais)
+   ====================================================================== */
+const API_BASE = window.MES_API_BASE || "";
+
+function formatBRL(value) {
+  return Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+function formatDateBR(isoDate) {
+  return isoDate ? isoDate.split("-").reverse().join("/") : "";
+}
+
+const ICON_LOAN = `<svg class="icon icon-sm" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>`;
+const ICON_PS = `<svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>`;
+const ICON_PAID = `<svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+function installmentRowHTML(inst, { showBadge }) {
+  const pago = inst.status === "pago";
+  const sub = pago
+    ? `Parcela ${inst.numero}/${inst.contractTotalParcelas} · Pago em ${formatDateBR(inst.pagoEm)}`
+    : `Parcela ${inst.numero}/${inst.contractTotalParcelas} · Vencimento: ${formatDateBR(inst.vencimento)}`;
+  const badge = showBadge
+    ? `<span class="account-status-badge ${pago ? "status-success" : ""}">${pago ? "Pago" : "Pendente"}</span>`
+    : "";
+  return `
+    <div class="pay-boleto-row">
+      <span class="pay-boleto-icon" style="background:${pago ? "rgba(52,211,153,0.15)" : "rgba(247,148,30,0.15)"}; color:${pago ? "var(--success)" : "var(--orange)"};">${pago ? ICON_PAID : ICON_LOAN}</span>
+      <div class="pay-boleto-body"><strong>${inst.contractTitulo}</strong><span>${sub}</span></div>
+      ${badge}
+      <span class="pay-boleto-value">${formatBRL(inst.valor)}</span>
+      ${pago ? "" : `<button class="pay-boleto-pay-btn" type="button">Pagar</button>`}
+    </div>`;
+}
+
+function renderMeusBoletos(installments) {
+  const el = document.getElementById("meusBoletosList");
+  if (!el) return;
+  if (!installments.length) {
+    el.innerHTML = `<p class="pay-empty-note">Você ainda não tem nenhum boleto de empréstimo com a Marques.</p>`;
+    return;
+  }
+  const pendentes = installments.filter(i => i.status === "pendente").sort((a, b) => a.vencimento.localeCompare(b.vencimento));
+  const pagos = installments.filter(i => i.status === "pago").sort((a, b) => (b.pagoEm || "").localeCompare(a.pagoEm || ""));
+  el.innerHTML = [...pendentes, ...pagos].map(i => installmentRowHTML(i, { showBadge: true })).join("");
+}
+
+function renderProximosBoletos(installments) {
+  const el = document.getElementById("proximosBoletosList");
+  if (!el) return;
+  const pendentes = installments
+    .filter(i => i.status === "pendente")
+    .sort((a, b) => a.vencimento.localeCompare(b.vencimento))
+    .slice(0, 3);
+  if (!pendentes.length) {
+    el.innerHTML = `<p class="pay-empty-note">Nenhum boleto pendente no momento.</p>`;
+    return;
+  }
+  el.innerHTML = pendentes.map(i => installmentRowHTML(i, { showBadge: false })).join("");
+}
+
+function updateBoletosStat(installments) {
+  const valorEl = document.getElementById("statBoletosValor");
+  const trendEl = document.getElementById("statBoletosTrend");
+  if (!valorEl || !trendEl) return;
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const pendentesMes = installments.filter(i => i.status === "pendente" && i.vencimento.startsWith(ym));
+  const total = pendentesMes.reduce((sum, i) => sum + i.valor, 0);
+  valorEl.textContent = formatBRL(total);
+  trendEl.textContent = pendentesMes.length
+    ? `${pendentesMes.length} boleto${pendentesMes.length > 1 ? "s" : ""} pendente${pendentesMes.length > 1 ? "s" : ""}`
+    : "Nenhum boleto pendente este mês";
+}
+
+function contractCardHTML(contract) {
+  if (!contract) {
+    return `
+      <div class="pay-card-head"><h2>Seu contrato</h2></div>
+      <p class="pay-empty-note">Você ainda não tem um contrato de participação nos lucros ativo. Fale com a nossa equipe pra saber mais.</p>`;
+  }
+  const ativo = contract.status === "ativo";
+  return `
+    <div class="pay-card-head"><h2>Seu contrato</h2><span class="account-status-badge ${ativo ? "status-success" : ""}">${ativo ? "Ativo" : "Encerrado"}</span></div>
+    <div class="pay-contract-grid">
+      <div><span>Nº do contrato</span><strong>${contract.numeroContrato}</strong></div>
+      <div><span>Início</span><strong>${formatDateBR(contract.dataInicio)}</strong></div>
+      <div><span>Participação</span><strong>${String(contract.percentual).replace(".", ",")}% dos lucros líquidos</strong></div>
+      <div><span>Repasse</span><strong>${contract.periodicidade || "-"}</strong></div>
+    </div>
+    <p class="pay-empty-note" style="margin-top:14px;">Contrato cadastrado e atualizado pela equipe Marques. Alguma dúvida sobre os valores? Fale com a gente pelo WhatsApp.</p>`;
+}
+
+function paymentRowHTML(payment) {
+  const comprovante = payment.temComprovante
+    ? `<a class="pay-boleto-pay-btn pay-comprovante-btn" href="${API_BASE}/api/customers/me/profit-share/payments/${payment.id}/comprovante" target="_blank" rel="noopener">Ver comprovante</a>`
+    : "";
+  const sub = `Lançado pela Marques · ${formatDateBR(payment.dataPagamento)}${payment.observacao ? " · " + payment.observacao : ""}`;
+  return `
+    <div class="pay-boleto-row">
+      <span class="pay-boleto-icon" style="background:rgba(52,211,153,0.15); color:var(--success);">${ICON_PS}</span>
+      <div class="pay-boleto-body"><strong>Repasse de Participação nos Lucros</strong><span>${sub}</span></div>
+      <span class="pay-boleto-value" style="color:var(--success);">+ ${formatBRL(payment.valor)}</span>
+      ${comprovante}
+    </div>`;
+}
+
+function renderParticipacaoLucros(contracts, payments) {
+  const contractEl = document.getElementById("psContractCard");
+  if (contractEl) {
+    const contrato = contracts.find(c => c.status === "ativo") || contracts[0] || null;
+    contractEl.innerHTML = contractCardHTML(contrato);
+  }
+  const paymentsEl = document.getElementById("psPaymentsList");
+  if (paymentsEl) {
+    paymentsEl.innerHTML = payments.length
+      ? payments.map(paymentRowHTML).join("")
+      : `<p class="pay-empty-note">Nenhum repasse lançado ainda.</p>`;
+  }
+}
+
+function updatePsStat(payments) {
+  const labelEl = document.getElementById("statPsLabel");
+  const valorEl = document.getElementById("statPsValor");
+  const trendEl = document.getElementById("statPsTrend");
+  if (!labelEl || !valorEl || !trendEl) return;
+  if (!payments.length) {
+    labelEl.textContent = "Participação nos lucros";
+    valorEl.textContent = formatBRL(0);
+    trendEl.textContent = "Nenhum repasse recebido ainda";
+    return;
+  }
+  const ultimo = payments[0]; // backend já ordena por data_pagamento desc
+  labelEl.textContent = "Último repasse recebido";
+  valorEl.textContent = formatBRL(ultimo.valor);
+  trendEl.textContent = `Em ${formatDateBR(ultimo.dataPagamento)}`;
+}
+
+function applyCustomerGreeting(customer) {
+  const firstName = String(customer.nome || "").trim().split(" ")[0] || customer.email;
+  const greetingH1 = document.getElementById("payGreetingName");
+  const greetingSmall = document.getElementById("payUserGreetingSmall");
+  const avatar = document.getElementById("payUserAvatar");
+  if (greetingH1) greetingH1.textContent = `Olá, ${firstName}!`;
+  if (greetingSmall) greetingSmall.textContent = `Olá, ${firstName}`;
+  if (avatar) avatar.textContent = firstName.charAt(0).toUpperCase();
+}
+
+async function fetchJSON(path) {
+  try {
+    const res = await fetch(`${API_BASE}${path}`, { credentials: "include" });
+    return await res.json();
+  } catch (err) {
+    return { ok: false };
+  }
+}
+
+async function initMarquesPayRealData() {
+  const customer = window.MES_ACCOUNT ? await window.MES_ACCOUNT.requireLogin() : null;
+  if (!customer) return; // requireLogin já redirecionou pra tela de login
+
+  applyCustomerGreeting(customer);
+
+  const [loansRes, psRes] = await Promise.all([
+    fetchJSON("/api/customers/me/loans"),
+    fetchJSON("/api/customers/me/profit-share"),
+  ]);
+
+  if (loansRes.ok) {
+    renderMeusBoletos(loansRes.installments);
+    renderProximosBoletos(loansRes.installments);
+    updateBoletosStat(loansRes.installments);
+  }
+  if (psRes.ok) {
+    renderParticipacaoLucros(psRes.contracts, psRes.payments);
+    updatePsStat(psRes.payments);
+  }
+}
+
+initMarquesPayRealData();

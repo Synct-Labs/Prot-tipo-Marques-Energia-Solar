@@ -16,7 +16,9 @@ const auth = require("./auth");
 const orders = require("./orders");
 const creditLeads = require("./creditLeads");
 const customers = require("./customers");
-const { parseJSONBody, sendJSON, getClientIP } = require("./http-utils");
+const loans = require("./loans");
+const profitShare = require("./profitShare");
+const { parseJSONBody, sendJSON, sendBinary, getClientIP } = require("./http-utils");
 const { serveStatic } = require("./static");
 
 /* ---------------------- CORS ---------------------- */
@@ -321,6 +323,183 @@ async function handleApi(req, res, pathname) {
     }
   }
 
+  // ---- ADMIN: BUSCA DE CLIENTE (pra vincular contrato de empréstimo/participação) ----
+  if (pathname === "/api/admin/customers/search" && req.method === "GET") {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const url = new URL(req.url, "http://localhost");
+    const q = url.searchParams.get("q") || "";
+    if (q.trim().length < 2) return sendJSON(res, 200, { ok: true, customers: [] });
+    return sendJSON(res, 200, { ok: true, customers: await customers.searchCustomers(q) });
+  }
+
+  // ---- ADMIN: EMPRÉSTIMOS/FINANCIAMENTOS (só Promotora ou dono) ----
+  if (pathname === "/api/admin/loans/contracts" && req.method === "GET") {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const url = new URL(req.url, "http://localhost");
+    const q = url.searchParams.get("q") || undefined;
+    return sendJSON(res, 200, { ok: true, contracts: await loans.listAllContracts({ q }) });
+  }
+
+  if (pathname === "/api/admin/loans/contracts" && req.method === "POST") {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const body = await parseJSONBody(req);
+    const customerId = parseInt(body.customerId, 10);
+    const titulo = String(body.titulo || "").trim();
+    const valorParcela = Number(body.valorParcela);
+    const totalParcelas = parseInt(body.totalParcelas, 10);
+    const dataPrimeiraParcela = String(body.dataPrimeiraParcela || "").trim();
+
+    if (!customerId) return sendJSON(res, 400, { ok: false, error: "Selecione o cliente." });
+    if (!titulo) return sendJSON(res, 400, { ok: false, error: "Informe o título do contrato (ex: Financiamento Solar)." });
+    if (!(valorParcela > 0)) return sendJSON(res, 400, { ok: false, error: "Valor da parcela inválido." });
+    if (!(totalParcelas > 0 && totalParcelas <= 360)) return sendJSON(res, 400, { ok: false, error: "Total de parcelas inválido." });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dataPrimeiraParcela)) return sendJSON(res, 400, { ok: false, error: "Data da primeira parcela inválida." });
+    if (!(await customers.findById(customerId))) return sendJSON(res, 404, { ok: false, error: "Cliente não encontrado." });
+
+    const id = await loans.createContract({ customerId, titulo, valorParcela, totalParcelas, dataPrimeiraParcela });
+    return sendJSON(res, 201, { ok: true, contract: await loans.getContractById(id) });
+  }
+
+  const loanContractIdMatch = pathname.match(/^\/api\/admin\/loans\/contracts\/(\d+)$/);
+  if (loanContractIdMatch && (req.method === "GET" || req.method === "PATCH")) {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const id = parseInt(loanContractIdMatch[1], 10);
+
+    if (req.method === "GET") {
+      const contract = await loans.getContractById(id);
+      if (!contract) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+      return sendJSON(res, 200, { ok: true, contract, installments: await loans.listInstallmentsByContract(id) });
+    }
+
+    if (req.method === "PATCH") {
+      const body = await parseJSONBody(req);
+      if (!loans.CONTRACT_STATUSES.includes(body.status)) {
+        return sendJSON(res, 400, { ok: false, error: `Status inválido. Use um de: ${loans.CONTRACT_STATUSES.join(", ")}` });
+      }
+      const changed = await loans.updateContractStatus(id, body.status);
+      if (!changed) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+      return sendJSON(res, 200, { ok: true, contract: await loans.getContractById(id) });
+    }
+  }
+
+  const loanInstallmentIdMatch = pathname.match(/^\/api\/admin\/loans\/installments\/(\d+)$/);
+  if (loanInstallmentIdMatch && req.method === "PATCH") {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const id = parseInt(loanInstallmentIdMatch[1], 10);
+    const body = await parseJSONBody(req);
+    if (!loans.INSTALLMENT_STATUSES.includes(body.status)) {
+      return sendJSON(res, 400, { ok: false, error: `Status inválido. Use um de: ${loans.INSTALLMENT_STATUSES.join(", ")}` });
+    }
+    const changed = await loans.updateInstallmentStatus(id, body.status);
+    if (!changed) return sendJSON(res, 404, { ok: false, error: "Parcela não encontrada." });
+    return sendJSON(res, 200, { ok: true });
+  }
+
+  // ---- ADMIN: PARTICIPAÇÃO NOS LUCROS (só Promotora ou dono) ----
+  if (pathname === "/api/admin/profit-share/contracts" && req.method === "GET") {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const url = new URL(req.url, "http://localhost");
+    const q = url.searchParams.get("q") || undefined;
+    return sendJSON(res, 200, { ok: true, contracts: await profitShare.listAllContracts({ q }) });
+  }
+
+  if (pathname === "/api/admin/profit-share/contracts" && req.method === "POST") {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const body = await parseJSONBody(req);
+    const customerId = parseInt(body.customerId, 10);
+    const numeroContrato = String(body.numeroContrato || "").trim();
+    const percentual = Number(body.percentual);
+    const dataInicio = String(body.dataInicio || "").trim();
+    const periodicidade = String(body.periodicidade || "").trim();
+
+    if (!customerId) return sendJSON(res, 400, { ok: false, error: "Selecione o cliente." });
+    if (!numeroContrato) return sendJSON(res, 400, { ok: false, error: "Informe o número do contrato." });
+    if (!(percentual > 0 && percentual <= 100)) return sendJSON(res, 400, { ok: false, error: "Percentual inválido." });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dataInicio)) return sendJSON(res, 400, { ok: false, error: "Data de início inválida." });
+    if (!(await customers.findById(customerId))) return sendJSON(res, 404, { ok: false, error: "Cliente não encontrado." });
+
+    const id = await profitShare.createContract({ customerId, numeroContrato, percentual, periodicidade, dataInicio });
+    return sendJSON(res, 201, { ok: true, contract: await profitShare.getContractById(id) });
+  }
+
+  const profitShareContractIdMatch = pathname.match(/^\/api\/admin\/profit-share\/contracts\/(\d+)$/);
+  if (profitShareContractIdMatch && (req.method === "GET" || req.method === "PATCH")) {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const id = parseInt(profitShareContractIdMatch[1], 10);
+
+    if (req.method === "GET") {
+      const contract = await profitShare.getContractById(id);
+      if (!contract) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+      return sendJSON(res, 200, { ok: true, contract, payments: await profitShare.listPaymentsByContract(id) });
+    }
+
+    if (req.method === "PATCH") {
+      const body = await parseJSONBody(req);
+      if (!profitShare.CONTRACT_STATUSES.includes(body.status)) {
+        return sendJSON(res, 400, { ok: false, error: `Status inválido. Use um de: ${profitShare.CONTRACT_STATUSES.join(", ")}` });
+      }
+      const changed = await profitShare.updateContractStatus(id, body.status);
+      if (!changed) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+      return sendJSON(res, 200, { ok: true, contract: await profitShare.getContractById(id) });
+    }
+  }
+
+  const profitSharePaymentsMatch = pathname.match(/^\/api\/admin\/profit-share\/contracts\/(\d+)\/payments$/);
+  if (profitSharePaymentsMatch && req.method === "POST") {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const contractId = parseInt(profitSharePaymentsMatch[1], 10);
+    if (!(await profitShare.getContractById(contractId))) {
+      return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+    }
+
+    const body = await parseJSONBody(req, profitShare.MAX_COMPROVANTE_BYTES);
+    const valor = Number(body.valor);
+    const dataPagamento = String(body.dataPagamento || "").trim();
+    if (!(valor > 0)) return sendJSON(res, 400, { ok: false, error: "Valor do repasse inválido." });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dataPagamento)) return sendJSON(res, 400, { ok: false, error: "Data do repasse inválida." });
+
+    let comprovanteBuffer = null;
+    if (body.comprovanteBase64) {
+      try {
+        comprovanteBuffer = Buffer.from(body.comprovanteBase64, "base64");
+      } catch (e) {
+        return sendJSON(res, 400, { ok: false, error: "Arquivo de comprovante inválido." });
+      }
+      if (comprovanteBuffer.length > profitShare.MAX_COMPROVANTE_BYTES) {
+        return sendJSON(res, 400, { ok: false, error: "Comprovante muito grande (máximo 4MB)." });
+      }
+    }
+
+    const id = await profitShare.addPayment(contractId, {
+      valor,
+      dataPagamento,
+      observacao: body.observacao,
+      comprovanteBuffer,
+      comprovanteTipo: body.comprovanteTipo,
+      comprovanteNome: body.comprovanteNome,
+    });
+    return sendJSON(res, 201, { ok: true, payments: await profitShare.listPaymentsByContract(contractId), paymentId: id });
+  }
+
+  const profitSharePaymentComprovanteAdminMatch = pathname.match(/^\/api\/admin\/profit-share\/payments\/(\d+)\/comprovante$/);
+  if (profitSharePaymentComprovanteAdminMatch && req.method === "GET") {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const id = parseInt(profitSharePaymentComprovanteAdminMatch[1], 10);
+    const comprovante = await profitShare.getPaymentComprovante(id);
+    if (!comprovante) return sendJSON(res, 404, { ok: false, error: "Comprovante não encontrado." });
+    return sendBinary(res, 200, comprovante.data, comprovante.tipo, comprovante.nome);
+  }
+
   // ---- CLIENTES: CADASTRO/LOGIN (conta única, loja + crédito) ----
   if (pathname === "/api/customers/register" && req.method === "POST") {
     const body = await parseJSONBody(req);
@@ -541,6 +720,38 @@ async function handleApi(req, res, pathname) {
     const customer = await requireCustomer(req, res);
     if (!customer) return;
     return sendJSON(res, 200, { ok: true, leads: await creditLeads.listLeadsByCustomer(customer.id) });
+  }
+
+  // ---- CLIENTE: MEUS BOLETOS (empréstimos/financiamentos com a Marques) ----
+  if (pathname === "/api/customers/me/loans" && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    return sendJSON(res, 200, {
+      ok: true,
+      contracts: await loans.listContractsByCustomer(customer.id),
+      installments: await loans.listInstallmentsByCustomer(customer.id),
+    });
+  }
+
+  // ---- CLIENTE: PARTICIPAÇÃO NOS LUCROS ----
+  if (pathname === "/api/customers/me/profit-share" && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    return sendJSON(res, 200, {
+      ok: true,
+      contracts: await profitShare.listContractsByCustomer(customer.id),
+      payments: await profitShare.listPaymentsByCustomer(customer.id),
+    });
+  }
+
+  const profitSharePaymentComprovanteMatch = pathname.match(/^\/api\/customers\/me\/profit-share\/payments\/(\d+)\/comprovante$/);
+  if (profitSharePaymentComprovanteMatch && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const id = parseInt(profitSharePaymentComprovanteMatch[1], 10);
+    const comprovante = await profitShare.getPaymentComprovante(id, customer.id);
+    if (!comprovante) return sendJSON(res, 404, { ok: false, error: "Comprovante não encontrado." });
+    return sendBinary(res, 200, comprovante.data, comprovante.tipo, comprovante.nome);
   }
 
   // ---- ADMIN: GESTÃO DE EQUIPE (só "owner") ----

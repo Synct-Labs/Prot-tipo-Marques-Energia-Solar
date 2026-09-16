@@ -4,13 +4,13 @@
 
 const MAX_BODY_BYTES = 1024 * 1024; // 1 MB é mais que suficiente para um pedido
 
-function parseJSONBody(req) {
+function parseJSONBody(req, maxBytes = MAX_BODY_BYTES) {
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks = [];
     req.on("data", (chunk) => {
       size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
+      if (size > maxBytes) {
         reject(Object.assign(new Error("Corpo da requisição muito grande"), { statusCode: 413 }));
         req.destroy();
         return;
@@ -46,4 +46,15 @@ function getClientIP(req) {
   return req.socket.remoteAddress || "unknown";
 }
 
-module.exports = { parseJSONBody, sendJSON, getClientIP };
+// Serve um arquivo binário (ex: comprovante de pagamento) direto do banco.
+// "inline" deixa o navegador abrir a imagem/PDF na hora em vez de baixar.
+function sendBinary(res, statusCode, buffer, contentType, filename) {
+  res.writeHead(statusCode, {
+    "Content-Type": contentType || "application/octet-stream",
+    "Content-Length": buffer.length,
+    "Content-Disposition": `inline; filename="${(filename || "comprovante").replace(/"/g, "")}"`,
+  });
+  res.end(buffer);
+}
+
+module.exports = { parseJSONBody, sendJSON, sendBinary, getClientIP };

@@ -256,3 +256,65 @@
   .admin-table td{ border-bottom:none; padding: 4px 16px; }
   .admin-table td::before{ content: attr(data-label); display:block; color:var(--muted); font-size:.7rem; text-transform:uppercase; margin-bottom:2px; }
 }
+
+/* ---- status: empréstimos e participação nos lucros ---- */
+.status-ativo{ background: rgba(52,211,153,0.15); color: var(--success); }
+.status-quitado{ background: rgba(93,163,255,0.15); color: #7fb2ff; }
+.status-encerrado{ background: rgba(147,147,143,0.18); color: var(--muted); }
+.status-pendente{ background: rgba(247,148,30,0.15); color: var(--orange-light); }
+.status-pago{ background: rgba(52,211,153,0.15); color: var(--success); }
+
+/* ---- Marques Pay (empréstimos / participação nos lucros) ---- */
+.admin-subtabs{ display:flex; gap:8px; margin-bottom:20px; }
+.admin-subtab{
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size:.85rem;
+  font-weight:600;
+  cursor:pointer;
+}
+.admin-subtab.active{ color: var(--orange-light); border-color: var(--border-orange); background: rgba(247,148,30,0.1); }
+.admin-subpanel{ display:none; }
+.admin-subpanel.active{ display:block; }
+
+.admin-customer-picker{ position:relative; }
+.admin-customer-results{
+  position:absolute;
+  top:100%; left:0; right:0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-top:4px;
+  max-height:220px;
+  overflow-y:auto;
+  z-index:10;
+  display:none;
+}
+.admin-customer-results.show{ display:block; }
+.admin-customer-result-item{
+  padding: 9px 12px;
+  cursor:pointer;
+  font-size:.85rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+.admin-customer-result-item:last-child{ border-bottom:none; }
+.admin-customer-result-item:hover{ background: var(--glass); }
+.admin-customer-result-item span{ display:block; color:var(--muted); font-size:.76rem; }
+.admin-customer-picked{
+  margin-top:8px;
+  font-size:.82rem;
+  color: var(--success);
+  display:none;
+}
+.admin-customer-picked.show{ display:block; }
+
+.admin-mini-table{ width:100%; border-collapse:collapse; margin-top:10px; }
+.admin-mini-table th, .admin-mini-table td{ text-align:left; padding: 7px 8px; font-size:.82rem; border-bottom: 1px solid var(--border-soft); }
+.admin-mini-table th{ color:var(--muted); font-weight:600; text-transform:uppercase; font-size:.68rem; letter-spacing:.03em; }
+
+.admin-payment-form{ display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-top:16px; padding-top:16px; border-top:1px solid var(--border-soft); }
+.admin-payment-form .admin-field{ margin-bottom:0; min-width:140px; }
+.admin-payment-form .admin-field input{ font-size:.85rem; }
