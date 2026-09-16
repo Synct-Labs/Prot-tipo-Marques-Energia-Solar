@@ -92,10 +92,17 @@ function getRedirectTarget(){
   return raw ? `../${raw}` : "minha-conta.html";
 }
 
+// Pra onde vai um admin logo depois de entrar por aqui.
+function adminRedirectTarget(){
+  return "../admin/dashboard.html";
+}
+
 (async function () {
-  // Se já existir sessão válida, pula direto pro destino.
+  // Se já existir sessão válida (cliente ou admin), pula direto pro destino.
   const me = await CONTA.apiGet("/api/customers/me").catch(() => null);
-  if (me && me.ok) window.location.href = getRedirectTarget();
+  if (me && me.ok) { window.location.href = getRedirectTarget(); return; }
+  const adminMe = await CONTA.apiGet("/api/auth/me").catch(() => null);
+  if (adminMe && adminMe.ok) window.location.href = adminRedirectTarget();
 })();
 
 // Preserva o ?redirect= ao trocar pra tela de cadastro.
@@ -120,10 +127,14 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   const password = document.getElementById("password").value;
 
   try {
-    const res = await CONTA.apiPost("/api/customers/login", { email, password });
+    const res = await CONTA.apiPost("/api/session/login", { email, password });
     if (!res.ok) {
       errorBox.textContent = res.error || "Não foi possível entrar.";
       errorBox.classList.add("show");
+      return;
+    }
+    if (res.kind === "admin") {
+      window.location.href = adminRedirectTarget();
       return;
     }
     if (res.requires2FA) {

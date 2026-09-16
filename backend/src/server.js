@@ -594,6 +594,73 @@ async function handleApi(req, res, pathname) {
     );
   }
 
+  // ---- LOGIN UNIFICADO (conta/entrar.html) ----
+  // Mesma tela serve cliente e administrador: tenta como admin primeiro
+  // (conta mais rara), senão como cliente (mesmo fluxo de sempre, com 2FA
+  // se a conta tiver ativado). Um só request e um só registro de tentativa
+  // falha no limitador — evita que alguém gaste o limite em dobro só por
+  // essa tela testar as duas contas. admin/login.html continua existindo
+  // e funcionando à parte, sem mudanças.
+  if (pathname === "/api/session/login" && req.method === "POST") {
+    if (auth.isRateLimited(ip)) {
+      return sendJSON(res, 429, { ok: false, error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." });
+    }
+    const body = await parseJSONBody(req);
+    const email = String(body.email || "").trim();
+    const password = String(body.password || "");
+
+    const adminRecord = email ? await auth.findAdminByEmail(email) : null;
+    if (adminRecord && auth.verifyPassword(password, adminRecord.password_hash)) {
+      auth.clearAttempts(ip);
+      const { token, expiresAt } = await auth.createSession(adminRecord.id);
+      return sendJSON(
+        res,
+        200,
+        {
+          ok: true,
+          kind: "admin",
+          admin: {
+            id: adminRecord.id,
+            email: adminRecord.email,
+            name: adminRecord.name,
+            company: adminRecord.company,
+            role: adminRecord.role,
+          },
+        },
+        { "Set-Cookie": auth.buildSessionCookie(token, expiresAt) }
+      );
+    }
+
+    const customerRecord = email ? await customers.findByEmail(email) : null;
+    if (customerRecord && auth.verifyPassword(password, customerRecord.password_hash)) {
+      auth.clearAttempts(ip);
+      if (customerRecord.two_factor_enabled) {
+        const pendingToken = await customers.createPending2FALogin(
+          customerRecord.id,
+          customerRecord.two_factor_method,
+          customerRecord.email
+        );
+        return sendJSON(res, 200, {
+          ok: true,
+          kind: "customer",
+          requires2FA: true,
+          pendingToken,
+          method: customerRecord.two_factor_method,
+        });
+      }
+      const { token, expiresAt } = await customers.createSession(customerRecord.id);
+      return sendJSON(
+        res,
+        200,
+        { ok: true, kind: "customer", customer: customers.toPublic(customerRecord) },
+        { "Set-Cookie": auth.buildSessionCookie(token, expiresAt, customers.SESSION_COOKIE_NAME) }
+      );
+    }
+
+    auth.registerFailedAttempt(ip);
+    return sendJSON(res, 401, { ok: false, error: "E-mail ou senha inválidos." });
+  }
+
   if (pathname === "/api/customers/login" && req.method === "POST") {
     if (auth.isRateLimited(ip)) {
       return sendJSON(res, 429, { ok: false, error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." });
