@@ -499,9 +499,20 @@ async function handleApi(req, res, pathname) {
     const customer = await requireCustomer(req, res);
     if (!customer) return;
     const body = await parseJSONBody(req);
-    const nome = String(body.nome || "").trim();
-    if (!nome) return sendJSON(res, 400, { ok: false, error: "Informe seu nome completo." });
-    await customers.updateProfile(customer.id, { nome, cpf: body.cpf, telefone: body.telefone });
+
+    // `nome`/`cpf`/`telefone` (formulário de perfil) e `endereco` (checkout
+    // ou perfil) são independentes — cada PATCH só mexe no que veio no body,
+    // pra o checkout poder salvar só o endereço sem precisar reenviar o resto.
+    if (body.nome !== undefined) {
+      const nome = String(body.nome || "").trim();
+      if (!nome) return sendJSON(res, 400, { ok: false, error: "Informe seu nome completo." });
+      await customers.updateProfile(customer.id, { nome, cpf: body.cpf, telefone: body.telefone });
+    }
+
+    if (body.endereco && typeof body.endereco === "object") {
+      await customers.saveAddress(customer.id, body.endereco);
+    }
+
     const updated = await customers.findById(customer.id);
     return sendJSON(res, 200, { ok: true, customer: customers.toPublic(updated) });
   }

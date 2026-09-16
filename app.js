@@ -1465,6 +1465,51 @@ $("#goCheckoutBtn").addEventListener("click", async () => {
   location.hash = "#checkout";
 });
 
+/* ---------------------- PRÉ-PREENCHIMENTO COM DADOS DA CONTA ----------------------
+   Puxa nome/CPF/e-mail/telefone e o último endereço salvo (se a pessoa já
+   comprou antes — ver saveEnderecoNaConta, mais abaixo) pra poupar retrabalho.
+   Só preenche campos vazios: se a pessoa já editou algo nesta mesma visita,
+   isso não é sobrescrito. */
+function preencherCheckoutComCliente(customer){
+  const setIfEmpty = (id, value) => {
+    const el = $(id);
+    if(el && !el.value && value) el.value = value;
+  };
+  setIfEmpty("#checkoutNome", customer.nome);
+  setIfEmpty("#checkoutCpf", customer.cpf);
+  setIfEmpty("#checkoutEmail", customer.email);
+  setIfEmpty("#checkoutTelefone", customer.telefone);
+
+  const end = customer.endereco || {};
+  setIfEmpty("#checkoutCep", end.cep);
+  setIfEmpty("#checkoutCidade", end.cidade);
+  setIfEmpty("#checkoutEstado", end.estado);
+  setIfEmpty("#checkoutRua", end.rua);
+  setIfEmpty("#checkoutNumero", end.numero);
+  setIfEmpty("#checkoutBairro", end.bairro);
+  setIfEmpty("#checkoutComplemento", end.complemento);
+
+  const hint = $("#checkoutEnderecoSalvoHint");
+  if(hint) hint.hidden = !(end.cep || end.rua || end.cidade);
+}
+
+// Salva o endereço preenchido no checkout de volta na conta do cliente,
+// pra já vir pronto na próxima compra. "Melhor esforço": se falhar (rede
+// instável, backend fora do ar), não impede a confirmação do pedido —
+// só significa que a pessoa preenche de novo da próxima vez.
+async function saveEnderecoNaConta(endereco){
+  try{
+    await fetch(`${API_BASE}/api/customers/me`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ endereco }),
+    });
+  } catch(err){
+    // silencioso de propósito — ver comentário acima.
+  }
+}
+
 /* ======================================================================
    CHECKOUT
    ====================================================================== */
@@ -1480,6 +1525,8 @@ async function renderCheckout(){
     window.location.href = "conta/entrar.html?redirect=" + encodeURIComponent("loja.html#checkout");
     return;
   }
+  preencherCheckoutComCliente(customer);
+
   const list = $("#checkoutItemsList");
   list.innerHTML = state.cart.map(item => {
     const p = getProduct(item.id);
@@ -1650,6 +1697,10 @@ $("#checkoutForm").addEventListener("submit", async (e) => {
     }
 
     $("#orderNumber").textContent = data.orderNumber;
+    saveEnderecoNaConta({
+      cep: payload.cep, cidade: payload.cidade, estado: payload.estado, rua: payload.rua,
+      numero: payload.numero, bairro: payload.bairro, complemento: payload.complemento,
+    });
     state.cart = [];
     updateCartCount();
     location.hash = "#confirmacao";

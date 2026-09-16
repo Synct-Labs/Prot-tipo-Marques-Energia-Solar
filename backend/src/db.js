@@ -58,6 +58,16 @@ async function initSchema() {
       nome                    TEXT NOT NULL,
       cpf                     TEXT,
       telefone                TEXT,
+      -- endereço salvo pra pré-preencher o checkout nas próximas compras
+      -- (ver saveAddress em customers.js) — opcional, só existe depois que
+      -- a pessoa finaliza o primeiro pedido.
+      endereco_cep            TEXT,
+      endereco_cidade         TEXT,
+      endereco_estado         TEXT,
+      endereco_rua            TEXT,
+      endereco_numero         TEXT,
+      endereco_bairro         TEXT,
+      endereco_complemento    TEXT,
       -- verificação em duas etapas: por app autenticador (TOTP) ou por
       -- código enviado por e-mail — 'app' ou 'email' em two_factor_method
       two_factor_enabled      BOOLEAN NOT NULL DEFAULT false,
@@ -152,6 +162,14 @@ async function initSchema() {
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS two_factor_method TEXT;
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS two_factor_secret TEXT;
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS two_factor_backup_codes TEXT;
+
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS endereco_cep TEXT;
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS endereco_cidade TEXT;
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS endereco_estado TEXT;
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS endereco_rua TEXT;
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS endereco_numero TEXT;
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS endereco_bairro TEXT;
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS endereco_complemento TEXT;
   `);
 
   // Garante que sempre exista pelo menos um "owner" (dono/admin geral que

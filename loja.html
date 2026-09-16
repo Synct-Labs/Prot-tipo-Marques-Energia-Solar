@@ -570,16 +570,16 @@
           </legend>
           <div class="form-grid">
             <label>Nome completo
-              <input type="text" name="nome" required placeholder="Seu nome completo">
+              <input type="text" name="nome" id="checkoutNome" required placeholder="Seu nome completo">
             </label>
             <label>CPF
-              <input type="text" name="cpf" required placeholder="000.000.000-00">
+              <input type="text" name="cpf" id="checkoutCpf" required placeholder="000.000.000-00">
             </label>
             <label>E-mail
-              <input type="email" name="email" required placeholder="voce@email.com">
+              <input type="email" name="email" id="checkoutEmail" required placeholder="voce@email.com">
             </label>
             <label>Telefone / WhatsApp
-              <input type="tel" name="telefone" required placeholder="(65) 90000-0000">
+              <input type="tel" name="telefone" id="checkoutTelefone" required placeholder="(65) 90000-0000">
             </label>
           </div>
         </fieldset>
@@ -589,6 +589,7 @@
             <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
             Endereço de Entrega
           </legend>
+          <p class="field-hint" id="checkoutEnderecoSalvoHint" hidden>Preenchido com o endereço salvo na sua conta. Pode editar à vontade — a versão mais recente fica salva pras próximas compras.</p>
           <div class="form-grid">
             <label>CEP
               <input type="text" name="cep" id="checkoutCep" required placeholder="00000-000" inputmode="numeric" maxlength="9">
@@ -604,13 +605,13 @@
               <input type="text" name="rua" id="checkoutRua" required placeholder="Nome da rua">
             </label>
             <label>Número
-              <input type="text" name="numero" required placeholder="123">
+              <input type="text" name="numero" id="checkoutNumero" required placeholder="123">
             </label>
             <label>Bairro
               <input type="text" name="bairro" id="checkoutBairro" required placeholder="Bairro">
             </label>
             <label class="col-span-2">Complemento (opcional)
-              <input type="text" name="complemento" placeholder="Apto, bloco, referência...">
+              <input type="text" name="complemento" id="checkoutComplemento" placeholder="Apto, bloco, referência...">
             </label>
           </div>
         </fieldset>

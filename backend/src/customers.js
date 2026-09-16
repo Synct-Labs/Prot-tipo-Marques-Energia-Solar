@@ -36,6 +36,15 @@ function toPublic(row) {
     nome: row.nome,
     cpf: row.cpf,
     telefone: row.telefone,
+    endereco: {
+      cep: row.endereco_cep || "",
+      cidade: row.endereco_cidade || "",
+      estado: row.endereco_estado || "",
+      rua: row.endereco_rua || "",
+      numero: row.endereco_numero || "",
+      bairro: row.endereco_bairro || "",
+      complemento: row.endereco_complemento || "",
+    },
     twoFactorEnabled: !!row.two_factor_enabled,
     twoFactorMethod: row.two_factor_method || null,
   };
@@ -56,6 +65,20 @@ async function updateProfile(id, { nome, cpf, telefone }) {
   await pool.query(
     "UPDATE customers SET nome = $1, cpf = $2, telefone = $3, updated_at = $4 WHERE id = $5",
     [nome, cpf || "", telefone || "", now, id]
+  );
+}
+
+// Endereço salvo separado do resto do perfil (chamado a partir do checkout,
+// depois de um pedido confirmado) — atualiza só os campos de endereço, sem
+// mexer em nome/cpf/telefone.
+async function saveAddress(id, { cep, cidade, estado, rua, numero, bairro, complemento } = {}) {
+  const now = new Date().toISOString();
+  await pool.query(
+    `UPDATE customers SET
+      endereco_cep = $1, endereco_cidade = $2, endereco_estado = $3, endereco_rua = $4,
+      endereco_numero = $5, endereco_bairro = $6, endereco_complemento = $7, updated_at = $8
+     WHERE id = $9`,
+    [cep || "", cidade || "", estado || "", rua || "", numero || "", bairro || "", complemento || "", now, id]
   );
 }
 
@@ -302,6 +325,7 @@ module.exports = {
   toPublic,
   register,
   updateProfile,
+  saveAddress,
   updatePassword,
   createSession,
   destroySession,
