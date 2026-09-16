@@ -402,6 +402,32 @@ $("#fgtsAuthReopenBtn")?.addEventListener("click", openFgtsAuthModal);
    persiste a solicitação no banco e a deixa disponível no painel de
    administrador; mesmo fluxo já usado pelos pedidos da loja.
    ====================================================================== */
+
+// Se a pessoa já estiver logada, puxa o que já sabemos da conta (nome,
+// CPF, telefone, e-mail, cidade/UF) pra poupar ela de redigitar. Só
+// preenche campo vazio — nunca sobrescreve o que a pessoa já digitou.
+async function prefillLeadFormFromAccount(){
+  const form = $("#creditLeadForm");
+  if(!form || !window.MES_ACCOUNT) return;
+  const customer = await window.MES_ACCOUNT.getCustomer();
+  if(!customer) return;
+
+  const setIfEmpty = (name, value) => {
+    if(!value) return;
+    const field = form.elements[name];
+    if(field && !field.value) field.value = value;
+  };
+
+  setIfEmpty("nome", customer.nome);
+  setIfEmpty("cpf", customer.cpf);
+  setIfEmpty("telefone", customer.telefone);
+  setIfEmpty("email", customer.email);
+  const cidade = customer.endereco && customer.endereco.cidade;
+  const estado = customer.endereco && customer.endereco.estado;
+  setIfEmpty("cidade_uf", cidade && estado ? `${cidade} / ${estado}` : cidade || "");
+}
+prefillLeadFormFromAccount();
+
 $("#creditLeadForm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
 
