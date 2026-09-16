@@ -118,6 +118,20 @@ const PRODUCTS = [
       { brand:"TSUN Power", name:"Módulo Bifacial 144 Cel. N Type 630W Black Frame Cabo 0.30m", sku:"MFTB-0.3-BF-144-630W", qty:7, image:"assets/products/tsun-mftb-bifacial-630w.webp" },
       { brand:"Solis", name:"Inversor de Corrente Monofásico 1MPPT 220V 3kW", sku:"INVSO-MO-220V-3KW", qty:1, image:"assets/products/solis-invso-mo-220v-3kw.png" },
     ] },
+  { id:"kit3", cat:"kits", brand:"TCL Solar + Solis", sku:"KIT-600-TCL-SOLIS", embVenda:"1 kit completo (módulos + inversor)", subcategoria:"Kit Residencial", facetValue:"400–700 kWh/mês",
+    // Kit espelhado num orçamento real de revenda (Co2 Energia Solar, MT) pra faixa de
+    // 600 kWh/mês: 9 módulos TCL Solar 620W + 1 inversor Solis 4kW/2MPPT, mesmo padrão
+    // dos kits kit1/kit2 (equipamento cotado à parte; preço final já embute estrutura,
+    // cabo, projeto/ART, mão de obra e margem).
+    name:"Kit Solar Completo 600 kWh/mês — 5,58 kWp", price:19000.00,
+    // Foto real da revenda Co2 Energia Solar (MT) — SKU exato do módulo usado no kit.
+    image:"assets/products/tcl-mftc-bifacial-620w.jpg",
+    specs:{ potencia:"5,58 kWp", modulos:"9x TCL Solar Bifacial N-Type 620W (132 células)", inversor:"1x Solis Monofásico 2MPPT 220V 4kW",
+      entradaMax:"7,20 kW", saidaMax:"4,00 kW", consumoAlvo:"~600 kWh/mês" },
+    bundleItems:[
+      { brand:"TCL Solar", name:"Módulo Bifacial 132 Cél. N-Type 620W Cabo 1,2m", sku:"MFTC-1.2-BF-132-620W", qty:9, image:"assets/products/tcl-mftc-bifacial-620w.jpg" },
+      { brand:"Solis", name:"Inversor de Corrente Monofásico 2MPPT 220V 4kW", sku:"INVSO-MO-220V-4KW", qty:1, image:"assets/products/solis-invso-mo-220v-4kw.jpg" },
+    ] },
 
   // ---------- PAINÉIS SOLARES (preços/specs reais, cotados na Apex Energia Solar em 12/2026) ----------
   { id:"pn1", cat:"paineis", brand:"ZTROON", sku:"ZTP-360MI", embVenda:"1 unidade", subcategoria:"Monocristalino", facetValue:"Até 400 Wp",
@@ -363,7 +377,7 @@ function showToast(msg){
    DIMENSIONAMENTO (calculadora de kWp)
    ====================================================================== */
 const KWH_PER_KWP_MONTH = 119; // geração média mensal (kWh) por kWp instalado no Brasil
-const TARIFA_MEDIA_KWH = 1.19; // usada só para converter conta em R$ -> kWh
+const TARIFA_MEDIA_KWH = 1; // usada só para converter conta em R$ -> kWh
 const POTENCIA_PAINEL_REFERENCIA_WP = 610; // referência para estimar qtd. de painéis
 
 function calcSizing(){
