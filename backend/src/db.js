@@ -109,6 +109,35 @@ async function initSchema() {
       updated_at           TEXT NOT NULL
     );
 
+    -- Catálogo da loja — antes era um array fixo em app.js, agora fica no
+    -- banco pra o admin poder adicionar/remover produto, mudar preço e
+    -- criar promoção sem precisar mexer em código. "id" mantém os códigos
+    -- curtos que já existiam (kit1, pn3, iv2...) porque o carrinho e o
+    -- configurador guardam esses ids; produtos novos ganham um id gerado
+    -- (ver products.js). specs e bundleItems ficam como JSON em texto.
+    CREATE TABLE IF NOT EXISTS products (
+      id                SERIAL PRIMARY KEY,
+      product_id        TEXT UNIQUE NOT NULL,
+      cat               TEXT NOT NULL,
+      brand             TEXT,
+      sku               TEXT,
+      emb_venda         TEXT,
+      subcategoria      TEXT,
+      facet_value       TEXT,
+      name              TEXT NOT NULL,
+      price             DOUBLE PRECISION NOT NULL,
+      promo_price       DOUBLE PRECISION,
+      promo_label       TEXT,
+      image             TEXT,
+      is_launch         BOOLEAN NOT NULL DEFAULT false,
+      power_kw          DOUBLE PRECISION,
+      specs_json        TEXT NOT NULL DEFAULT '{}',
+      bundle_items_json TEXT,
+      sort_order        INTEGER NOT NULL DEFAULT 0,
+      created_at        TEXT NOT NULL,
+      updated_at        TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS credit_leads (
       id                   SERIAL PRIMARY KEY,
       lead_number          TEXT UNIQUE NOT NULL,

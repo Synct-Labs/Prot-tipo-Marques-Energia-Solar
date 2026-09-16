@@ -18,6 +18,7 @@ const creditLeads = require("./creditLeads");
 const customers = require("./customers");
 const loans = require("./loans");
 const profitShare = require("./profitShare");
+const products = require("./products");
 const { parseJSONBody, sendJSON, sendBinary, getClientIP } = require("./http-utils");
 const { serveStatic } = require("./static");
 
@@ -108,6 +109,24 @@ async function requireCustomer(req, res) {
   return customer;
 }
 
+/* ---------------------- VALIDAÇÃO DO PRODUTO (catálogo) ---------------------- */
+const VALID_PRODUCT_CATEGORIES = ["kits", "paineis", "inversores", "cabos", "estrutura", "baterias", "controlador"];
+
+function validateProductPayload(body) {
+  if (!VALID_PRODUCT_CATEGORIES.includes(body.cat)) {
+    return `Categoria inválida. Use uma de: ${VALID_PRODUCT_CATEGORIES.join(", ")}`;
+  }
+  if (!String(body.name || "").trim()) return "Informe o nome do produto.";
+  if (typeof body.price !== "number" || !(body.price > 0)) return "Preço inválido.";
+  if (body.promoPrice !== undefined && body.promoPrice !== null) {
+    if (typeof body.promoPrice !== "number" || !(body.promoPrice > 0)) return "Preço promocional inválido.";
+    if (body.promoPrice >= body.price) return "O preço promocional precisa ser menor que o preço normal.";
+  }
+  if (body.specs && typeof body.specs !== "object") return "Specs em formato inválido.";
+  if (body.bundleItems && !Array.isArray(body.bundleItems)) return "Itens do kit em formato inválido.";
+  return null;
+}
+
 /* ---------------------- VALIDAÇÃO DO PEDIDO ---------------------- */
 function validateOrderPayload(body) {
   const required = ["nome", "cpf", "email", "telefone", "cep", "cidade", "estado", "rua", "numero", "bairro"];
@@ -195,6 +214,43 @@ async function handleApi(req, res, pathname) {
     }
     await auth.updateAdminPassword(admin.id, body.newPassword);
     return sendJSON(res, 200, { ok: true });
+  }
+
+  // ---- CATÁLOGO (público — mesma info que já era publicada direto no app.js) ----
+  if (pathname === "/api/products" && req.method === "GET") {
+    return sendJSON(res, 200, { ok: true, products: await products.listAll() });
+  }
+
+  // ---- ADMIN: CATÁLOGO (adicionar/remover produto, preço, promoção — só Energia Solar ou dono) ----
+  if (pathname === "/api/admin/products" && req.method === "POST") {
+    const admin = await requireCompanyAccess(req, res, "energia_solar");
+    if (!admin) return;
+    const body = await parseJSONBody(req);
+    const error = validateProductPayload(body);
+    if (error) return sendJSON(res, 400, { ok: false, error });
+    const id = await products.create(body);
+    return sendJSON(res, 201, { ok: true, product: await products.getById(id) });
+  }
+
+  const productIdMatch = pathname.match(/^\/api\/admin\/products\/(.+)$/);
+  if (productIdMatch && (req.method === "PATCH" || req.method === "DELETE")) {
+    const admin = await requireCompanyAccess(req, res, "energia_solar");
+    if (!admin) return;
+    const id = decodeURIComponent(productIdMatch[1]);
+    if (!(await products.getById(id))) return sendJSON(res, 404, { ok: false, error: "Produto não encontrado." });
+
+    if (req.method === "PATCH") {
+      const body = await parseJSONBody(req);
+      const error = validateProductPayload(body);
+      if (error) return sendJSON(res, 400, { ok: false, error });
+      await products.update(id, body);
+      return sendJSON(res, 200, { ok: true, product: await products.getById(id) });
+    }
+
+    if (req.method === "DELETE") {
+      await products.remove(id);
+      return sendJSON(res, 200, { ok: true });
+    }
   }
 
   // ---- PEDIDOS (exige conta logada — ver requireCustomer) ----
@@ -842,6 +898,7 @@ async function handleApi(req, res, pathname) {
 async function main() {
   await db.initSchema();
   await auth.ensureAdminSeeded();
+  await products.seedIfEmpty();
 
   const server = http.createServer(async (req, res) => {
     try {

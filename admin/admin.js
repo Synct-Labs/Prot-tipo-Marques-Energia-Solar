@@ -124,10 +124,12 @@ window.MES = (function(){
     const ordersLink = document.querySelector('.admin-nav-link[href="dashboard.html"]');
     const leadsLink  = document.querySelector('.admin-nav-link[href="credit-leads.html"]');
     const payLink    = document.querySelector('.admin-nav-link[href="marques-pay.html"]');
+    const catalogLink = document.querySelector('.admin-nav-link[href="catalogo.html"]');
     const staffLink  = document.querySelector('.admin-nav-link[href="equipe.html"]');
     if(ordersLink) ordersLink.style.display = hasCompanyAccess(admin, "energia_solar") ? "" : "none";
     if(leadsLink)  leadsLink.style.display  = hasCompanyAccess(admin, "promotora") ? "" : "none";
     if(payLink)    payLink.style.display    = hasCompanyAccess(admin, "promotora") ? "" : "none";
+    if(catalogLink) catalogLink.style.display = hasCompanyAccess(admin, "energia_solar") ? "" : "none";
     if(staffLink)  staffLink.style.display  = admin.role === "owner" ? "" : "none";
 
     const label = document.getElementById("adminUserLabel");

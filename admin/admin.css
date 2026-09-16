@@ -84,6 +84,48 @@
   font-size:.95rem;
 }
 .admin-field input:focus, .admin-field select:focus{ border-color: var(--border-orange); }
+label.admin-field{ font-size:.82rem; color:var(--muted); }
+
+/* ---------- formulário de produto (catálogo) ---------- */
+.admin-product-form-grid{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 16px;
+}
+.admin-product-form-grid .col-span-2{ grid-column: 1 / -1; }
+@media (max-width: 640px){ .admin-product-form-grid{ grid-template-columns: 1fr; } }
+.admin-checkbox-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:.85rem;
+  color: var(--white);
+  margin-bottom:16px;
+}
+.admin-form-section-title{
+  font-size:.8rem;
+  color: var(--orange-light);
+  text-transform: uppercase;
+  letter-spacing:.04em;
+  margin: 6px 0 10px;
+}
+.admin-bundle-item-row{
+  display:grid;
+  grid-template-columns: 1fr 2fr 1fr 70px 1.4fr auto;
+  gap:8px;
+  margin-bottom:8px;
+  align-items:center;
+}
+.admin-bundle-item-row input{
+  background: var(--surface-2);
+  border:1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  color: var(--white);
+  font-size:.82rem;
+  min-width:0;
+}
+@media (max-width: 720px){ .admin-bundle-item-row{ grid-template-columns: 1fr 1fr; } }
 
 .admin-btn{
   width:100%;

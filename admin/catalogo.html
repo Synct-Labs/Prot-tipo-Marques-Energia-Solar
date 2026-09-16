@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Catálogo | Painel de Administrador | Marques</title>
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<header class="admin-topbar">
+  <div class="admin-brand">
+    <img src="../logo-mark-128.png" alt="Marques">
+    <span>Painel de Administrador</span>
+  </div>
+  <nav class="admin-nav">
+    <a href="dashboard.html" class="admin-nav-link">Pedidos</a>
+    <a href="credit-leads.html" class="admin-nav-link">Solicitações de Crédito</a>
+    <a href="marques-pay.html" class="admin-nav-link">Marques Pay</a>
+    <a href="catalogo.html" class="admin-nav-link active">Catálogo</a>
+    <a href="equipe.html" class="admin-nav-link">Equipe</a>
+  </nav>
+  <div class="admin-topbar-right">
+    <span class="admin-user" id="adminUserLabel"></span>
+    <button class="admin-btn admin-btn-ghost" id="logoutBtn">Sair</button>
+  </div>
+</header>
+
+<main class="admin-main">
+  <div class="admin-container">
+
+    <div class="admin-toolbar">
+      <h2 style="font-size:1.15rem;">Catálogo da loja</h2>
+      <div class="admin-toolbar-filters">
+        <input type="text" id="searchInput" placeholder="Buscar por nome, marca ou SKU">
+        <select id="catFilter">
+          <option value="">Todas as categorias</option>
+        </select>
+        <button class="admin-btn admin-btn-ghost" id="newProductBtn">+ Novo produto</button>
+      </div>
+    </div>
+
+    <div class="admin-table-wrap" id="newProductCard" style="display:none; padding:22px; margin-bottom:20px;">
+      <h3 style="margin-bottom:16px;">Novo produto</h3>
+      <div class="admin-error" id="newProductError"></div>
+      <form id="newProductForm">
+        <div class="admin-product-form-grid" id="newProductFields"></div>
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <button type="submit" class="admin-btn" id="newProductSubmitBtn" style="width:auto;">Criar produto</button>
+          <button type="button" class="admin-btn admin-btn-ghost" id="cancelNewProductBtn">Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Produto</th>
+            <th>Categoria</th>
+            <th>Marca</th>
+            <th>Preço</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="productsTableBody">
+          <tr><td colspan="6" class="admin-loading">Carregando catálogo...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</main>
+
+<script src="../api-config.js"></script>
+<script src="admin.js"></script>
+<script>
+let allProducts = [];
+
+/* ---------------------- CONFIG DE CATEGORIAS (espelha app.js) ---------------------- */
+const CATEGORY_LABELS = {
+  kits: "Kits Prontos",
+  paineis: "Painéis Solares",
+  inversores: "Inversores",
+  cabos: "Cabos e Conectores",
+  estrutura: "Parafusos e Estrutura",
+  baterias: "Baterias",
+  controlador: "Controlador de Carga",
+};
+const CATEGORY_SPEC_FIELDS = {
+  kits: [["potencia","Potência do sistema"],["modulos","Módulos"],["inversor","Inversor"],["entradaMax","Potência máx. de entrada"],["saidaMax","Potência máx. de saída"],["consumoAlvo","Consumo médio estimado"]],
+  paineis: [["potencia","Potência"],["tipo","Tipo de célula"],["eficiencia","Eficiência"],["tensaoMax","Tensão máxima"],["correnteMax","Corrente máxima"],["dimensoes","Dimensões"],["peso","Peso"],["garantia","Garantia"]],
+  inversores: [["potencia","Potência"],["mppt","Entradas MPPT"],["tensaoSaida","Tensão de saída"],["eficiencia","Eficiência máxima"],["comunicacao","Comunicação"],["protecao","Grau de proteção"],["garantia","Garantia"]],
+  cabos: [["bitola","Bitola"],["comprimento","Comprimento"],["isolacao","Isolação"],["tensaoMax","Tensão máxima"],["resistencia","Resistência"]],
+  estrutura: [["material","Material"],["capacidade","Capacidade/Uso"],["fixacao","Tipo de fixação"],["resistencia","Resistência"],["garantia","Garantia"]],
+  baterias: [["tensao","Tensão"],["capacidade","Capacidade"],["tecnologia","Tecnologia"],["ciclos","Vida útil"],["dimensoes","Dimensões"],["peso","Peso"],["garantia","Garantia"]],
+  controlador: [["tipo","Tipo de carregamento"],["corrente","Corrente nominal"],["tensaoSistema","Tensão do sistema"],["eficiencia","Eficiência"],["protecoes","Proteções"],["dimensoes","Dimensões"],["garantia","Garantia"]],
+};
+const CATEGORY_FACETS = {
+  kits: ["Até 400 kWh/mês", "400–700 kWh/mês", "700–1000 kWh/mês", "Acima de 1000 kWh/mês"],
+  paineis: ["Até 400 Wp", "400–500 Wp", "500–600 Wp", "Acima de 600 Wp"],
+  inversores: ["Até 3 kW", "3–5 kW", "5–10 kW", "Acima de 10 kW"],
+  cabos: ["6 mm²", "Conectores", "Proteção"],
+  estrutura: ["Trilhos", "Fixação"],
+  baterias: ["Chumbo-Ácido (Estacionária)", "Lítio (LiFePO4)"],
+  controlador: ["PWM", "MPPT"],
+};
+
+function esc(v){ return String(v == null ? "" : v).replace(/"/g, "&quot;"); }
+// Imagens do catálogo são salvas com caminho relativo à raiz do site (ex:
+// "assets/products/x.jpg"), mas esta página vive em /admin — precisa subir
+// um nível pra resolver certo. URLs completas (http...) passam direto.
+function resolveImageUrl(src){
+  if(!src) return "";
+  return /^https?:\/\//i.test(src) ? src : `../${src}`;
+}
+
+function categoryOptionsHTML(selected){
+  return Object.entries(CATEGORY_LABELS).map(([k,l]) =>
+    `<option value="${k}" ${k === selected ? "selected" : ""}>${l}</option>`).join("");
+}
+function facetOptionsHTML(cat, selected){
+  const opts = CATEGORY_FACETS[cat] || [];
+  return `<option value="">—</option>` + opts.map(v =>
+    `<option value="${v}" ${v === selected ? "selected" : ""}>${v}</option>`).join("");
+}
+function specFieldsHTML(cat, specs = {}){
+  const fields = CATEGORY_SPEC_FIELDS[cat] || [];
+  return fields.map(([key,label]) => `
+    <label class="admin-field">${label}
+      <input type="text" class="pf-spec-input" data-key="${key}" value="${esc(specs[key])}">
+    </label>`).join("");
+}
+function bundleItemRowHTML(it = {}){
+  return `<div class="admin-bundle-item-row">
+    <input type="text" class="bi-brand" placeholder="Marca" value="${esc(it.brand)}">
+    <input type="text" class="bi-name" placeholder="Nome do item" value="${esc(it.name)}">
+    <input type="text" class="bi-sku" placeholder="SKU" value="${esc(it.sku)}">
+    <input type="number" class="bi-qty" placeholder="Qtd" min="1" value="${it.qty || 1}">
+    <input type="text" class="bi-image" placeholder="URL da imagem" value="${esc(it.image)}">
+    <button type="button" class="admin-btn admin-btn-ghost remove-bundle-item-btn" title="Remover item">✕</button>
+  </div>`;
+}
+
+function productFormHTML(p = {}){
+  const cat = p.cat || "kits";
+  const isKit = cat === "kits";
+  return `
+    <label class="admin-field">Categoria
+      <select class="pf-cat">${categoryOptionsHTML(cat)}</select>
+    </label>
+    <label class="admin-field">Nome do produto
+      <input type="text" class="pf-name" value="${esc(p.name)}" required>
+    </label>
+    <label class="admin-field">Marca
+      <input type="text" class="pf-brand" value="${esc(p.brand)}">
+    </label>
+    <label class="admin-field">SKU
+      <input type="text" class="pf-sku" value="${esc(p.sku)}">
+    </label>
+    <label class="admin-field">Preço (R$)
+      <input type="number" class="pf-price" min="0.01" step="0.01" value="${p.price ?? ""}" required>
+    </label>
+    <label class="admin-field">Preço promocional (opcional)
+      <input type="number" class="pf-promo-price" min="0.01" step="0.01" value="${p.promoPrice ?? ""}">
+    </label>
+    <label class="admin-field">Rótulo da promoção
+      <input type="text" class="pf-promo-label" value="${esc(p.promoLabel)}" placeholder="Ex: Oferta de lançamento">
+    </label>
+    <label class="admin-field">Embalagem de venda
+      <input type="text" class="pf-emb" value="${esc(p.embVenda)}" placeholder="Ex: 1 unidade">
+    </label>
+    <label class="admin-field">Subcategoria
+      <input type="text" class="pf-subcat" value="${esc(p.subcategoria)}">
+    </label>
+    <label class="admin-field">Faixa do filtro (facet)
+      <select class="pf-facet">${facetOptionsHTML(cat, p.facetValue)}</select>
+    </label>
+    <label class="admin-field col-span-2">URL da imagem
+      <input type="text" class="pf-image" value="${esc(p.image)}" placeholder="assets/products/arquivo.jpg ou URL completa">
+    </label>
+    <label class="admin-checkbox-row col-span-2">
+      <input type="checkbox" class="pf-launch" ${p.isLaunch ? "checked" : ""}> Marcar como "Lançamento"
+    </label>
+
+    <div class="col-span-2">
+      <h4 class="admin-form-section-title">Especificações</h4>
+      <div class="admin-product-form-grid" id="pfSpecsGrid">${specFieldsHTML(cat, p.specs)}</div>
+    </div>
+
+    <div class="col-span-2 admin-kit-block" id="pfKitBlock" ${isKit ? "" : 'style="display:none;"'}>
+      <h4 class="admin-form-section-title">Itens do kit (painéis, inversor...)</h4>
+      <div id="pfBundleItems">${(p.bundleItems || []).map(bundleItemRowHTML).join("")}</div>
+      <button type="button" class="admin-btn admin-btn-ghost" id="pfAddBundleItemBtn" style="width:auto; margin-top:8px;">+ Item do kit</button>
+    </div>
+  `;
+}
+
+function wireProductForm(root){
+  const catSelect = root.querySelector(".pf-cat");
+  catSelect.addEventListener("change", () => {
+    const cat = catSelect.value;
+    root.querySelector("#pfSpecsGrid").innerHTML = specFieldsHTML(cat, {});
+    root.querySelector(".pf-facet").innerHTML = facetOptionsHTML(cat, "");
+    root.querySelector("#pfKitBlock").style.display = cat === "kits" ? "" : "none";
+  });
+  root.querySelector("#pfAddBundleItemBtn")?.addEventListener("click", () => {
+    root.querySelector("#pfBundleItems").insertAdjacentHTML("beforeend", bundleItemRowHTML());
+  });
+  root.querySelector("#pfBundleItems")?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".remove-bundle-item-btn");
+    if(btn) btn.closest(".admin-bundle-item-row").remove();
+  });
+}
+
+function readProductForm(root){
+  const specs = {};
+  root.querySelectorAll(".pf-spec-input").forEach(inp => {
+    if(inp.value.trim()) specs[inp.dataset.key] = inp.value.trim();
+  });
+  const cat = root.querySelector(".pf-cat").value;
+  const bundleItems = cat === "kits"
+    ? Array.from(root.querySelectorAll("#pfBundleItems .admin-bundle-item-row")).map(row => ({
+        brand: row.querySelector(".bi-brand").value.trim(),
+        name: row.querySelector(".bi-name").value.trim(),
+        sku: row.querySelector(".bi-sku").value.trim(),
+        qty: Number(row.querySelector(".bi-qty").value) || 1,
+        image: row.querySelector(".bi-image").value.trim(),
+      })).filter(it => it.name)
+    : [];
+  const promoPriceRaw = root.querySelector(".pf-promo-price").value;
+
+  return {
+    cat,
+    name: root.querySelector(".pf-name").value.trim(),
+    brand: root.querySelector(".pf-brand").value.trim(),
+    sku: root.querySelector(".pf-sku").value.trim(),
+    price: Number(root.querySelector(".pf-price").value),
+    promoPrice: promoPriceRaw ? Number(promoPriceRaw) : null,
+    promoLabel: root.querySelector(".pf-promo-label").value.trim(),
+    embVenda: root.querySelector(".pf-emb").value.trim(),
+    subcategoria: root.querySelector(".pf-subcat").value.trim(),
+    facetValue: root.querySelector(".pf-facet").value,
+    image: root.querySelector(".pf-image").value.trim(),
+    isLaunch: root.querySelector(".pf-launch").checked,
+    specs,
+    bundleItems,
+  };
+}
+
+/* ---------------------- NOVO PRODUTO ---------------------- */
+const newProductFieldsBox = document.getElementById("newProductFields");
+newProductFieldsBox.innerHTML = productFormHTML({});
+wireProductForm(document.getElementById("newProductForm"));
+
+document.getElementById("newProductBtn").addEventListener("click", () => {
+  document.getElementById("newProductCard").style.display = "block";
+});
+document.getElementById("cancelNewProductBtn").addEventListener("click", () => {
+  document.getElementById("newProductCard").style.display = "none";
+  newProductFieldsBox.innerHTML = productFormHTML({});
+  wireProductForm(document.getElementById("newProductForm"));
+});
+
+document.getElementById("newProductForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("newProductError");
+  const btn = document.getElementById("newProductSubmitBtn");
+  errorBox.classList.remove("show");
+  btn.disabled = true; btn.textContent = "Criando...";
+  try{
+    const payload = readProductForm(document.getElementById("newProductForm"));
+    const res = await MES.apiPost("/api/admin/products", payload);
+    if(!res.ok){
+      errorBox.textContent = res.error || "Não foi possível criar o produto.";
+      errorBox.classList.add("show");
+      return;
+    }
+    document.getElementById("newProductCard").style.display = "none";
+    newProductFieldsBox.innerHTML = productFormHTML({});
+    wireProductForm(document.getElementById("newProductForm"));
+    MES.showToast("Produto criado.");
+    loadProducts();
+  } finally {
+    btn.disabled = false; btn.textContent = "Criar produto";
+  }
+});
+
+/* ---------------------- LISTA / EDIÇÃO ---------------------- */
+function productDetailHTML(p){
+  return `
+    <div class="admin-detail-block" style="grid-column: 1 / -1;">
+      <div class="admin-product-form-grid">${productFormHTML(p)}</div>
+      <div class="admin-error" data-edit-error="${p.id}"></div>
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button type="button" class="admin-btn save-product-btn" style="width:auto;" data-id="${p.id}">Salvar alterações</button>
+        <button type="button" class="admin-btn admin-btn-ghost delete-product-btn" style="width:auto;" data-id="${p.id}">Excluir produto</button>
+      </div>
+    </div>`;
+}
+
+function priceCellHTML(p){
+  if(p.promoPrice){
+    return `<span style="text-decoration:line-through; color:var(--muted); font-size:.78rem; display:block;">${MES.formatBRL(p.price)}</span>
+            <span style="color:var(--danger); font-weight:700;">${MES.formatBRL(p.promoPrice)}</span>`;
+  }
+  return MES.formatBRL(p.price);
+}
+
+function renderProducts(list){
+  const tbody = document.getElementById("productsTableBody");
+  if(list.length === 0){
+    tbody.innerHTML = `<tr><td colspan="6" class="admin-empty">Nenhum produto encontrado.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(p => `
+    <tr class="admin-order-row" data-id="${p.id}">
+      <td data-label="" style="width:44px;">${p.image ? `<img src="${resolveImageUrl(p.image)}" alt="" style="width:36px;height:36px;object-fit:contain;border-radius:6px;background:#fff;">` : ""}</td>
+      <td data-label="Produto">${p.name}${p.isLaunch ? ' <span class="status-badge status-novo">Lançamento</span>' : ""}${p.promoPrice ? ` <span class="status-badge status-cancelado">${p.promoLabel || "Promoção"}</span>` : ""}</td>
+      <td data-label="Categoria">${CATEGORY_LABELS[p.cat] || p.cat}</td>
+      <td data-label="Marca">${p.brand || "-"}</td>
+      <td data-label="Preço">${priceCellHTML(p)}</td>
+      <td data-label=""><span class="admin-note">SKU ${p.sku || "-"}</span></td>
+    </tr>
+    <tr class="admin-order-detail" data-detail-for="${p.id}">
+      <td colspan="6"><div class="admin-order-detail-inner" id="productDetailInner-${p.id}"></div></td>
+    </tr>`).join("");
+}
+
+function applyFilters(){
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  const cat = document.getElementById("catFilter").value;
+  let list = allProducts;
+  if(cat) list = list.filter(p => p.cat === cat);
+  if(q){
+    list = list.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      (p.brand || "").toLowerCase().includes(q) ||
+      (p.sku || "").toLowerCase().includes(q)
+    );
+  }
+  renderProducts(list);
+}
+
+async function loadProducts(){
+  document.getElementById("productsTableBody").innerHTML = `<tr><td colspan="6" class="admin-loading">Carregando catálogo...</td></tr>`;
+  const res = await MES.apiGet("/api/products");
+  if(!res.ok){ MES.showToast(res.error || "Erro ao carregar catálogo."); return; }
+  allProducts = res.products;
+  applyFilters();
+}
+
+document.getElementById("searchInput").addEventListener("input", applyFilters);
+document.getElementById("catFilter").addEventListener("change", applyFilters);
+
+document.getElementById("productsTableBody").addEventListener("click", async (e) => {
+  const saveBtn = e.target.closest(".save-product-btn");
+  const deleteBtn = e.target.closest(".delete-product-btn");
+
+  if(saveBtn){
+    const id = saveBtn.dataset.id;
+    const root = document.getElementById(`productDetailInner-${id}`);
+    const errorBox = root.querySelector(`[data-edit-error="${id}"]`);
+    errorBox.classList.remove("show");
+    const payload = readProductForm(root);
+    const res = await MES.apiPatch(`/api/admin/products/${encodeURIComponent(id)}`, payload);
+    if(!res.ok){
+      errorBox.textContent = res.error || "Não foi possível salvar.";
+      errorBox.classList.add("show");
+      return;
+    }
+    MES.showToast("Produto atualizado.");
+    loadProducts();
+    return;
+  }
+
+  if(deleteBtn){
+    const id = deleteBtn.dataset.id;
+    const p = allProducts.find(x => x.id === id);
+    if(!confirm(`Excluir "${p ? p.name : id}" do catálogo? Essa ação não pode ser desfeita.`)) return;
+    const res = await MES.apiDelete(`/api/admin/products/${encodeURIComponent(id)}`);
+    if(!res.ok){ MES.showToast(res.error || "Erro ao excluir."); return; }
+    MES.showToast("Produto excluído.");
+    loadProducts();
+    return;
+  }
+
+  if(e.target.closest("select") || e.target.closest("input") || e.target.closest("button")) return;
+  const row = e.target.closest(".admin-order-row");
+  if(!row) return;
+  const id = row.dataset.id;
+  const detail = document.querySelector(`.admin-order-detail[data-detail-for="${CSS.escape(id)}"] .admin-order-detail-inner`);
+  if(!detail) return;
+  const willOpen = !detail.classList.contains("open");
+  detail.classList.toggle("open");
+  if(willOpen && !detail.dataset.built){
+    const p = allProducts.find(x => x.id === id);
+    detail.innerHTML = productDetailHTML(p);
+    wireProductForm(detail);
+    detail.dataset.built = "1";
+  }
+});
+
+/* ---------------------- INIT ---------------------- */
+async function init(){
+  const admin = await MES.requireAuth("energia_solar");
+  if(!admin) return;
+  document.getElementById("catFilter").insertAdjacentHTML("beforeend",
+    Object.entries(CATEGORY_LABELS).map(([k,l]) => `<option value="${k}">${l}</option>`).join(""));
+  await loadProducts();
+}
+
+document.getElementById("logoutBtn").addEventListener("click", () => MES.logout());
+
+init();
+</script>
+</body>
+</html>

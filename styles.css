@@ -1115,6 +1115,38 @@ input, select{ font-family: inherit; }
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+.promo-badge{
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: var(--danger);
+  color: #2a0603;
+  font-weight: 800;
+  font-size: 0.62rem;
+  padding: 5px 9px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  box-shadow: var(--shadow-sm);
+}
+.catalog-load-error{
+  grid-column: 1 / -1;
+  background: rgba(240,100,90,0.1);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  font-size: 0.88rem;
+  margin-bottom: 20px;
+}
+.price-original{
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--muted-2);
+  text-decoration: line-through;
+  font-family: var(--font-body);
+}
 .launch-tag{
   display: none;
   align-items: center;
@@ -1195,6 +1227,7 @@ input, select{ font-family: inherit; }
 .install-included-note .icon{ width: 14px; height: 14px; }
 .product-page-price + .install-included-note{ font-size: 0.85rem; margin-top: 8px; margin-bottom: 4px; }
 .product-page-price + .install-included-note .icon{ width: 17px; height: 17px; }
+.install-included-note[hidden]{ display: none; }
 
 .product-actions{
   display: flex;
@@ -2360,6 +2393,7 @@ input, select{ font-family: inherit; }
 }
 .sizing-calc-inputs input:focus{ border-color: var(--border-orange); }
 .sizing-calc-or{ color: var(--muted-2); font-size: 0.8rem; padding-bottom: 12px; }
+.sizing-calc-result[hidden]{ display: none; }
 .sizing-calc-result{
   display: flex;
   flex-wrap: wrap;
@@ -2642,6 +2676,15 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
 .footer-contact p{ display:flex; align-items:center; gap:8px; font-size: 0.87rem; color: var(--muted); margin-bottom: 10px; }
 .footer-contact a:hover{ color: var(--orange); }
 .footer-note{ font-size: 0.8rem; color: var(--muted-2); }
+/* Acesso da equipe — de propósito discreto (não é pra chamar atenção do
+   cliente), mas continua sendo um link de verdade, sempre no mesmo lugar. */
+.footer-admin-link{
+  color: var(--muted-2);
+  opacity: 0.35;
+  text-decoration: none;
+  padding: 0 4px;
+}
+.footer-admin-link:hover{ opacity: 0.9; color: var(--orange-light); }
 .prototype-tag{
   margin-top: 10px;
   display: inline-block;
