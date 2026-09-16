@@ -1,11 +1,16 @@
 /* =====================================================================
    MARQUES ENERGIA SOLAR: LOJA
    Painéis, inversores, baterias, controladores de carga, cabos/conectores
-   e estrutura de fixação têm preço e ficha técnica reais, cotados na Apex
-   Energia Solar (revenda de Cuiabá-MT) em dezembro/2026 — servem de
-   referência de mercado até a Marques Energia Solar definir sua própria
-   linha/fornecedor. Os 2 kits prontos (kit1, kit2) são orçamento real da
-   própria Marques, com preço revisado a partir dessa mesma referência.
+   e estrutura de fixação têm ficha técnica real, cotada na Apex Energia
+   Solar (revenda de Cuiabá-MT) em dezembro/2026 — serve de referência de
+   mercado até a Marques Energia Solar definir sua própria linha/fornecedor.
+   O preço desses itens (tudo, exceto os kits prontos) leva a cotação da
+   Apex + 30% de margem da Marques. Os kits prontos (kit1-kit9) são
+   orçamento real da própria Marques — já é o valor final "chave na mão",
+   incluindo instalação e mão de obra, então não recebem esse mesmo
+   percentual (evita cobrar margem em cima de margem).
+   Frete grátis para todo o Brasil como bônus de lançamento (sem integração
+   de transportadora real ainda — ver item 6 do README).
    Não há integração de pagamento real; ver seção CHECKOUT / PAYMENT
    INTEGRATION POINT mais abaixo.
    ===================================================================== */
@@ -202,33 +207,33 @@ const PRODUCTS = [
 
   // ---------- PAINÉIS SOLARES (preços/specs reais, cotados na Apex Energia Solar em 12/2026) ----------
   { id:"pn1", cat:"paineis", brand:"ZTROON", sku:"ZTP-360MI", embVenda:"1 unidade", subcategoria:"Monocristalino", facetValue:"Até 400 Wp",
-    name:"Painel Solar Monocristalino 360W (Off-Grid)", price:733.96,
+    name:"Painel Solar Monocristalino 360W (Off-Grid)", price:954.15,
     // Foto real da revenda NeoSolar — o próprio arquivo é "ztp-340mi" (mesma peça física,
     // a Apex também lista esse SKU alternativo pro 360W: é a mesma linha, binagem de potência diferente).
     image:"assets/products/ztroon-ztp-360mi.png",
     specs:{ potencia:"360 Wp", tipo:"Monocristalino PERC", eficiencia:"21,90%", tensaoMax:"39,44 V",
       correnteMax:"9,13 A", dimensoes:"1870 x 880 x 30 mm", peso:"15,6 kg", garantia:"15 anos (produto)" } },
   { id:"pn2", cat:"paineis", brand:"TSUN", sku:"RIO600W-144BIF-2278", embVenda:"1 unidade", subcategoria:"Bifacial", facetValue:"500–600 Wp",
-    name:"Painel Solar Bifacial 600W", price:718.91,
+    name:"Painel Solar Bifacial 600W", price:934.58,
     // Mesma foto do pn3: irmão de linha (TSUN RIO bifacial N-Type preto), não achamos
     // foto de revenda específica da variante 600W/144 células.
     image:"assets/products/tsun-mftb-bifacial-630w.webp",
     specs:{ potencia:"600 Wp", tipo:"N-Type Monocristalina Bifacial", eficiencia:"23,2%", tensaoMax:"44,45 V",
       correnteMax:"13,50 A", dimensoes:"2278 x 1134 x 30 mm", peso:"32 kg", garantia:"12 anos (produto) / 30 anos (linear)" } },
   { id:"pn3", cat:"paineis", brand:"TSUN", sku:"TS630S8E-132GANT", embVenda:"1 unidade", subcategoria:"Bifacial", facetValue:"Acima de 600 Wp",
-    name:"Painel Solar Bifacial 630W N-Type", price:730.80,
+    name:"Painel Solar Bifacial 630W N-Type", price:950.04,
     // Mesmo módulo/foto usado no kit1 e kit2 — é exatamente o mesmo modelo (132 células, N-Type, 630W).
     image:"assets/products/tsun-mftb-bifacial-630w.webp",
     specs:{ potencia:"630 Wp", tipo:"N-Type Monocristalina Bifacial (132 células)", eficiencia:"23,7%", tensaoMax:"42,17 V",
       correnteMax:"14,94 A", dimensoes:"2382 x 1134 x 30 mm", peso:"33,5 kg", garantia:"12 anos (produto) / 30 anos (linear)" } },
   { id:"pn4", cat:"paineis", brand:"Jinko Solar", sku:"JKM620N-66HL4M-BDV", embVenda:"1 unidade", subcategoria:"Bifacial TOPCon", facetValue:"Acima de 600 Wp",
-    name:"Painel Solar Bifacial TOPCon 620W", price:1119.23, isLaunch:true,
+    name:"Painel Solar Bifacial TOPCon 620W", price:1455.00, isLaunch:true,
     // Foto real da revenda Recarga Solar (recargasolar.shop) — mesmo SKU exato (JKM620N-66HL4M-BDV).
     image:"assets/products/jinko-jkm620n-66hl4m-bdv.webp",
     specs:{ potencia:"620 Wp", tipo:"N-Type TOPCon Monocristalina Bifacial", eficiencia:"23%", tensaoMax:"40,74 V",
       correnteMax:"15,22 A", dimensoes:"2382 x 1134 x 30 mm", peso:"32,5 kg", garantia:"15 anos (produto) / 30 anos (linear)" } },
   { id:"pn5", cat:"paineis", brand:"Renepv", sku:"ZY700G12HNHB-132", embVenda:"1 unidade", subcategoria:"Bifacial", facetValue:"Acima de 600 Wp",
-    name:"Painel Solar Bifacial 700W", price:980.00,
+    name:"Painel Solar Bifacial 700W", price:1274.00,
     // Foto real da revenda NeoSolar — mesmo SKU exato (ZY700G12HNHB-132).
     image:"assets/products/renepv-zy700g12hnhb-132.png",
     specs:{ potencia:"700 Wp", tipo:"Monocristalino Bifacial (vidro duplo)", eficiencia:"22,50%", tensaoMax:"41,78 V",
@@ -236,37 +241,37 @@ const PRODUCTS = [
 
   // ---------- INVERSORES (preços/specs reais, cotados na Apex Energia Solar em 12/2026) ----------
   { id:"iv1", cat:"inversores", brand:"Sungrow", sku:"SG2K-S", embVenda:"1 unidade", subcategoria:"On Grid", facetValue:"Até 3 kW", powerKw:2,
-    name:"Inversor String 2kW Monofásico", price:2300.00,
+    name:"Inversor String 2kW Monofásico", price:2990.00,
     // Foto real da revenda Energia Total — mesmo SKU exato (SG2K-S).
     image:"assets/products/sungrow-sg2k-s.jpg",
     specs:{ potencia:"2 kW", mppt:"1 MPPT", tensaoSaida:"220V Monofásico", eficiencia:"98,2%",
       comunicacao:"-", protecao:"IP65", garantia:"7 anos" } },
   { id:"iv2", cat:"inversores", brand:"Canadian Solar", sku:"CSI-5K-S22003-E", embVenda:"1 unidade", subcategoria:"On Grid", facetValue:"3–5 kW", powerKw:5,
-    name:"Inversor String 5kW Monofásico", price:4600.00,
+    name:"Inversor String 5kW Monofásico", price:5980.00,
     // Foto real da revenda Energia Total — mesmo SKU exato (CSI-5K-S22003-E).
     image:"assets/products/canadian-csi-5k-s22003-e.png",
     specs:{ potencia:"5 kW", mppt:"2 MPPT", tensaoSaida:"220V Monofásico", eficiencia:"98,1%",
       comunicacao:"Wi-Fi + monitoramento em nuvem", protecao:"IP65", garantia:"10 anos" } },
   { id:"iv3", cat:"inversores", brand:"Fronius", sku:"Primo 3.0-1", embVenda:"1 unidade", subcategoria:"On Grid", facetValue:"Até 3 kW", powerKw:3,
-    name:"Inversor String 3kW Monofásico Primo", price:6342.50,
+    name:"Inversor String 3kW Monofásico Primo", price:8245.25,
     // Foto real da revenda Energia Total — mesmo modelo exato (Primo 3.0-1).
     image:"assets/products/fronius-primo-3.0-1.jpeg",
     specs:{ potencia:"3 kW", mppt:"2 MPPT", tensaoSaida:"220V Monofásico", eficiencia:"98,0% (máx.) / 96,1% (europeia)",
       comunicacao:"-", protecao:"IP65", garantia:"5 anos" } },
   { id:"iv4", cat:"inversores", brand:"Canadian Solar", sku:"CSI-9K-S22002-ED", embVenda:"1 unidade", subcategoria:"On Grid", facetValue:"5–10 kW", powerKw:9,
-    name:"Inversor String 9kW Monofásico", price:7420.00,
+    name:"Inversor String 9kW Monofásico", price:9646.00,
     // Foto real da revenda Energia Total — mesmo SKU exato (CSI-9K-S22002-ED).
     image:"assets/products/canadian-csi-9k-s22002-ed.jpg",
     specs:{ potencia:"9 kW", mppt:"2 MPPT", tensaoSaida:"220V Monofásico", eficiencia:"98,1%",
       comunicacao:"Wi-Fi + monitoramento em nuvem", protecao:"IP65", garantia:"10 anos" } },
   { id:"iv5", cat:"inversores", brand:"Canadian Solar", sku:"CSI-15KTL-GI-LFL", embVenda:"1 unidade", subcategoria:"On Grid", facetValue:"Acima de 10 kW", powerKw:15,
-    name:"Inversor String 15kW Trifásico", price:5375.27,
+    name:"Inversor String 15kW Trifásico", price:6987.85,
     // Foto real da revenda Energia Total — mesmo SKU exato (CSI-15KTL-GI-LFL).
     image:"assets/products/canadian-csi-15ktl-gi-lfl.png",
     specs:{ potencia:"15 kW", mppt:"2 MPPT", tensaoSaida:"220V Trifásico", eficiencia:"97%",
       comunicacao:"-", protecao:"-", garantia:"5 anos" } },
   { id:"iv6", cat:"inversores", brand:"Deye", sku:"SUN-5K-SG04LP1-EU", embVenda:"1 unidade", subcategoria:"Híbrido", facetValue:"3–5 kW", powerKw:5,
-    name:"Inversor Híbrido 5kW (compatível c/ bateria)", price:10751.63, isLaunch:true,
+    name:"Inversor Híbrido 5kW (compatível c/ bateria)", price:13977.12, isLaunch:true,
     // Foto real da revenda NeoSolar — mesma linha Deye SUN5K (EU) híbrida.
     image:"assets/products/deye-sun-5k-sg04lp1-eu.jpg",
     specs:{ potencia:"5 kW", mppt:"2 MPPT + entrada bateria 48V (40–60V)", tensaoSaida:"220V Monofásico", eficiencia:"97,6%",
@@ -274,13 +279,13 @@ const PRODUCTS = [
 
   // ---------- BATERIAS (preços/specs reais, cotados na Apex Energia Solar em 12/2026) ----------
   { id:"bt1", cat:"baterias", brand:"Moura", sku:"12MN2000", embVenda:"1 unidade", subcategoria:"Chumbo-Carbono (Estacionária)", facetValue:"Chumbo-Ácido (Estacionária)",
-    name:"Bateria Estacionária Moura 105Ah 12V", price:1112.00,
+    name:"Bateria Estacionária Moura 105Ah 12V", price:1445.60,
     // Foto real da revenda Energia Total — mesmo SKU exato (12MN2000).
     image:"assets/products/moura-12mn2000.png",
     specs:{ tensao:"12V", capacidade:"105 Ah (C120) / 95 Ah (C10)", tecnologia:"Chumbo-Carbono (PbC), selada, uso exclusivo solar",
       ciclos:"Mais de 450 ciclos", dimensoes:"330 x 172 x 214 mm", peso:"26 kg", garantia:"2 anos" } },
   { id:"bt2", cat:"baterias", brand:"Epever", sku:"LFP1.28KWH12.8V-P20L1", embVenda:"1 unidade", subcategoria:"Lítio (LiFePO4)", facetValue:"Lítio (LiFePO4)",
-    name:"Bateria de Lítio LiFePO4 100Ah 12,8V", price:3547.31, isLaunch:true,
+    name:"Bateria de Lítio LiFePO4 100Ah 12,8V", price:4611.50, isLaunch:true,
     // Foto real da revenda NeoSolar — mesma família Epever LFP1.28kWh 12,8V/100Ah (variante
     // de terminal P65L2EV50; a Apex vende a variante P20L1, célula/capacidade idênticas).
     image:"assets/products/epever-lfp1-28kwh.jpg",
@@ -289,13 +294,13 @@ const PRODUCTS = [
 
   // ---------- CONTROLADOR DE CARGA (preços/specs reais, cotados na Apex Energia Solar em 12/2026) ----------
   { id:"cc1", cat:"controlador", brand:"Epever", sku:"LS3024EU", embVenda:"1 unidade", subcategoria:"PWM", facetValue:"PWM",
-    name:"Controlador de Carga PWM 30A 12/24V", price:279.00,
+    name:"Controlador de Carga PWM 30A 12/24V", price:362.70,
     // Foto real da revenda NeoSolar — mesmo SKU exato (LS3024EU).
     image:"assets/products/epever-ls3024eu.jpg",
     specs:{ tipo:"PWM", corrente:"30 A", tensaoSistema:"12V/24V (auto reconhecimento)", eficiencia:"-",
       protecoes:"Sobrecarga, curto-circuito, polaridade reversa, descarga excessiva", dimensoes:"178 x 95,5 x 41,5 mm", garantia:"2 anos" } },
   { id:"cc2", cat:"controlador", brand:"Epever", sku:"XTRA 3210N", embVenda:"1 unidade", subcategoria:"MPPT", facetValue:"MPPT",
-    name:"Controlador de Carga MPPT 30A 12/24V", price:890.00,
+    name:"Controlador de Carga MPPT 30A 12/24V", price:1157.00,
     // Foto real da revenda NeoSolar — mesmo SKU exato (XTRA 3210N).
     image:"assets/products/epever-xtra-3210n.jpg",
     specs:{ tipo:"MPPT", corrente:"30 A (carga e descarga)", tensaoSistema:"12V/24V", eficiencia:"98,6%",
@@ -303,40 +308,40 @@ const PRODUCTS = [
 
   // ---------- CABOS, CONECTORES E PROTEÇÃO (preços/specs reais, cotados na Apex Energia Solar em 12/2026) ----------
   { id:"cb1", cat:"cabos", brand:"-", sku:"000190", embVenda:"venda por metro", subcategoria:"Cabo Solar", facetValue:"6 mm²",
-    name:"Cabo Solar Preto 6mm² 1,8kV (metro)", price:9.50,
+    name:"Cabo Solar Preto 6mm² 1,8kV (metro)", price:12.35,
     // Foto real da revenda NeoSolar — cabo solar 6mm²/1,8kV preto (marca Lafeber; a Apex
     // vende o mesmo tipo de cabo sem marca própria divulgada).
     image:"assets/products/cabo-solar-6mm-preto.jpg",
     specs:{ bitola:"6 mm²", comprimento:"Venda por metro (corte sob medida)", isolacao:"Dupla camada, resistente a UV/óleo/abrasão",
       tensaoMax:"1,8 kV DC", resistencia:"Condutor de cobre estanhado flexível, -40°C a 90°C" } },
   { id:"cb2", cat:"cabos", brand:"-", sku:"000191", embVenda:"venda por metro", subcategoria:"Cabo Solar", facetValue:"6 mm²",
-    name:"Cabo Solar Vermelho 6mm² 1,8kV (metro)", price:9.50,
+    name:"Cabo Solar Vermelho 6mm² 1,8kV (metro)", price:12.35,
     // Foto real da revenda NeoSolar — mesma observação do cb1 (marca Lafeber).
     image:"assets/products/cabo-solar-6mm-vermelho.jpg",
     specs:{ bitola:"6 mm²", comprimento:"Venda por metro (corte sob medida)", isolacao:"Dupla camada, resistente a UV/óleo/abrasão",
       tensaoMax:"1,8 kV DC", resistencia:"Condutor de cobre estanhado flexível, -40°C a 90°C" } },
   { id:"cb3", cat:"cabos", brand:"Victron Energy", sku:"MC4", embVenda:"1 par (macho-fêmea)", subcategoria:"Conectores", facetValue:"Conectores",
-    name:"Conector Fotovoltaico MC4 (par avulso)", price:32.68,
-    // Foto real da revenda Energia Total — mesmo produto (mesmo preço de R$32,68, mesma
-    // descrição "Multi-Contact MC4 Macho-Fêmea Par").
+    name:"Conector Fotovoltaico MC4 (par avulso)", price:42.48,
+    // Foto real da revenda Energia Total — mesmo produto (cotado a R$32,68 na Apex, mesma
+    // descrição "Multi-Contact MC4 Macho-Fêmea Par"; preço final aqui já com os +30% de margem).
     image:"assets/products/mc4-conector-par.jpeg",
     specs:{ bitola:"Compatível 2,5 a 6 mm²", comprimento:"6 cm", isolacao:"Contato em cobre estanhado",
       tensaoMax:"1000 V DC / 30 A", resistencia:"-40°C a 90°C, 30g o par" } },
   { id:"cb4", cat:"cabos", brand:"Soprano", sku:"SHB2 DC-C016A", embVenda:"1 unidade", subcategoria:"Proteção", facetValue:"Proteção",
-    name:"Disjuntor CC 16A 500V", price:122.01,
+    name:"Disjuntor CC 16A 500V", price:158.61,
     // Foto real da Leroy Merlin — mesmo produto exato (Disjuntor CC 500V Soprano SHB2-C 16A).
     image:"assets/products/soprano-disjuntor-cc-16a.jpg",
     specs:{ bitola:"-", comprimento:"-", isolacao:"-",
       tensaoMax:"500 V DC / 16 A", resistencia:"Proteção de circuitos CC (sistemas solares e banco de baterias)" } },
   { id:"cb5", cat:"cabos", brand:"Embrastec", sku:"4E-2S-20A-1040V", embVenda:"1 unidade", subcategoria:"Proteção", facetValue:"Proteção",
-    name:"String Box 4E/2S 20A 1040VCC", price:1160.10,
+    name:"String Box 4E/2S 20A 1040VCC", price:1508.13,
     // Foto real do site oficial da Embrastec — mostra a linha String Box CC (design da
     // caixa pode variar por configuração de entradas/saídas).
     image:"assets/products/embrastec-stringbox.jpg",
     specs:{ bitola:"4 entradas / 2 saídas", comprimento:"41 x 31 x 15 cm", isolacao:"Caixa ABS anti-chama (UL94 V0), IP65",
       tensaoMax:"1040 V DC / 20 A", resistencia:"DPS integrado, -40°C a 80°C, 3,5 kg" } },
   { id:"cb6", cat:"cabos", brand:"Canadian Solar", sku:"CSI-GI-DCBOX-42E", embVenda:"1 unidade", subcategoria:"Proteção", facetValue:"Proteção",
-    name:"String Box 8E/8S", price:1826.88,
+    name:"String Box 8E/8S", price:2374.94,
     // Foto real da revenda Minha Casa Solar — mesmo SKU exato (CSI-GI-DCBOX-42E).
     image:"assets/products/canadian-csi-gi-dcbox-42e.jpg",
     specs:{ bitola:"8 entradas / 8 saídas", comprimento:"-", isolacao:"-",
@@ -345,37 +350,37 @@ const PRODUCTS = [
   // ---------- PARAFUSOS E ESTRUTURA DE FIXAÇÃO (peça avulsa, preços reais Apex Energia Solar em 12/2026 —
   //            o mercado (inclusive a Apex) não vende "kit pra N painéis" fechado, só peça a peça) ----------
   { id:"es1", cat:"estrutura", brand:"Alumax", sku:"-", embVenda:"1 unidade", subcategoria:"Trilhos", facetValue:"Trilhos",
-    name:"Perfil de Alumínio 2,4m (trilho suspenso)", price:59.90,
+    name:"Perfil de Alumínio 2,4m (trilho suspenso)", price:77.87,
     // Foto real da revenda Energia Total — mesmo produto exato.
     image:"assets/products/alumax-perfil-2-4m.png",
     specs:{ material:"Alumínio estrutural anodizado/escovado", capacidade:"2,4m por peça, vendido individualmente", fixacao:"Compatível com grampos finais e intermediários (35mm)",
       resistencia:"Anticorrosivo, não enferruja", garantia:"-" } },
   { id:"es2", cat:"estrutura", brand:"Alumax", sku:"-", embVenda:"1 unidade", subcategoria:"Trilhos", facetValue:"Trilhos",
-    name:"Minitrilho 30cm (complemento/vão curto)", price:17.90,
+    name:"Minitrilho 30cm (complemento/vão curto)", price:23.27,
     // Foto real da revenda Energia Total — mesmo produto exato.
     image:"assets/products/alumax-minitrilho-30cm.png",
     specs:{ material:"Alumínio anodizado", capacidade:"30cm por peça, complemento de vãos curtos", fixacao:"Compatível com grampos finais e intermediários (35mm)",
       resistencia:"Anticorrosivo", garantia:"-" } },
   { id:"es3", cat:"estrutura", brand:"Alumax", sku:"-", embVenda:"1 unidade", subcategoria:"Trilhos", facetValue:"Trilhos",
-    name:"Emenda de Junção entre Trilhos", price:5.54,
+    name:"Emenda de Junção entre Trilhos", price:7.20,
     // Foto real da revenda Energia Total — mesmo produto exato.
     image:"assets/products/alumax-emenda-juncao.png",
     specs:{ material:"Alumínio", capacidade:"Une 2 trilhos de 2,4m para vãos maiores", fixacao:"Encaixe de junção",
       resistencia:"Anticorrosivo", garantia:"-" } },
   { id:"es4", cat:"estrutura", brand:"Alumax", sku:"-", embVenda:"1 unidade", subcategoria:"Fixação", facetValue:"Fixação",
-    name:"Terminal Final 35mm (grampo de borda)", price:8.50,
+    name:"Terminal Final 35mm (grampo de borda)", price:11.05,
     // Foto real da revenda Energia Total — mesmo produto exato.
     image:"assets/products/alumax-terminal-final-35mm.png",
     specs:{ material:"Alumínio", capacidade:"Fixa a borda externa do módulo (moldura até 35mm)", fixacao:"Grampo final de trilho",
       resistencia:"Anticorrosivo", garantia:"-" } },
   { id:"es5", cat:"estrutura", brand:"Alumax", sku:"-", embVenda:"1 unidade", subcategoria:"Fixação", facetValue:"Fixação",
-    name:"Terminal Intermediário 35mm (grampo entre painéis)", price:9.50,
+    name:"Terminal Intermediário 35mm (grampo entre painéis)", price:12.35,
     // Foto real da revenda Energia Total — mesmo produto exato.
     image:"assets/products/alumax-terminal-intermediario-35mm.png",
     specs:{ material:"Alumínio", capacidade:"Fixa entre 2 módulos adjacentes (moldura até 35mm)", fixacao:"Grampo intermediário de trilho",
       resistencia:"Anticorrosivo", garantia:"-" } },
   { id:"es6", cat:"estrutura", brand:"Alumax", sku:"-", embVenda:"1 unidade", subcategoria:"Fixação", facetValue:"Fixação",
-    name:"Parafuso Estrutural (Fibrocimento/Base Metálica)", price:23.95,
+    name:"Parafuso Estrutural (Fibrocimento/Base Metálica)", price:31.14,
     // Foto real da revenda Energia Total — mesmo produto exato.
     image:"assets/products/alumax-parafuso-estrutural.png",
     specs:{ material:"Aço resistente à corrosão", capacidade:"Fixação de trilho em telhado de fibrocimento c/ estrutura metálica", fixacao:"Rosca autobrocante",
@@ -501,6 +506,24 @@ $("#sizingGoWizardBtn")?.addEventListener("click", () => {
   location.hash = "configurador";
   startWizard();
 });
+
+/* ---------------------- GALERIA DE IMAGENS (foto principal + itens do kit) ----------------------
+   Pra kits, a "galeria" são as fotos reais dos equipamentos que vêm dentro
+   (painel, inversor etc.), sem repetir a mesma foto duas vezes. Pra produto
+   avulso normalmente sobra só a foto principal — nesse caso não faz sentido
+   mostrar miniaturas (não tem outra imagem real pra trocar). */
+function getGalleryImages(p){
+  const seen = new Set();
+  const images = [];
+  const add = (src, alt) => {
+    if(!src || seen.has(src)) return;
+    seen.add(src);
+    images.push({ src, alt });
+  };
+  add(p.image, p.name);
+  (p.bundleItems || []).forEach(item => add(item.image, `${item.brand} — ${item.name}`));
+  return images;
+}
 
 /* ---------------------- IMAGEM DE PRODUTO (placeholder neutro, tipo "foto de estúdio") ---------------------- */
 function productImageHTML(p, extraClass=""){
@@ -793,6 +816,7 @@ function renderProductCard(p){
     </a>
     <div class="product-body product-body-price">
       <div class="product-price">${formatBRL(p.price)}<small>ou ${formatParcelamento(p.price)}</small></div>
+      ${p.cat === "kits" ? `<span class="install-included-note">${ICON_CHECK} Instalação inclusa</span>` : ""}
     </div>
     <div class="product-actions">
       <a href="#produto/${p.id}" class="btn btn-ghost">+ detalhes</a>
@@ -961,15 +985,24 @@ function renderProductPage(){
   ]);
 
   $("#galleryMain").innerHTML = productImageHTML(p, "gallery-main-img");
-  $("#galleryThumbs").innerHTML = [0,1,2].map(i =>
-    `<button class="gallery-thumb ${i===0 ? "active" : ""}" data-idx="${i}" type="button">${ICONS[p.cat]}</button>`
-  ).join("");
+  const galleryImages = getGalleryImages(p);
+  $("#galleryThumbs").innerHTML = galleryImages.length > 1
+    ? galleryImages.map((img, i) => `
+        <button class="gallery-thumb ${i===0 ? "active" : ""}" data-idx="${i}" data-src="${img.src}" data-alt="${img.alt}" type="button">
+          <img src="${img.src}" alt="${img.alt}" loading="lazy">
+        </button>`).join("")
+    : "";
 
   $("#productBrandChip").textContent = p.brand;
   $("#productLaunchTag").style.display = p.isLaunch ? "inline-flex" : "none";
   $("#productTitle").textContent = p.name;
   $("#productMeta").innerHTML = `<span>SKU: ${p.sku}</span><span>Emb. venda: ${p.embVenda}</span>`;
   $("#productPagePrice").innerHTML = `${formatBRL(p.price)}<small>ou ${formatParcelamento(p.price)}</small>`;
+  const installNote = $("#productInstallNote");
+  if(installNote){
+    installNote.hidden = p.cat !== "kits";
+    if(p.cat === "kits") installNote.innerHTML = `${ICON_CHECK} Preço já inclui instalação e mão de obra`;
+  }
   $("#productAddCartBtn").dataset.id = p.id;
 
   $("#specsHighlight").innerHTML = cat.specFields.map(([key,label]) => `
@@ -1002,6 +1035,11 @@ $("#galleryThumbs").addEventListener("click", (e) => {
   if(!btn) return;
   $all(".gallery-thumb").forEach(t => t.classList.remove("active"));
   btn.classList.add("active");
+  const mainImg = $("#galleryMain .product-photo");
+  if(mainImg){
+    mainImg.src = btn.dataset.src;
+    mainImg.alt = btn.dataset.alt;
+  }
 });
 
 $("#productAddCartBtn").addEventListener("click", (e) => {
@@ -1478,41 +1516,6 @@ $all('input[name="pagamento"]').forEach(radio => {
   radio.addEventListener("change", atualizarVisibilidadeParcelas);
 });
 
-/* ---------------------- ESTIMATIVA DE FRETE POR ZONA ----------------------
-   Não existe integração com transportadora/Correios aqui — é uma faixa
-   estimada por zona a partir de Cuiabá-MT (sede da Marques), pra dar uma
-   noção de custo já no checkout em vez de só "A combinar". O valor exato
-   é sempre confirmado pela equipe no contato pós-pedido (mesma lógica já
-   usada pra forma de pagamento). Avaliamos usar o calculador de frete da
-   Apex Energia Solar como referência, mas ele está fora do ar no site
-   deles (não retorna resultado nem pra CEP válido) — não deu pra basear
-   nada nele. */
-const FRETE_ZONAS = {
-  MT: { label: "Cuiabá-MT e região", texto: "R$ 0 – R$ 150 (estimativa)" },
-  VIZINHOS: { label: "Estados vizinhos", texto: "R$ 300 – R$ 600 (estimativa)", ufs: ["MS","GO","RO","PA","TO","AC","RR","DF"] },
-  DEMAIS: { label: "Demais estados", texto: "R$ 600 – R$ 1.200 (estimativa)" },
-};
-
-function estimarFrete(uf){
-  const ufNorm = String(uf || "").trim().toUpperCase();
-  if(!ufNorm) return null;
-  if(ufNorm === "MT") return FRETE_ZONAS.MT;
-  if(FRETE_ZONAS.VIZINHOS.ufs.includes(ufNorm)) return FRETE_ZONAS.VIZINHOS;
-  return FRETE_ZONAS.DEMAIS;
-}
-
-function atualizarFreteEstimado(uf){
-  const el = $("#checkoutFreteValor");
-  if(!el) return;
-  const zona = estimarFrete(uf);
-  if(!zona){
-    el.textContent = "A combinar";
-    return;
-  }
-  el.textContent = zona.texto;
-  el.title = `Estimativa para ${zona.label}. Peso e volume do pedido podem mudar o valor — nossa equipe confirma o frete exato no contato.`;
-}
-
 /* ---------------------- BUSCA DE CEP (autopreenchimento) ----------------------
    Usa a API pública e gratuita ViaCEP (viacep.com.br) para preencher cidade,
    estado, rua e bairro a partir do CEP. Os campos continuam editáveis
@@ -1523,7 +1526,6 @@ async function buscarEnderecoPorCep(rawCep){
 
   if(cep.length !== 8){
     if(statusEl) statusEl.hidden = true;
-    atualizarFreteEstimado(null);
     return;
   }
 
@@ -1542,7 +1544,6 @@ async function buscarEnderecoPorCep(rawCep){
         statusEl.className = "field-hint field-hint-error";
         statusEl.textContent = "CEP não encontrado. Preencha o endereço manualmente.";
       }
-      atualizarFreteEstimado(null);
       return;
     }
 
@@ -1554,7 +1555,6 @@ async function buscarEnderecoPorCep(rawCep){
     if(estadoEl) estadoEl.value = data.uf || estadoEl.value;
     if(ruaEl) ruaEl.value = data.logradouro || ruaEl.value;
     if(bairroEl) bairroEl.value = data.bairro || bairroEl.value;
-    atualizarFreteEstimado(data.uf);
 
     if(statusEl){
       statusEl.className = "field-hint field-hint-ok";

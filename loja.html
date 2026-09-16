@@ -201,8 +201,9 @@
         </div>
       </div>
       <div class="tag-row reveal">
+        <span class="tag tag-highlight">Frete grátis (bônus de lançamento)</span>
         <span class="tag">Nota fiscal em todo pedido</span>
-        <span class="tag">Pix, cartão ou boleto</span>
+        <span class="tag">Pix, cartão ou boleto em até 10x</span>
         <span class="tag">Entrega para o Brasil inteiro</span>
       </div>
     </div>
@@ -497,6 +498,7 @@
         <h1 class="product-page-title" id="productTitle"></h1>
         <div class="product-meta" id="productMeta"></div>
         <div class="product-page-price" id="productPagePrice"></div>
+        <p class="install-included-note" id="productInstallNote" hidden></p>
         <div class="product-page-actions">
           <button class="btn btn-primary btn-lg" id="productAddCartBtn">
             <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -545,7 +547,7 @@
       <aside class="cart-summary">
         <h2>Resumo do Pedido</h2>
         <div class="summary-row"><span>Subtotal</span><span id="cartSubtotal">R$ 0,00</span></div>
-        <div class="summary-row"><span>Frete</span><span>A calcular no checkout</span></div>
+        <div class="summary-row"><span>Frete</span><span class="frete-gratis-tag">Grátis (bônus de lançamento)</span></div>
         <div class="summary-row summary-total"><span>Total</span><span id="cartTotal">R$ 0,00</span></div>
         <button class="btn btn-primary btn-block" id="goCheckoutBtn">Finalizar Compra</button>
         <a href="#catalogo" class="btn btn-outline btn-block">Continuar Comprando</a>
@@ -657,8 +659,8 @@
         <h2>Resumo do Pedido</h2>
         <div id="checkoutItemsList" class="checkout-items-list"></div>
         <div class="summary-row"><span>Subtotal</span><span id="checkoutSubtotal">R$ 0,00</span></div>
-        <div class="summary-row"><span>Frete</span><span id="checkoutFreteValor">A combinar</span></div>
-        <p class="field-hint">Estimativa por região a partir de Cuiabá-MT. O valor exato (peso/volume) é confirmado pela nossa equipe no contato.</p>
+        <div class="summary-row"><span>Frete</span><span id="checkoutFreteValor" class="frete-gratis-tag">Grátis (bônus de lançamento)</span></div>
+        <p class="field-hint">Frete grátis para todo o Brasil por tempo limitado, sem valor mínimo de compra.</p>
         <div class="summary-row summary-total"><span>Total</span><span id="checkoutTotal">R$ 0,00</span></div>
         <p class="checkout-parcelamento" id="checkoutParcelamento"></p>
         <button type="submit" class="btn btn-primary btn-block" id="checkoutSubmitBtn">Finalizar Pedido</button>
