@@ -132,6 +132,18 @@ const PRODUCTS = [
       { brand:"TCL Solar", name:"Módulo Bifacial 132 Cél. N-Type 620W Cabo 1,2m", sku:"MFTC-1.2-BF-132-620W", qty:9, image:"assets/products/tcl-mftc-bifacial-620w.jpg" },
       { brand:"Solis", name:"Inversor de Corrente Monofásico 2MPPT 220V 4kW", sku:"INVSO-MO-220V-4KW", qty:1, image:"assets/products/solis-invso-mo-220v-4kw.jpg" },
     ] },
+  { id:"kit4", cat:"kits", brand:"TCL Solar + Solis", sku:"KIT-700-TCL-SOLIS", embVenda:"1 kit completo (módulos + inversor)", subcategoria:"Kit Residencial", facetValue:"700–1000 kWh/mês",
+    // Mesmo padrão do kit3 (orçamento real de revenda, Co2 Energia Solar/MT), um degrau
+    // acima: mais 1 módulo TCL 620W, mesmo inversor Solis 4kW/2MPPT (ainda dentro do
+    // limite de entrada dele).
+    name:"Kit Solar Completo 700 kWh/mês — 6,20 kWp", price:19500.00,
+    image:"assets/products/tcl-mftc-bifacial-620w.jpg",
+    specs:{ potencia:"6,20 kWp", modulos:"10x TCL Solar Bifacial N-Type 620W (132 células)", inversor:"1x Solis Monofásico 2MPPT 220V 4kW",
+      entradaMax:"7,20 kW", saidaMax:"4,00 kW", consumoAlvo:"~700 kWh/mês" },
+    bundleItems:[
+      { brand:"TCL Solar", name:"Módulo Bifacial 132 Cél. N-Type 620W Cabo 1,2m", sku:"MFTC-1.2-BF-132-620W", qty:10, image:"assets/products/tcl-mftc-bifacial-620w.jpg" },
+      { brand:"Solis", name:"Inversor de Corrente Monofásico 2MPPT 220V 4kW", sku:"INVSO-MO-220V-4KW", qty:1, image:"assets/products/solis-invso-mo-220v-4kw.jpg" },
+    ] },
 
   // ---------- PAINÉIS SOLARES (preços/specs reais, cotados na Apex Energia Solar em 12/2026) ----------
   { id:"pn1", cat:"paineis", brand:"ZTROON", sku:"ZTP-360MI", embVenda:"1 unidade", subcategoria:"Monocristalino", facetValue:"Até 400 Wp",
