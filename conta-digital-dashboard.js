@@ -1,12 +1,10 @@
 /* =====================================================================
-   MARQUES PAY — PAINEL (DESKTOP)
+   MARQUES PAY — PAINEL
    ---------------------------------------------------------------------
-   A maior parte da tela ainda é protótipo estático (saldo, cartão,
-   extrato geral, metas) — precisaria de um parceiro bancário de verdade
-   pra virar real. "Meus Boletos" (empréstimos) e "Participação nos
-   Lucros" são as exceções: dados reais, puxados do backend, ligados à
-   conta do cliente logado (mesmo login da loja/crédito). Ver
-   PARTICIPAÇÃO/EMPRÉSTIMOS mais abaixo.
+   Só dados reais, ligados à conta do cliente logado: boletos de
+   empréstimo, participação nos lucros e perfil. Saldo, Pix, cartão e
+   extrato não existem aqui: dependem de instituição financeira autorizada
+   pelo Banco Central e só entram quando houver esse parceiro.
    ===================================================================== */
 function goToPayPanel(panel) {
   document.querySelectorAll(".pay-panel").forEach(el => el.classList.remove("active"));
@@ -26,10 +24,6 @@ document.addEventListener("click", (e) => {
   if (!trigger) return;
   e.preventDefault();
   goToPayPanel(trigger.dataset.goto);
-});
-
-document.querySelectorAll(".pay-toggle").forEach(toggle => {
-  toggle.addEventListener("click", () => toggle.classList.toggle("is-on"));
 });
 
 /* ======================================================================
@@ -62,7 +56,6 @@ function installmentRowHTML(inst, { showBadge }) {
       <div class="pay-boleto-body"><strong>${inst.contractTitulo}</strong><span>${sub}</span></div>
       ${badge}
       <span class="pay-boleto-value">${formatBRL(inst.valor)}</span>
-      ${pago ? "" : `<button class="pay-boleto-pay-btn" type="button">Pagar</button>`}
     </div>`;
 }
 
@@ -240,7 +233,11 @@ async function ensurePayAccount(customer) {
   });
 }
 
-function applyPayAccount(account) {
+function applyPayAccount(account, customer) {
+  const nameEl = document.getElementById("payProfileName");
+  const mailEl = document.getElementById("payProfileEmail");
+  if (nameEl) nameEl.textContent = customer.nome;
+  if (mailEl) mailEl.textContent = `${customer.email} · Ag ${account.agencia} · Conta ${account.numeroConta}`;
   const el = document.getElementById("payUserAccountLabel");
   if (el) el.textContent = `Ag ${account.agencia} · Conta ${account.numeroConta}`;
 }
@@ -250,7 +247,7 @@ async function initMarquesPayRealData() {
   if (!customer) return; // requireLogin já redirecionou pra tela de login
 
   applyCustomerGreeting(customer);
-  applyPayAccount(await ensurePayAccount(customer));
+  applyPayAccount(await ensurePayAccount(customer), customer);
 
   const [loansRes, psRes] = await Promise.all([
     fetchJSON("/api/customers/me/loans"),

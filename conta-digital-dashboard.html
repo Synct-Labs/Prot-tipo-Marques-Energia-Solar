@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Prévia do painel | Marques Pay</title>
+<title>Painel | Marques Pay</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="logo-promotora-icon-128.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,19 +21,11 @@
       <img src="logo-mark-128.png" alt="Marques Pay">
       <span class="pay-topbar-logo-text">Marques<strong>Pay</strong></span>
     </a>
-    <div class="pay-topbar-search">
-      <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" placeholder="Buscar boletos, contas, transações..." disabled>
-    </div>
     <div class="pay-topbar-actions">
-      <button class="pay-bell-btn" type="button" aria-label="Notificações">
-        <svg class="icon" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        <span class="pay-bell-dot">1</span>
-      </button>
       <div class="pay-user-menu">
-        <div class="pay-user-avatar" id="payUserAvatar" style="background:linear-gradient(135deg, var(--orange-light), var(--orange-deep)); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; color:#1a1200;">L</div>
+        <div class="pay-user-avatar" id="payUserAvatar" style="background:linear-gradient(135deg, var(--orange-light), var(--orange-deep)); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; color:#1a1200;"></div>
         <div class="pay-user-menu-text">
-          <small id="payUserGreetingSmall">Olá, Leonardo</small>
+          <small id="payUserGreetingSmall">Olá</small>
           <strong id="payUserAccountLabel">Cliente Marques Pay</strong>
         </div>
         <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -58,22 +50,7 @@
           <svg class="icon" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
           Participação nos Lucros
         </button>
-        <button class="pay-nav-btn" type="button" data-goto="cartoes">
-          <svg class="icon" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-          Cartões
-        </button>
-        <button class="pay-nav-btn" type="button" data-goto="extrato">
-          <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-          Extrato
-        </button>
-        <button class="pay-nav-btn" type="button" data-goto="metas">
-          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-          Metas
-        </button>
-        <button class="pay-nav-btn" type="button" data-goto="relatorios">
-          <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
-          Relatórios
-        </button>
+
         <button class="pay-nav-btn" type="button" data-goto="perfil">
           <svg class="icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           Perfil
@@ -93,8 +70,6 @@
 
     <!-- ===================== CONTEÚDO ===================== -->
     <main class="pay-main">
-      <span class="pay-preview-tag">"Meus Boletos" e "Participação nos Lucros" mostram dados reais da sua conta. Saldo, cartão, extrato geral e metas ainda são só protótipo — mostram como vai funcionar.</span>
-
       <!-- ---------- INÍCIO ---------- -->
       <div class="pay-panel active" data-panel="inicio">
         <div class="pay-main-head">
@@ -110,27 +85,11 @@
 
         <div class="pay-stats-grid">
           <div class="pay-stat-card">
-            <div class="pay-stat-icon is-green"><svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="15" r="1.5"/></svg></div>
-            <div class="pay-stat-body">
-              <span>Saldo disponível</span>
-              <strong>R$ 8.450,00</strong>
-              <div class="pay-stat-trend is-up">↑ 12% em relação ao mês anterior</div>
-            </div>
-          </div>
-          <div class="pay-stat-card">
             <div class="pay-stat-icon is-red"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
             <div class="pay-stat-body">
               <span>Total a pagar este mês</span>
               <strong id="statBoletosValor">R$ 0,00</strong>
               <div class="pay-stat-trend" id="statBoletosTrend">Carregando...</div>
-            </div>
-          </div>
-          <div class="pay-stat-card">
-            <div class="pay-stat-icon is-blue"><svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
-            <div class="pay-stat-body">
-              <span>Total recebido este mês</span>
-              <strong>R$ 5.890,00</strong>
-              <div class="pay-stat-trend is-up">↑ 8% em relação ao mês anterior</div>
             </div>
           </div>
           <div class="pay-stat-card">
@@ -147,25 +106,6 @@
           <div class="pay-col-main">
 
             <div class="pay-card">
-              <div class="pay-card-head">
-                <h2>Resumo Financeiro</h2>
-                <div class="pay-legend">
-                  <span class="pay-legend-item"><span class="pay-legend-dot" style="background:var(--success)"></span>Entradas</span>
-                  <span class="pay-legend-item"><span class="pay-legend-dot" style="background:var(--danger)"></span>Saídas</span>
-                </div>
-              </div>
-              <p class="pay-card-sub">Entradas e saídas dos últimos 6 meses</p>
-              <div class="pay-bar-chart">
-                <div class="pay-bar-col"><div class="pay-bar-pair"><div class="pay-bar is-in" style="height:127px"></div><div class="pay-bar is-out" style="height:83px"></div></div><span class="pay-bar-label">Abr</span></div>
-                <div class="pay-bar-col"><div class="pay-bar-pair"><div class="pay-bar is-in" style="height:117px"></div><div class="pay-bar is-out" style="height:91px"></div></div><span class="pay-bar-label">Mai</span></div>
-                <div class="pay-bar-col"><div class="pay-bar-pair"><div class="pay-bar is-in" style="height:144px"></div><div class="pay-bar is-out" style="height:80px"></div></div><span class="pay-bar-label">Jun</span></div>
-                <div class="pay-bar-col"><div class="pay-bar-pair"><div class="pay-bar is-in" style="height:168px"></div><div class="pay-bar is-out" style="height:60px"></div></div><span class="pay-bar-label">Jul</span></div>
-                <div class="pay-bar-col"><div class="pay-bar-pair"><div class="pay-bar is-in" style="height:156px"></div><div class="pay-bar is-out" style="height:68px"></div></div><span class="pay-bar-label">Ago</span></div>
-                <div class="pay-bar-col"><div class="pay-bar-pair"><div class="pay-bar is-in" style="height:184px"></div><div class="pay-bar is-out" style="height:43px"></div></div><span class="pay-bar-label">Set</span></div>
-              </div>
-            </div>
-
-            <div class="pay-card">
               <div class="pay-card-head"><h2>Ações rápidas</h2></div>
               <div class="pay-quick-actions">
                 <button class="pay-quick-action is-primary" type="button" data-goto="boletos">
@@ -176,64 +116,6 @@
                   <svg class="icon" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
                   <span>Participação nos Lucros</span>
                 </button>
-                <button class="pay-quick-action" type="button" data-goto="extrato">
-                  <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-                  <span>Extrato</span>
-                </button>
-                <button class="pay-quick-action" type="button" data-goto="metas">
-                  <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-                  <span>Metas</span>
-                </button>
-                <button class="pay-quick-action" type="button" data-goto="cartoes">
-                  <svg class="icon" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                  <span>Meus cartões</span>
-                </button>
-              </div>
-            </div>
-
-            <div class="pay-grid-split" style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-              <div class="pay-card">
-                <div class="pay-card-head"><h2>Últimas movimentações</h2><a class="pay-card-link" href="#" data-goto="extrato">Ver extrato →</a></div>
-                <div class="pay-tx-list">
-                  <div class="pay-tx-row">
-                    <span class="pay-tx-icon is-in"><svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="17" y1="7" x2="7" y2="17"/><path d="M8 7h9v9"/></svg></span>
-                    <div class="pay-tx-body"><strong>Salário</strong><span>Receita · 02/09/2026</span></div>
-                    <span class="pay-tx-value is-in">+ R$ 5.000,00</span>
-                  </div>
-                  <div class="pay-tx-row">
-                    <span class="pay-tx-icon"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
-                    <div class="pay-tx-body"><strong>Supermercado</strong><span>Despesa · 01/09/2026</span></div>
-                    <span class="pay-tx-value">- R$ 342,50</span>
-                  </div>
-                  <div class="pay-tx-row">
-                    <span class="pay-tx-icon"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M5 17h14M5 17a2 2 0 0 1-2-2v-1a2 2 0 0 1 .3-1.05L5.5 8.7A2 2 0 0 1 7.24 7.6h9.52a2 2 0 0 1 1.74 1.1l2.2 4.25A2 2 0 0 1 21 14v1a2 2 0 0 1-2 2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg></span>
-                    <div class="pay-tx-body"><strong>Uber</strong><span>Despesa · 31/08/2026</span></div>
-                    <span class="pay-tx-value">- R$ 28,90</span>
-                  </div>
-                  <div class="pay-tx-row">
-                    <span class="pay-tx-icon is-in"><svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="17" y1="7" x2="7" y2="17"/><path d="M8 7h9v9"/></svg></span>
-                    <div class="pay-tx-body"><strong>Transferência recebida</strong><span>Receita · 30/08/2026</span></div>
-                    <span class="pay-tx-value is-in">+ R$ 450,00</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="pay-card">
-                <div class="pay-card-head"><h2>Controle por categoria</h2></div>
-                <p class="pay-card-sub">Este mês</p>
-                <div class="pay-donut-wrap">
-                  <div class="pay-donut" style="background:conic-gradient(#4F8EF7 0% 35%, var(--danger) 35% 57%, var(--orange) 57% 69%, #F2C744 69% 87%, #A78BFA 87% 95%, var(--muted) 95% 100%)">
-                    <div class="pay-donut-center"><strong>R$ 2.340,75</strong><span>Total de despesas</span></div>
-                  </div>
-                  <div class="pay-donut-legend">
-                    <div class="pay-donut-legend-item"><span class="pay-donut-dot" style="background:#4F8EF7"></span>Moradia<strong>35%</strong></div>
-                    <div class="pay-donut-legend-item"><span class="pay-donut-dot" style="background:var(--danger)"></span>Alimentação<strong>22%</strong></div>
-                    <div class="pay-donut-legend-item"><span class="pay-donut-dot" style="background:var(--orange)"></span>Transporte<strong>12%</strong></div>
-                    <div class="pay-donut-legend-item"><span class="pay-donut-dot" style="background:#F2C744"></span>Contas<strong>18%</strong></div>
-                    <div class="pay-donut-legend-item"><span class="pay-donut-dot" style="background:#A78BFA"></span>Lazer<strong>8%</strong></div>
-                    <div class="pay-donut-legend-item"><span class="pay-donut-dot" style="background:var(--muted)"></span>Outros<strong>5%</strong></div>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -245,18 +127,6 @@
               <p class="pay-card-sub">Só os boletos dos seus empréstimos com a Marques.</p>
               <div class="pay-boletos-list" id="proximosBoletosList">
                 <p class="pay-empty-note">Carregando...</p>
-              </div>
-            </div>
-
-            <div class="pay-card">
-              <div class="pay-card-head"><h2>Sua meta financeira</h2><a class="pay-card-link" href="#" data-goto="metas">Ver metas →</a></div>
-              <div class="pay-goal-row">
-                <div class="pay-goal-ring" style="background:conic-gradient(var(--orange) 0% 60%, var(--surface-2) 60% 100%)"><span>60%</span></div>
-                <div class="pay-goal-body">
-                  <strong>Reserva de Emergência</strong>
-                  <span>R$ 12.000,00 de R$ 20.000,00</span>
-                  <div class="pay-goal-bar"><span style="width:60%"></span></div>
-                </div>
               </div>
             </div>
 
@@ -295,117 +165,11 @@
         </div>
       </div>
 
-      <!-- ---------- CARTÕES ---------- -->
-      <div class="pay-panel" data-panel="cartoes">
-        <div class="pay-main-head"><div><h1>Cartões</h1><p>Seu cartão virtual Marques Pay, pronto pra usar.</p></div></div>
-        <div class="pay-card">
-          <div class="pay-virtual-card">
-            <div class="pay-virtual-card-top">
-              <span>Marques</span>
-              <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="9" cy="12" r="6" fill="rgba(255,255,255,0.55)" stroke="none"/><circle cx="15" cy="12" r="6" fill="rgba(255,255,255,0.3)" stroke="none"/></svg>
-            </div>
-            <div class="pay-virtual-card-number">•••• •••• •••• 4821</div>
-            <div class="pay-virtual-card-bottom">
-              <span>LEONARDO V N</span>
-              <span>12/31</span>
-            </div>
-          </div>
-          <div style="margin-top:20px; max-width:340px;">
-            <div class="pay-toggle-row"><span>Cartão virtual ativo</span><span class="pay-toggle is-on"><span class="pay-toggle-dot"></span></span></div>
-            <div class="pay-toggle-row"><span>Compras online</span><span class="pay-toggle is-on"><span class="pay-toggle-dot"></span></span></div>
-            <div class="pay-toggle-row"><span>Compras internacionais</span><span class="pay-toggle"><span class="pay-toggle-dot"></span></span></div>
-          </div>
-          <button class="btn btn-outline" type="button" style="margin-top:18px;">Pedir cartão físico</button>
-        </div>
-      </div>
-
-      <!-- ---------- EXTRATO ---------- -->
-      <div class="pay-panel" data-panel="extrato">
-        <div class="pay-main-head"><div><h1>Extrato</h1><p>Todas as movimentações da sua conta.</p></div></div>
-        <div class="pay-card">
-          <div class="pay-tx-list">
-            <div class="pay-tx-row">
-              <span class="pay-tx-icon is-in"><svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="17" y1="7" x2="7" y2="17"/><path d="M8 7h9v9"/></svg></span>
-              <div class="pay-tx-body"><strong>Salário</strong><span>Receita · 02/09/2026</span></div>
-              <span class="pay-tx-value is-in">+ R$ 5.000,00</span>
-            </div>
-            <div class="pay-tx-row">
-              <span class="pay-tx-icon"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
-              <div class="pay-tx-body"><strong>Supermercado</strong><span>Despesa · 01/09/2026</span></div>
-              <span class="pay-tx-value">- R$ 342,50</span>
-            </div>
-            <div class="pay-tx-row">
-              <span class="pay-tx-icon"><svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M5 17h14l-1.5-6h-11z"/></svg></span>
-              <div class="pay-tx-body"><strong>Uber</strong><span>Despesa · 31/08/2026</span></div>
-              <span class="pay-tx-value">- R$ 28,90</span>
-            </div>
-            <div class="pay-tx-row">
-              <span class="pay-tx-icon is-in"><svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="17" y1="7" x2="7" y2="17"/><path d="M8 7h9v9"/></svg></span>
-              <div class="pay-tx-body"><strong>Transferência recebida</strong><span>Receita · 30/08/2026</span></div>
-              <span class="pay-tx-value is-in">+ R$ 450,00</span>
-            </div>
-            <div class="pay-tx-row">
-              <span class="pay-tx-icon"><svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
-              <div class="pay-tx-body"><strong>Compra no cartão · Posto</strong><span>Despesa · 28/08/2026</span></div>
-              <span class="pay-tx-value">- R$ 210,00</span>
-            </div>
-            <div class="pay-tx-row">
-              <span class="pay-tx-icon is-in"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/></svg></span>
-              <div class="pay-tx-body"><strong>Cashback solar creditado</strong><span>Receita · 27/08/2026</span></div>
-              <span class="pay-tx-value is-in">+ R$ 12,30</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ---------- METAS ---------- -->
-      <div class="pay-panel" data-panel="metas">
-        <div class="pay-main-head"><div><h1>Metas</h1><p>2 de 5 metas em andamento.</p></div></div>
-        <div class="pay-card">
-          <div style="display:flex; flex-direction:column; gap:22px;">
-            <div class="pay-goal-row">
-              <div class="pay-goal-ring" style="background:conic-gradient(var(--orange) 0% 60%, var(--surface-2) 60% 100%)"><span>60%</span></div>
-              <div class="pay-goal-body"><strong>Reserva de Emergência</strong><span>R$ 12.000,00 de R$ 20.000,00</span><div class="pay-goal-bar"><span style="width:60%"></span></div></div>
-            </div>
-            <div class="pay-goal-row">
-              <div class="pay-goal-ring" style="background:conic-gradient(var(--orange) 0% 30%, var(--surface-2) 30% 100%)"><span>30%</span></div>
-              <div class="pay-goal-body"><strong>Viagem de fim de ano</strong><span>R$ 1.500,00 de R$ 5.000,00</span><div class="pay-goal-bar"><span style="width:30%"></span></div></div>
-            </div>
-            <div class="pay-goal-row" style="opacity:0.55;">
-              <div class="pay-goal-ring" style="background:conic-gradient(var(--muted) 0% 0%, var(--surface-2) 0% 100%)"><span>0%</span></div>
-              <div class="pay-goal-body"><strong>Reforma da casa</strong><span>Meta ainda não iniciada</span><div class="pay-goal-bar"><span style="width:0%"></span></div></div>
-            </div>
-          </div>
-          <button class="btn btn-outline btn-block" type="button" style="margin-top:22px;">
-            <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Criar nova meta
-          </button>
-        </div>
-      </div>
-
-      <!-- ---------- RELATÓRIOS ---------- -->
-      <div class="pay-panel" data-panel="relatorios">
-        <div class="pay-main-head"><div><h1>Relatórios</h1><p>Exporte sua movimentação pra planilha, imposto de renda ou controle pessoal.</p></div></div>
-        <div class="pay-card">
-          <div class="pay-link-row"><span>Resumo mensal (Setembro/2026)</span><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-          <div class="pay-link-row"><span>Extrato completo do ano</span><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-          <div class="pay-link-row"><span>Informe de rendimentos (IR)</span><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-          <p class="pay-empty-note" style="margin-top:16px;">No app real, cada relatório é gerado em PDF ou planilha na hora.</p>
-        </div>
-      </div>
-
       <!-- ---------- PERFIL ---------- -->
       <div class="pay-panel" data-panel="perfil">
-        <div class="pay-main-head"><div><h1>Leonardo Neves</h1><p>leonardo@email.com</p></div></div>
-        <div class="pay-card">
-          <h2 style="font-family:var(--font-display); font-size:1rem; color:var(--white); margin-bottom:12px;">Preferências</h2>
-          <div class="pay-toggle-row"><span>Notificações push</span><span class="pay-toggle is-on"><span class="pay-toggle-dot"></span></span></div>
-          <div class="pay-toggle-row"><span>Notificações por e-mail</span><span class="pay-toggle is-on"><span class="pay-toggle-dot"></span></span></div>
-          <div class="pay-toggle-row"><span>Face ID / biometria</span><span class="pay-toggle"><span class="pay-toggle-dot"></span></span></div>
-        </div>
+        <div class="pay-main-head"><div><h1 id="payProfileName">Perfil</h1><p id="payProfileEmail"></p></div></div>
         <div class="pay-card">
           <h2 style="font-family:var(--font-display); font-size:1rem; color:var(--white); margin-bottom:4px;">Sobre a conta</h2>
-          <a class="pay-link-row" href="conta-digital-app.html"><span>Ver prévia como app (celular)</span><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
           <a class="pay-link-row" href="https://wa.me/5565996591300" target="_blank" rel="noopener"><span>Central de ajuda (WhatsApp)</span><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
           <a class="pay-link-row" href="conta-digital.html"><span>Sobre o Marques Pay</span><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
         </div>
@@ -416,8 +180,6 @@
         <div class="pay-main-head"><div><h1>Ajuda</h1><p>Precisa de uma mão? A gente responde rápido.</p></div></div>
         <div class="pay-card">
           <a class="pay-link-row" href="https://wa.me/5565996591300" target="_blank" rel="noopener"><span>Falar no WhatsApp com um atendente</span><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
-          <div class="pay-link-row"><span>Como funciona o Pix sem tarifa?</span><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-          <div class="pay-link-row"><span>Como funciona o cashback de energia solar?</span><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
           <div class="pay-link-row"><span>Meu boleto não foi reconhecido, e agora?</span><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
         </div>
       </div>
