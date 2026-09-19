@@ -83,11 +83,10 @@ window.CONTA = (function () {
   };
 })();
 
-/* ---------------------- MENU MOBILE (hamburger) ---------------------- */
+/* ---------------------- MENU MOBILE ---------------------- */
 (function () {
   const btn = document.getElementById("hamburgerBtn");
   const nav = document.getElementById("mainNav");
   if (!btn || !nav) return;
   btn.addEventListener("click", () => nav.classList.toggle("open"));
 })();
-
