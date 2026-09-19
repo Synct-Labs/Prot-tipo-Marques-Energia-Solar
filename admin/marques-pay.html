@@ -34,6 +34,7 @@
     <div class="admin-subtabs">
       <button type="button" class="admin-subtab active" data-subtab="emprestimos">Empréstimos</button>
       <button type="button" class="admin-subtab" data-subtab="participacao">Participação nos Lucros</button>
+      <button type="button" class="admin-subtab" data-subtab="contas">Contas (KYC)</button>
     </div>
 
     <!-- ========================= EMPRÉSTIMOS ========================= -->
@@ -160,6 +161,24 @@
           </tbody>
         </table>
       </div>
+    </div>
+
+    <!-- ========================= CONTAS (KYC) ========================= -->
+    <div class="admin-subpanel" data-subpanel="contas">
+      <div class="admin-toolbar">
+        <h2 style="font-size:1.15rem;">Abertura de contas Marques Pay</h2>
+        <div class="admin-toolbar-filters">
+          <select id="kycStatusFilter">
+            <option value="em_analise">Em análise</option>
+            <option value="aprovado">Aprovadas</option>
+            <option value="reprovado">Reprovadas</option>
+            <option value="">Todas</option>
+          </select>
+          <button class="admin-btn admin-btn-ghost" id="kycRefreshBtn" type="button">Atualizar</button>
+        </div>
+      </div>
+      <p class="admin-customer-picked show" style="margin-bottom:14px;">Análise manual: confira os dados e os documentos antes de aprovar. Toda visualização de documento e cada decisão fica registrada com o seu e-mail.</p>
+      <div id="kycList"></div>
     </div>
 
   </div>
@@ -646,11 +665,99 @@ document.getElementById("psContractsTableBody").addEventListener("change", async
   applyPsFilters();
 });
 
+/* ---------------------- CONTAS (KYC) ---------------------- */
+const KYC_STATUS = { em_analise: "Em análise", aprovado: "Aprovada", reprovado: "Reprovada" };
+const DOC_NAMES = { doc_frente: "Documento (frente)", doc_verso: "Documento (verso)", selfie: "Selfie com documento", comprovante_endereco: "Comprovante de endereço" };
+function esc(v){ return String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function fmtCpf(c){ const d = String(c||"").replace(/\D/g,""); return d.length === 11 ? d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : esc(c); }
+
+async function loadKyc(){
+  const status = document.getElementById("kycStatusFilter").value;
+  const res = await MES.apiGet(`/api/admin/pay/kyc${status ? "?status=" + status : ""}`);
+  const box = document.getElementById("kycList");
+  if(!res.ok){ box.innerHTML = `<p class="admin-empty">${esc(res.error || "Erro ao carregar cadastros.")}</p>`; return; }
+  if(!res.items.length){ box.innerHTML = `<p class="admin-empty">Nenhum cadastro nesta lista.</p>`; return; }
+  box.innerHTML = res.items.map(i => `
+    <div class="admin-table-wrap" style="padding:16px 20px; margin-bottom:12px;" data-kyc="${i.id}">
+      <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:space-between;">
+        <div><strong>${esc(i.nome)}</strong><br><small>${esc(i.email)} · CPF ${fmtCpf(i.cpf)} · enviado em ${i.enviadoEm ? MES.formatDate(i.enviadoEm) : "-"}</small></div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <span class="status-badge status-${i.status === "aprovado" ? "ativo" : i.status === "reprovado" ? "encerrado" : "pendente"}">${KYC_STATUS[i.status] || esc(i.status)}</span>
+          <button type="button" class="admin-btn admin-btn-ghost" data-open-kyc="${i.id}">Ver cadastro</button>
+        </div>
+      </div>
+      <div class="kyc-detail" style="display:none; margin-top:16px;"></div>
+    </div>`).join("");
+}
+
+function kycDetailHTML(k){
+  const row = (l, v) => `<div><span style="color:var(--muted);font-size:.78rem;">${l}</span><br><strong>${esc(v) || "-"}</strong></div>`;
+  const docs = k.documentosInfo.map(d => `<a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/pay/kyc/${k.id}/documents/${d.tipo}" target="_blank" rel="noopener">${DOC_NAMES[d.tipo] || esc(d.tipo)}</a>`).join(" ");
+  const canDecide = k.status === "em_analise";
+  return `
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px;">
+      ${row("Nome", k.nome_completo)}${row("CPF", fmtCpf(k.cpf))}${row("Nascimento", k.data_nascimento)}
+      ${row("Mãe", k.nome_mae)}${row("Pai", k.nome_pai)}${row("Nacionalidade", k.nacionalidade)}
+      ${row("Naturalidade", k.naturalidade)}${row("Estado civil", k.estado_civil)}${row("Telefone", k.telefone)}
+      ${row("Documento", `${(k.doc_tipo||"").toUpperCase()} ${k.doc_numero} · ${k.doc_orgao}/${k.doc_uf} · emitido ${k.doc_emissao}`)}
+      ${row("Endereço", `${k.end_rua}, ${k.end_numero} ${k.end_complemento} · ${k.end_bairro} · ${k.end_cidade}/${k.end_uf} · CEP ${k.end_cep}`)}
+      ${row("Ocupação", k.ocupacao)}${row("Renda mensal", k.renda_mensal !== "" ? "R$ " + k.renda_mensal : "")}
+      ${row("Origem dos recursos", k.origem_recursos)}${row("Finalidade", k.finalidade)}
+      ${row("PEP", k.pep === true ? "SIM — " + k.pep_detalhe : "Não")}
+      ${row("Consentimento", `${k.consentimento.versao || "-"} · ${k.consentimento.em ? MES.formatDate(k.consentimento.em) : "-"} · IP ${k.consentimento.ip || "-"}`)}
+    </div>
+    <div style="margin:16px 0; display:flex; gap:8px; flex-wrap:wrap;">${docs || "<em>Nenhum documento enviado.</em>"}</div>
+    ${k.motivoReprovacao ? `<p class="admin-error show">Motivo da reprovação: ${esc(k.motivoReprovacao)}</p>` : ""}
+    ${canDecide ? `
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+        <button type="button" class="admin-btn" data-approve-kyc="${k.id}">Aprovar e abrir conta</button>
+        <input type="text" data-reject-reason="${k.id}" placeholder="Motivo (obrigatório para reprovar)" style="flex:1; min-width:220px;">
+        <button type="button" class="admin-btn admin-btn-ghost" data-reject-kyc="${k.id}">Reprovar</button>
+      </div>` : ""}
+    <details style="margin-top:14px;"><summary>Histórico (${k.eventos.length})</summary>
+      ${k.eventos.map(e => `<p style="margin:6px 0;font-size:.85rem;">${MES.formatDate(e.em)} · ${esc(e.evento)} · ${esc(e.autor)}${e.detalhe ? " · " + esc(e.detalhe) : ""}</p>`).join("")}
+    </details>`;
+}
+
+async function openKyc(id){
+  const card = document.querySelector(`[data-kyc="${id}"]`);
+  const detail = card.querySelector(".kyc-detail");
+  if(detail.style.display === "block"){ detail.style.display = "none"; return; }
+  const res = await MES.apiGet(`/api/admin/pay/kyc/${id}`);
+  if(!res.ok){ MES.showToast(res.error || "Erro ao abrir cadastro."); return; }
+  detail.innerHTML = kycDetailHTML(res.item);
+  detail.style.display = "block";
+}
+
+document.getElementById("kycList").addEventListener("click", async (e) => {
+  const open = e.target.closest("[data-open-kyc]");
+  if(open){ openKyc(open.dataset.openKyc); return; }
+  const approve = e.target.closest("[data-approve-kyc]");
+  const reject = e.target.closest("[data-reject-kyc]");
+  if(!approve && !reject) return;
+  const id = approve ? approve.dataset.approveKyc : reject.dataset.rejectKyc;
+  if(approve){
+    if(!confirm("Aprovar este cadastro e abrir a conta Marques Pay do cliente?")) return;
+    const res = await MES.apiPost(`/api/admin/pay/kyc/${id}/approve`, {});
+    if(!res.ok){ MES.showToast(res.error || "Erro ao aprovar."); return; }
+    MES.showToast("Cadastro aprovado. Conta aberta.");
+  } else {
+    const motivo = document.querySelector(`[data-reject-reason="${id}"]`).value.trim();
+    if(!motivo){ MES.showToast("Informe o motivo da reprovação."); return; }
+    const res = await MES.apiPost(`/api/admin/pay/kyc/${id}/reject`, { motivo });
+    if(!res.ok){ MES.showToast(res.error || "Erro ao reprovar."); return; }
+    MES.showToast("Cadastro reprovado.");
+  }
+  loadKyc();
+});
+document.getElementById("kycStatusFilter").addEventListener("change", loadKyc);
+document.getElementById("kycRefreshBtn").addEventListener("click", loadKyc);
+
 /* ---------------------- INIT ---------------------- */
 async function init(){
   const admin = await MES.requireAuth("promotora");
   if(!admin) return;
-  await Promise.all([loadLoanContracts(), loadPsContracts()]);
+  await Promise.all([loadLoanContracts(), loadPsContracts(), loadKyc()]);
 }
 
 document.getElementById("logoutBtn").addEventListener("click", () => MES.logout());

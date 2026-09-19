@@ -88,6 +88,77 @@ async function initSchema() {
       created_at       TEXT NOT NULL
     );
 
+    -- Cadastro completo (KYC) exigido para abrir a conta Marques Pay. É o
+    -- mesmo conjunto de dados que um parceiro bancário (BaaS) pede; quando
+    -- o parceiro existir, partner_name/partner_ref ligam este registro ao
+    -- titular criado lá.
+    CREATE TABLE IF NOT EXISTS pay_kyc (
+      id                 SERIAL PRIMARY KEY,
+      customer_id        INTEGER UNIQUE NOT NULL REFERENCES customers(id),
+      status             TEXT NOT NULL DEFAULT 'rascunho',
+      nome_completo      TEXT,
+      cpf                TEXT,
+      data_nascimento    TEXT,
+      nome_mae           TEXT,
+      nome_pai           TEXT,
+      nacionalidade      TEXT,
+      naturalidade       TEXT,
+      estado_civil       TEXT,
+      telefone           TEXT,
+      doc_tipo           TEXT,
+      doc_numero         TEXT,
+      doc_orgao          TEXT,
+      doc_uf             TEXT,
+      doc_emissao        TEXT,
+      ocupacao           TEXT,
+      renda_mensal       DOUBLE PRECISION,
+      origem_recursos    TEXT,
+      finalidade         TEXT,
+      pep                BOOLEAN,
+      pep_detalhe        TEXT,
+      end_cep            TEXT,
+      end_rua            TEXT,
+      end_numero         TEXT,
+      end_complemento    TEXT,
+      end_bairro         TEXT,
+      end_cidade         TEXT,
+      end_uf             TEXT,
+      consent_version    TEXT,
+      consent_at         TEXT,
+      consent_ip         TEXT,
+      consent_ua         TEXT,
+      motivo_reprovacao  TEXT,
+      revisado_por       TEXT,
+      revisado_em        TEXT,
+      partner_name       TEXT,
+      partner_ref        TEXT,
+      submitted_at       TEXT,
+      created_at         TEXT NOT NULL,
+      updated_at         TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS pay_kyc_documents (
+      id         SERIAL PRIMARY KEY,
+      kyc_id     INTEGER NOT NULL REFERENCES pay_kyc(id) ON DELETE CASCADE,
+      tipo       TEXT NOT NULL,
+      mime       TEXT NOT NULL,
+      nome       TEXT,
+      dados      BYTEA NOT NULL,
+      created_at TEXT NOT NULL,
+      UNIQUE (kyc_id, tipo)
+    );
+
+    -- Trilha de auditoria: quem fez o quê no cadastro (envio, aprovação,
+    -- reprovação, visualização de documento por um administrador).
+    CREATE TABLE IF NOT EXISTS pay_kyc_events (
+      id         SERIAL PRIMARY KEY,
+      kyc_id     INTEGER NOT NULL REFERENCES pay_kyc(id) ON DELETE CASCADE,
+      evento     TEXT NOT NULL,
+      autor      TEXT NOT NULL,
+      detalhe    TEXT,
+      created_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS customer_sessions (
       token       TEXT PRIMARY KEY,
       customer_id INTEGER NOT NULL REFERENCES customers(id),

@@ -3755,20 +3755,6 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
 .pay-panel{ display: none; }
 .pay-panel.active{ display: block; }
 
-.pay-open-overlay{
-  position: fixed; inset: 0; z-index: 1000;
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px; background: rgba(6,7,9,0.88); backdrop-filter: blur(6px);
-  overflow-y: auto;
-}
-.pay-open-overlay[hidden]{ display: none; }
-.pay-open-card{
-  width: 100%; max-width: 440px; padding: 30px 26px;
-  background: var(--surface, #141518); border: 1px solid var(--border, rgba(255,255,255,0.08));
-  border-radius: var(--radius, 16px);
-}
-.pay-open-card h2{ margin: 0 0 6px; }
-.pay-open-sub{ color: var(--muted); margin: 0 0 18px; }
 .pay-open-consent{ display: flex; gap: 10px; align-items: flex-start; margin: 16px 0 18px; font-size: .85rem; color: var(--muted); }
 .pay-open-consent input{ margin-top: 3px; }
 .pay-open-note{ margin: 14px 0 0; font-size: .78rem; color: var(--muted-2, var(--muted)); }
@@ -3801,3 +3787,15 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
   .pay-topbar{ padding: 12px 16px; }
 }
 .onboarding-success p{ font-size: 0.8rem; color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
+
+.kyc-h{ font-family: var(--font-display); font-size: 1.05rem; color: var(--white); margin: 28px 0 12px; }
+.kyc-h:first-of-type{ margin-top: 8px; }
+.kyc-radios{ display: flex; gap: 22px; flex-wrap: wrap; }
+.kyc-radios label{ display: flex; align-items: center; gap: 8px; }
+.kyc-docs{ display: grid; gap: 10px; }
+.kyc-doc{ display: grid; grid-template-columns: 1fr; gap: 6px; padding: 12px 14px; background: var(--surface-2, rgba(255,255,255,0.03)); border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 12px; font-size: .9rem; }
+.kyc-doc em{ font-style: normal; font-size: .8rem; color: var(--muted); }
+.kyc-doc em.is-ok{ color: var(--success); }
+.kyc-doc em.is-error{ color: var(--danger); }
+.kyc-actions{ display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+#pepDetalheWrap[hidden]{ display: none; }

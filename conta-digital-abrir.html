@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abrir conta | Marques Pay</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="logo-promotora-icon-128.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="noise-overlay" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="conta-digital.html" class="logo" aria-label="Marques Pay">
+      <img src="logo-mark-128.png" alt="Marques Pay" class="logo-mark-img">
+      <span class="logo-text">Marques<strong>Pay</strong></span>
+    </a>
+    <div class="header-actions">
+      <a href="conta/entrar.html" class="nav-account-link" id="accountLink">Entrar</a>
+    </div>
+  </div>
+</header>
+
+<main class="account-page">
+  <div class="hero-mesh" aria-hidden="true"></div>
+  <div class="container" style="max-width:760px;">
+
+    <!-- ---- EM ANÁLISE ---- -->
+    <div class="account-card" id="viewAnalise" hidden>
+      <h1>Cadastro em análise</h1>
+      <p class="account-sub">Recebemos seus dados e documentos. Assim que a análise terminar, sua conta é liberada aqui mesmo. Você não precisa fazer mais nada.</p>
+      <p class="pay-open-note" id="analiseInfo"></p>
+      <a class="btn btn-outline" href="conta-digital-dashboard.html" style="margin-top:14px;">Atualizar status</a>
+    </div>
+
+    <!-- ---- FORMULÁRIO ---- -->
+    <div class="account-card" id="viewForm" hidden>
+      <h1>Abra sua conta Marques Pay</h1>
+      <p class="account-sub">Para abrir uma conta, a lei exige confirmar quem você é. Preencha com os dados do seu documento oficial. Tudo é analisado antes da abertura.</p>
+      <div class="account-error" id="motivoBox"></div>
+      <div class="account-error" id="formError"></div>
+
+      <form id="kycForm" novalidate>
+        <h2 class="kyc-h">Dados pessoais</h2>
+        <div class="form-grid">
+          <label class="col-span-2">Nome completo
+            <input type="text" name="nome_completo" autocomplete="name">
+          </label>
+          <label>CPF
+            <input type="text" name="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00">
+          </label>
+          <label>Data de nascimento
+            <input type="date" name="data_nascimento">
+          </label>
+          <label>Nome da mãe
+            <input type="text" name="nome_mae">
+          </label>
+          <label>Nome do pai <small>(opcional)</small>
+            <input type="text" name="nome_pai">
+          </label>
+          <label>Nacionalidade
+            <input type="text" name="nacionalidade" value="Brasileira">
+          </label>
+          <label>Naturalidade (cidade/UF)
+            <input type="text" name="naturalidade" placeholder="Ex: Cuiabá / MT">
+          </label>
+          <label>Estado civil
+            <select name="estado_civil">
+              <option value="">Selecione</option>
+              <option value="solteiro">Solteiro(a)</option>
+              <option value="casado">Casado(a)</option>
+              <option value="uniao_estavel">União estável</option>
+              <option value="divorciado">Divorciado(a)</option>
+              <option value="viuvo">Viúvo(a)</option>
+            </select>
+          </label>
+          <label>Telefone / WhatsApp
+            <input type="tel" name="telefone" placeholder="(65) 90000-0000">
+          </label>
+        </div>
+
+        <h2 class="kyc-h">Documento de identificação</h2>
+        <div class="form-grid">
+          <label>Tipo
+            <select name="doc_tipo">
+              <option value="">Selecione</option>
+              <option value="rg">RG</option>
+              <option value="cnh">CNH</option>
+            </select>
+          </label>
+          <label>Número
+            <input type="text" name="doc_numero">
+          </label>
+          <label>Órgão emissor
+            <input type="text" name="doc_orgao" placeholder="Ex: SSP">
+          </label>
+          <label>UF do documento
+            <input type="text" name="doc_uf" maxlength="2" placeholder="MT">
+          </label>
+          <label class="col-span-2">Data de emissão
+            <input type="date" name="doc_emissao">
+          </label>
+        </div>
+
+        <h2 class="kyc-h">Endereço residencial</h2>
+        <div class="form-grid">
+          <label>CEP
+            <input type="text" name="end_cep" inputmode="numeric" maxlength="9" placeholder="00000-000">
+          </label>
+          <label>Rua
+            <input type="text" name="end_rua">
+          </label>
+          <label>Número
+            <input type="text" name="end_numero">
+          </label>
+          <label>Complemento <small>(opcional)</small>
+            <input type="text" name="end_complemento">
+          </label>
+          <label>Bairro
+            <input type="text" name="end_bairro">
+          </label>
+          <label>Cidade
+            <input type="text" name="end_cidade">
+          </label>
+          <label>UF
+            <input type="text" name="end_uf" maxlength="2" placeholder="MT">
+          </label>
+        </div>
+
+        <h2 class="kyc-h">Ocupação e renda</h2>
+        <div class="form-grid">
+          <label>Ocupação / profissão
+            <input type="text" name="ocupacao">
+          </label>
+          <label>Renda mensal (R$)
+            <input type="number" name="renda_mensal" min="0" step="1">
+          </label>
+          <label>Origem dos recursos
+            <input type="text" name="origem_recursos" placeholder="Ex: salário, atividade autônoma">
+          </label>
+          <label>Finalidade da conta
+            <input type="text" name="finalidade" placeholder="Ex: receber repasses e pagar boletos">
+          </label>
+        </div>
+
+        <h2 class="kyc-h">Pessoa politicamente exposta (PEP)</h2>
+        <p class="pay-open-note" style="margin:0 0 10px;">É PEP quem exerce ou exerceu, nos últimos 5 anos, cargo ou função pública relevante, ou é familiar/pessoa próxima de quem exerce.</p>
+        <div class="kyc-radios">
+          <label><input type="radio" name="pep" value="nao"> Não sou PEP</label>
+          <label><input type="radio" name="pep" value="sim"> Sou PEP</label>
+        </div>
+        <label id="pepDetalheWrap" hidden style="display:block; margin-top:10px;">Cargo/função e relação
+          <input type="text" name="pep_detalhe">
+        </label>
+
+        <h2 class="kyc-h">Documentos</h2>
+        <p class="pay-open-note" style="margin:0 0 10px;">Fotos nítidas, sem cortes. JPG, PNG ou PDF, até 4 MB cada. O arquivo é enviado assim que você seleciona.</p>
+        <div class="kyc-docs">
+          <div class="kyc-doc" data-tipo="doc_frente"><span>Documento (frente)</span><input type="file" accept="image/jpeg,image/png,application/pdf"><em></em></div>
+          <div class="kyc-doc" data-tipo="doc_verso"><span>Documento (verso) <small>(obrigatório para RG)</small></span><input type="file" accept="image/jpeg,image/png,application/pdf"><em></em></div>
+          <div class="kyc-doc" data-tipo="selfie"><span>Selfie segurando o documento</span><input type="file" accept="image/jpeg,image/png"><em></em></div>
+          <div class="kyc-doc" data-tipo="comprovante_endereco"><span>Comprovante de endereço <small>(últimos 90 dias)</small></span><input type="file" accept="image/jpeg,image/png,application/pdf"><em></em></div>
+        </div>
+
+        <label class="pay-open-consent">
+          <input type="checkbox" id="aceiteTermos">
+          <span>Declaro que os dados são verdadeiros e autorizo a Marques a tratá-los e compartilhá-los com a instituição financeira parceira para análise e abertura da conta, conforme os <a href="termos.html" target="_blank" rel="noopener">Termos de Uso</a> e a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a> (LGPD).</span>
+        </label>
+
+        <div class="kyc-actions">
+          <button type="button" class="btn btn-outline" id="saveDraftBtn">Salvar rascunho</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">Enviar para análise</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<script src="api-config.js"></script>
+<script src="account-widget.js"></script>
+<script src="conta-digital-abrir.js"></script>
+</body>
+</html>

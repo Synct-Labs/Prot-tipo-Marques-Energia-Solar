@@ -20,6 +20,8 @@ const loans = require("./loans");
 const profitShare = require("./profitShare");
 const products = require("./products");
 const payAccounts = require("./payAccounts");
+const payKyc = require("./payKyc");
+const payPartner = require("./payPartner");
 const { parseJSONBody, sendJSON, sendBinary, getClientIP } = require("./http-utils");
 const { serveStatic } = require("./static");
 
@@ -846,34 +848,125 @@ async function handleApi(req, res, pathname) {
     return sendJSON(res, 200, { ok: true, leads: await creditLeads.listLeadsByCustomer(customer.id) });
   }
 
-  // ---- CLIENTE: CONTA MARQUES PAY (abertura real, atrelada ao cadastro) ----
+  // ---- CLIENTE: CONTA MARQUES PAY (conta só existe depois do KYC aprovado) ----
+  // Erros de regra (4xx) do payKyc viram resposta com a mensagem; o resto cai no handler geral.
+  const kycGuard = async (fn) => {
+    try {
+      return await fn();
+    } catch (err) {
+      if (err.statusCode && err.statusCode < 500) {
+        return sendJSON(res, err.statusCode, { ok: false, error: err.message, problems: err.problems });
+      }
+      throw err;
+    }
+  };
+
   if (pathname === "/api/customers/me/pay-account" && req.method === "GET") {
     const customer = await requireCustomer(req, res);
     if (!customer) return;
     return sendJSON(res, 200, { ok: true, account: await payAccounts.getByCustomer(customer.id) });
   }
 
-  if (pathname === "/api/customers/me/pay-account" && req.method === "POST") {
+  if (pathname === "/api/customers/me/pay-kyc" && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    return sendJSON(res, 200, {
+      ok: true,
+      kyc: await payKyc.getByCustomer(customer.id),
+      account: await payAccounts.getByCustomer(customer.id),
+      consentVersion: payKyc.CONSENT_VERSION,
+    });
+  }
+
+  if (pathname === "/api/customers/me/pay-kyc" && req.method === "PUT") {
     const customer = await requireCustomer(req, res);
     if (!customer) return;
     const body = await parseJSONBody(req);
+    return kycGuard(async () => sendJSON(res, 200, { ok: true, kyc: await payKyc.saveDraft(customer.id, body) }));
+  }
 
-    if (body.aceiteTermos !== true) {
-      return sendJSON(res, 400, { ok: false, error: "Você precisa aceitar os termos para abrir a conta." });
-    }
-    const cpf = String(body.cpf || "").replace(/\D/g, "");
-    const telefone = String(body.telefone || "").replace(/\D/g, "");
-    if (cpf.length !== 11) return sendJSON(res, 400, { ok: false, error: "Informe um CPF válido (11 dígitos)." });
-    if (telefone.length < 10) return sendJSON(res, 400, { ok: false, error: "Informe um telefone com DDD." });
-
-    // Guarda CPF/telefone no cadastro do cliente (mesma fonte usada na loja e no crédito).
-    await customers.updateProfile(customer.id, {
-      nome: customer.nome,
-      cpf: String(body.cpf).trim(),
-      telefone: String(body.telefone).trim(),
+  const payKycDocMatch = pathname.match(/^\/api\/customers\/me\/pay-kyc\/documents\/([a-z_]+)$/);
+  if (payKycDocMatch && req.method === "PUT") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const body = await parseJSONBody(req, Math.ceil(payKyc.MAX_DOC_BYTES * 1.4));
+    return kycGuard(async () => {
+      let buffer;
+      try { buffer = Buffer.from(String(body.base64 || ""), "base64"); } catch { buffer = null; }
+      await payKyc.saveDocument(customer.id, payKycDocMatch[1], { buffer, mime: body.mime, nome: body.nome });
+      return sendJSON(res, 200, { ok: true, kyc: await payKyc.getByCustomer(customer.id) });
     });
-    const account = await payAccounts.open(customer.id);
-    return sendJSON(res, 200, { ok: true, account });
+  }
+
+  if (pathname === "/api/customers/me/pay-kyc/submit" && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const body = await parseJSONBody(req);
+    return kycGuard(async () => {
+      const row = await payKyc.submit(customer.id, {
+        aceiteTermos: body.aceiteTermos,
+        ip,
+        userAgent: req.headers["user-agent"],
+      });
+      // Repasse ao parceiro (no modo "manual" não faz nada). Falha aqui não desfaz o envio.
+      try { await payPartner.onKycSubmitted(row.id); } catch (err) { console.error("[payPartner] falha ao enviar KYC:", err.message); }
+      return sendJSON(res, 200, { ok: true, kyc: await payKyc.getByCustomer(customer.id) });
+    });
+  }
+
+  // ---- ADMIN: FILA DE ANÁLISE DAS CONTAS MARQUES PAY ----
+  if (pathname === "/api/admin/pay/kyc" && req.method === "GET") {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const url = new URL(req.url, "http://localhost");
+    const status = url.searchParams.get("status");
+    return sendJSON(res, 200, { ok: true, items: await payKyc.listForAdmin(status || null) });
+  }
+
+  const payKycAdminMatch = pathname.match(/^\/api\/admin\/pay\/kyc\/(\d+)(?:\/(approve|reject|documents\/([a-z_]+)))?$/);
+  if (payKycAdminMatch) {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const id = parseInt(payKycAdminMatch[1], 10);
+    const action = payKycAdminMatch[2];
+    const autor = `admin:${admin.email}`;
+
+    if (!action && req.method === "GET") {
+      const item = await payKyc.getForAdmin(id);
+      if (!item) return sendJSON(res, 404, { ok: false, error: "Cadastro não encontrado." });
+      return sendJSON(res, 200, { ok: true, item });
+    }
+    if (action && action.startsWith("documents/") && req.method === "GET") {
+      const doc = await payKyc.getDocumentForAdmin(id, payKycAdminMatch[3], autor);
+      if (!doc) return sendJSON(res, 404, { ok: false, error: "Documento não encontrado." });
+      return sendBinary(res, 200, doc.data, doc.mime, doc.nome);
+    }
+    if (action === "approve" && req.method === "POST") {
+      return kycGuard(async () => {
+        await payKyc.approve(id, autor);
+        return sendJSON(res, 200, { ok: true, item: await payKyc.getForAdmin(id) });
+      });
+    }
+    if (action === "reject" && req.method === "POST") {
+      const body = await parseJSONBody(req);
+      return kycGuard(async () => {
+        await payKyc.reject(id, autor, body.motivo);
+        return sendJSON(res, 200, { ok: true, item: await payKyc.getForAdmin(id) });
+      });
+    }
+  }
+
+  // ---- WEBHOOK DO PARCEIRO BANCÁRIO (assinado com HMAC; ver payPartner.js) ----
+  if (pathname === "/api/webhooks/pay-partner" && req.method === "POST") {
+    const chunks = [];
+    let size = 0;
+    for await (const chunk of req) {
+      size += chunk.length;
+      if (size > 256 * 1024) return sendJSON(res, 413, { ok: false, error: "Corpo muito grande." });
+      chunks.push(chunk);
+    }
+    const result = await payPartner.handleWebhook(Buffer.concat(chunks).toString("utf8"), req.headers["x-signature"]);
+    return sendJSON(res, result.status, result.ok ? { ok: true } : { ok: false, error: result.error });
   }
 
   // ---- CLIENTE: MEUS BOLETOS (empréstimos/financiamentos com a Marques) ----

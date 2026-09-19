@@ -210,3 +210,14 @@ backend/
     http-utils.js   → helpers de request/response
     static.js       → serve os arquivos do site (usado só rodando local)
 ```
+
+## Marques Pay: o que já está pronto para o parceiro bancário
+
+Pronto e funcionando de verdade (sem parceiro): cadastro completo de abertura de conta (KYC: dados pessoais, documento, endereço, renda, PEP, fotos/PDFs, consentimento versionado com IP), fila de análise no admin (aba "Contas (KYC)" em Marques Pay) com trilha de auditoria, e a conta só existe depois de aprovada. Meus Boletos e Participação nos Lucros também são reais.
+
+Fica com o parceiro (não existe no código de propósito): saldo, Pix, cartão, extrato.
+
+Para plugar o parceiro, tudo passa por `backend/src/payPartner.js`:
+1. Criar um provedor em `providers` (`submitKyc` envia dados e documentos; `parseEvent` traduz o webhook) e ligar com `PAY_PARTNER=<nome>`.
+2. Configurar `PAY_PARTNER_WEBHOOK_SECRET`; o parceiro chama `POST /api/webhooks/pay-partner` com o corpo assinado em HMAC-SHA256 no header `x-signature` (sem segredo, o webhook recusa tudo).
+3. Revisar com o jurídico o texto de consentimento (`CONSENT_VERSION` em `payKyc.js`) e os Termos/Política de Privacidade antes de abrir ao público: os documentos ficam guardados no Postgres, então vale definir prazo de retenção e backup.

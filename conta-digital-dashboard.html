@@ -188,31 +188,6 @@
   </div>
 </div>
 
-<!-- ===================== ABERTURA DE CONTA (aparece até a conta existir) ===================== -->
-<div class="pay-open-overlay" id="payOpenOverlay" hidden>
-  <div class="pay-open-card">
-    <h2>Abra sua conta Marques Pay</h2>
-    <p class="pay-open-sub">Sua conta fica ligada ao seu cadastro Marques. Confirme seus dados pra abrir.</p>
-    <div class="account-error" id="payOpenError"></div>
-    <form id="payOpenForm">
-      <div class="form-grid">
-        <label class="col-span-2">CPF
-          <input type="text" id="payOpenCpf" required inputmode="numeric" placeholder="000.000.000-00" maxlength="14">
-        </label>
-        <label class="col-span-2">Telefone / WhatsApp
-          <input type="tel" id="payOpenTelefone" required placeholder="(65) 90000-0000">
-        </label>
-      </div>
-      <label class="pay-open-consent">
-        <input type="checkbox" id="payOpenTermos" required>
-        <span>Li e aceito os <a href="termos.html" target="_blank" rel="noopener">Termos de Uso</a> e a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.</span>
-      </label>
-      <button type="submit" class="btn btn-primary btn-lg btn-block" id="payOpenBtn">Abrir minha conta</button>
-    </form>
-    <p class="pay-open-note">Por enquanto a conta libera Meus Boletos e Participação nos Lucros. Pix, cartão e saldo entram quando o parceiro financeiro for ativado.</p>
-  </div>
-</div>
-
 <script src="api-config.js"></script>
 <script src="account-widget.js"></script>
 <script src="conta-digital-dashboard.js"></script>
