@@ -3755,6 +3755,23 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
 .pay-panel{ display: none; }
 .pay-panel.active{ display: block; }
 
+.pay-open-overlay{
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; background: rgba(6,7,9,0.88); backdrop-filter: blur(6px);
+  overflow-y: auto;
+}
+.pay-open-overlay[hidden]{ display: none; }
+.pay-open-card{
+  width: 100%; max-width: 440px; padding: 30px 26px;
+  background: var(--surface, #141518); border: 1px solid var(--border, rgba(255,255,255,0.08));
+  border-radius: var(--radius, 16px);
+}
+.pay-open-card h2{ margin: 0 0 6px; }
+.pay-open-sub{ color: var(--muted); margin: 0 0 18px; }
+.pay-open-consent{ display: flex; gap: 10px; align-items: flex-start; margin: 16px 0 18px; font-size: .85rem; color: var(--muted); }
+.pay-open-consent input{ margin-top: 3px; }
+.pay-open-note{ margin: 14px 0 0; font-size: .78rem; color: var(--muted-2, var(--muted)); }
 .pay-preview-tag{
   display: inline-block;
   font-size: 0.7rem;

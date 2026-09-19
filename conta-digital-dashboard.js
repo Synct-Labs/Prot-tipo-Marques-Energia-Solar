@@ -188,11 +188,69 @@ async function fetchJSON(path) {
   }
 }
 
+// Garante que o cliente tenha conta Marques Pay aberta; se não tiver, mostra
+// o formulário de abertura e só resolve quando a conta existir.
+async function ensurePayAccount(customer) {
+  const res = await fetchJSON("/api/customers/me/pay-account");
+  if (res.ok && res.account) return res.account;
+
+  const overlay = document.getElementById("payOpenOverlay");
+  const form = document.getElementById("payOpenForm");
+  const errorBox = document.getElementById("payOpenError");
+  const btn = document.getElementById("payOpenBtn");
+  document.getElementById("payOpenCpf").value = customer.cpf || "";
+  document.getElementById("payOpenTelefone").value = customer.telefone || "";
+  overlay.hidden = false;
+  document.body.style.overflow = "hidden";
+
+  return new Promise((resolve) => {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorBox.classList.remove("show");
+      btn.disabled = true;
+      btn.textContent = "Abrindo conta...";
+      try {
+        const r = await fetch(`${API_BASE}/api/customers/me/pay-account`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            cpf: document.getElementById("payOpenCpf").value,
+            telefone: document.getElementById("payOpenTelefone").value,
+            aceiteTermos: document.getElementById("payOpenTermos").checked,
+          }),
+        });
+        const data = await r.json();
+        if (!data.ok) {
+          errorBox.textContent = data.error || "Não foi possível abrir a conta.";
+          errorBox.classList.add("show");
+          return;
+        }
+        overlay.hidden = true;
+        document.body.style.overflow = "";
+        resolve(data.account);
+      } catch (err) {
+        errorBox.textContent = "Erro de conexão com o servidor. Tente novamente.";
+        errorBox.classList.add("show");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Abrir minha conta";
+      }
+    });
+  });
+}
+
+function applyPayAccount(account) {
+  const el = document.getElementById("payUserAccountLabel");
+  if (el) el.textContent = `Ag ${account.agencia} · Conta ${account.numeroConta}`;
+}
+
 async function initMarquesPayRealData() {
   const customer = window.MES_ACCOUNT ? await window.MES_ACCOUNT.requireLogin() : null;
   if (!customer) return; // requireLogin já redirecionou pra tela de login
 
   applyCustomerGreeting(customer);
+  applyPayAccount(await ensurePayAccount(customer));
 
   const [loansRes, psRes] = await Promise.all([
     fetchJSON("/api/customers/me/loans"),

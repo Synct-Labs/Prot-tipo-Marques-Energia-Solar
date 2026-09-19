@@ -78,6 +78,16 @@ async function initSchema() {
       updated_at              TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS pay_accounts (
+      id               SERIAL PRIMARY KEY,
+      customer_id      INTEGER UNIQUE NOT NULL REFERENCES customers(id),
+      numero_conta     TEXT UNIQUE NOT NULL,
+      agencia          TEXT NOT NULL DEFAULT '0001',
+      status           TEXT NOT NULL DEFAULT 'ativa',
+      aceite_termos_em TEXT NOT NULL,
+      created_at       TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS customer_sessions (
       token       TEXT PRIMARY KEY,
       customer_id INTEGER NOT NULL REFERENCES customers(id),

@@ -19,6 +19,7 @@ const customers = require("./customers");
 const loans = require("./loans");
 const profitShare = require("./profitShare");
 const products = require("./products");
+const payAccounts = require("./payAccounts");
 const { parseJSONBody, sendJSON, sendBinary, getClientIP } = require("./http-utils");
 const { serveStatic } = require("./static");
 
@@ -843,6 +844,36 @@ async function handleApi(req, res, pathname) {
     const customer = await requireCustomer(req, res);
     if (!customer) return;
     return sendJSON(res, 200, { ok: true, leads: await creditLeads.listLeadsByCustomer(customer.id) });
+  }
+
+  // ---- CLIENTE: CONTA MARQUES PAY (abertura real, atrelada ao cadastro) ----
+  if (pathname === "/api/customers/me/pay-account" && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    return sendJSON(res, 200, { ok: true, account: await payAccounts.getByCustomer(customer.id) });
+  }
+
+  if (pathname === "/api/customers/me/pay-account" && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const body = await parseJSONBody(req);
+
+    if (body.aceiteTermos !== true) {
+      return sendJSON(res, 400, { ok: false, error: "Você precisa aceitar os termos para abrir a conta." });
+    }
+    const cpf = String(body.cpf || "").replace(/\D/g, "");
+    const telefone = String(body.telefone || "").replace(/\D/g, "");
+    if (cpf.length !== 11) return sendJSON(res, 400, { ok: false, error: "Informe um CPF válido (11 dígitos)." });
+    if (telefone.length < 10) return sendJSON(res, 400, { ok: false, error: "Informe um telefone com DDD." });
+
+    // Guarda CPF/telefone no cadastro do cliente (mesma fonte usada na loja e no crédito).
+    await customers.updateProfile(customer.id, {
+      nome: customer.nome,
+      cpf: String(body.cpf).trim(),
+      telefone: String(body.telefone).trim(),
+    });
+    const account = await payAccounts.open(customer.id);
+    return sendJSON(res, 200, { ok: true, account });
   }
 
   // ---- CLIENTE: MEUS BOLETOS (empréstimos/financiamentos com a Marques) ----
