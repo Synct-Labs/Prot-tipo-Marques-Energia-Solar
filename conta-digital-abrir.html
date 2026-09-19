@@ -108,7 +108,8 @@
         <h2 class="kyc-h">Endereço residencial</h2>
         <div class="form-grid">
           <label>CEP
-            <input type="text" name="end_cep" inputmode="numeric" maxlength="9" placeholder="00000-000">
+            <input type="text" name="end_cep" inputmode="numeric" maxlength="9" placeholder="00000-000" autocomplete="postal-code">
+            <small id="cepHint" class="cep-hint"></small>
           </label>
           <label>Rua
             <input type="text" name="end_rua">
@@ -135,8 +136,8 @@
           <label>Ocupação / profissão
             <input type="text" name="ocupacao">
           </label>
-          <label>Renda mensal (R$)
-            <input type="number" name="renda_mensal" min="0" step="1">
+          <label>Renda mensal
+            <span class="money-field"><em>R$</em><input type="text" name="renda_mensal" inputmode="numeric" placeholder="0,00" autocomplete="off"></span>
           </label>
           <label>Origem dos recursos
             <input type="text" name="origem_recursos" placeholder="Ex: salário, atividade autônoma">
@@ -146,15 +147,42 @@
           </label>
         </div>
 
-        <h2 class="kyc-h">Pessoa politicamente exposta (PEP)</h2>
-        <p class="pay-open-note" style="margin:0 0 10px;">É PEP quem exerce ou exerceu, nos últimos 5 anos, cargo ou função pública relevante, ou é familiar/pessoa próxima de quem exerce.</p>
+        <h2 class="kyc-h">É uma pessoa politicamente exposta?</h2>
+        <p class="pay-open-note" style="margin:0 0 10px;">Considere "Sim" se você exerce ou exerceu, nos últimos 5 anos, cargo ou função pública relevante, ou se é familiar ou pessoa próxima de quem exerce.</p>
         <div class="kyc-radios">
-          <label><input type="radio" name="pep" value="nao"> Não sou PEP</label>
-          <label><input type="radio" name="pep" value="sim"> Sou PEP</label>
+          <label><input type="radio" name="pep" value="sim"> Sim</label>
+          <label><input type="radio" name="pep" value="nao"> Não</label>
         </div>
-        <label id="pepDetalheWrap" hidden style="display:block; margin-top:10px;">Cargo/função e relação
-          <input type="text" name="pep_detalhe">
-        </label>
+        <div id="pepDetalheWrap" hidden>
+          <div class="form-grid" style="margin-top:14px;">
+            <label class="col-span-2">Quem é a pessoa politicamente exposta?
+              <select name="pep_relacao">
+                <option value="">Selecione</option>
+                <option value="propria">Eu mesmo(a)</option>
+                <option value="familiar">Um familiar meu</option>
+                <option value="proximo">Uma pessoa próxima (sócio, colaborador etc.)</option>
+              </select>
+            </label>
+            <label>Cargo ou função pública
+              <input type="text" name="pep_cargo" placeholder="Ex: Vereador, Secretário municipal">
+            </label>
+            <label>Órgão ou entidade
+              <input type="text" name="pep_orgao" placeholder="Ex: Câmara Municipal de Cuiabá">
+            </label>
+            <label class="col-span-2">Período no cargo
+              <input type="text" name="pep_periodo" placeholder="Ex: 2021 até hoje, ou 2017 a 2022">
+            </label>
+            <label id="pepNomeWrap" class="col-span-2" hidden>Nome completo da pessoa exposta
+              <input type="text" name="pep_nome">
+            </label>
+            <label id="pepCpfWrap" hidden>CPF da pessoa exposta
+              <input type="text" name="pep_cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00">
+            </label>
+            <label id="pepGrauWrap" hidden>Grau de parentesco ou tipo de relação
+              <input type="text" name="pep_grau" placeholder="Ex: pai, cônjuge, sócio">
+            </label>
+          </div>
+        </div>
 
         <h2 class="kyc-h">Documentos</h2>
         <p class="pay-open-note" style="margin:0 0 10px;">Fotos nítidas, sem cortes. JPG, PNG ou PDF, até 4 MB cada. O arquivo é enviado assim que você seleciona.</p>

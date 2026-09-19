@@ -31,7 +31,7 @@ const FIELDS = [
   "nome_completo", "cpf", "data_nascimento", "nome_mae", "nome_pai", "nacionalidade",
   "naturalidade", "estado_civil", "telefone", "doc_tipo", "doc_numero", "doc_orgao",
   "doc_uf", "doc_emissao", "ocupacao", "renda_mensal", "origem_recursos", "finalidade",
-  "pep", "pep_detalhe", "end_cep", "end_rua", "end_numero", "end_complemento",
+  "pep", "pep_detalhe", "pep_relacao", "pep_cargo", "pep_orgao", "pep_periodo", "pep_nome", "pep_cpf", "pep_grau", "end_cep", "end_rua", "end_numero", "end_complemento",
   "end_bairro", "end_cidade", "end_uf",
 ];
 
@@ -86,7 +86,17 @@ function validateComplete(k) {
   req(k.origem_recursos, "Informe a origem dos recursos.");
   req(k.finalidade, "Informe a finalidade da conta.");
   if (typeof k.pep !== "boolean") err.push("Responda se você é pessoa politicamente exposta (PEP).");
-  if (k.pep === true) req(k.pep_detalhe, "Descreva o cargo/função pública (PEP).");
+  if (k.pep === true) {
+    if (!["propria", "familiar", "proximo"].includes(k.pep_relacao)) err.push("Informe quem é a pessoa politicamente exposta.");
+    req(k.pep_cargo, "Informe o cargo ou função pública (PEP).");
+    req(k.pep_orgao, "Informe o órgão ou entidade (PEP).");
+    req(k.pep_periodo, "Informe o período no cargo (PEP).");
+    if (k.pep_relacao === "familiar" || k.pep_relacao === "proximo") {
+      req(k.pep_nome, "Informe o nome da pessoa politicamente exposta.");
+      if (!isValidCPF(k.pep_cpf)) err.push("CPF da pessoa politicamente exposta inválido.");
+      req(k.pep_grau, "Informe o grau de parentesco ou a relação com a pessoa exposta.");
+    }
+  }
   if (onlyDigits(k.end_cep).length !== 8) err.push("CEP inválido.");
   req(k.end_rua, "Informe a rua.");
   req(k.end_numero, "Informe o número do endereço.");
@@ -145,7 +155,7 @@ function normalize(input) {
     if (f === "renda_mensal") { o[f] = v === "" || v == null || isNaN(Number(v)) ? null : Number(v); continue; }
     v = v == null ? "" : String(v).trim().slice(0, 200);
     if (f === "end_uf" || f === "doc_uf") v = v.toUpperCase();
-    if (f === "cpf" || f === "end_cep") v = onlyDigits(v);
+    if (f === "cpf" || f === "end_cep" || f === "pep_cpf") v = onlyDigits(v);
     o[f] = v;
   }
   return o;

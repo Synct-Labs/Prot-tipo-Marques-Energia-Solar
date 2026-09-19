@@ -3798,7 +3798,12 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
 .kyc-doc em.is-ok{ color: var(--success); }
 .kyc-doc em.is-error{ color: var(--danger); }
 .kyc-actions{ display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
-#pepDetalheWrap[hidden]{ display: none; }
+#pepDetalheWrap[hidden], #pepNomeWrap[hidden], #pepCpfWrap[hidden], #pepGrauWrap[hidden]{ display: none; }
+.money-field{ display: flex; align-items: center; border: 1px solid var(--border, rgba(255,255,255,0.1)); border-radius: 10px; background: var(--surface-2, rgba(255,255,255,0.03)); }
+.money-field em{ font-style: normal; padding: 0 4px 0 14px; color: var(--muted); }
+.money-field input{ border: 0 !important; background: transparent !important; box-shadow: none !important; padding-left: 6px; flex: 1; min-width: 0; }
+.money-field:focus-within{ border-color: var(--orange); box-shadow: 0 0 0 3px rgba(247,148,30,0.15); }
+.cep-hint{ display: block; margin-top: 4px; font-size: .78rem; color: var(--muted); min-height: 1em; }
 
 /* ---- Programa de Parceiros ---- */
 .partner-benefits{ display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 18px; }

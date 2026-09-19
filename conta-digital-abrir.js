@@ -29,12 +29,66 @@ function clearError() { $err.classList.remove("show"); }
 
 function field(name) { return form.elements[name]; }
 
+/* ---------------------- MÁSCARAS ---------------------- */
+function digits(v) { return String(v || "").replace(/\D/g, ""); }
+
+function formatMoney(n) {
+  return Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+// "4.500,00" -> "4500" ; vazio -> ""
+function parseMoney(v) {
+  const d = digits(v);
+  return d ? String(Number(d) / 100) : "";
+}
+function maskMoney(input) {
+  const d = digits(input.value).replace(/^0+/, "");
+  input.value = d ? formatMoney(Number(d) / 100) : "";
+}
+function maskCpf(input) {
+  const d = digits(input.value).slice(0, 11);
+  input.value = d.replace(/^(\d{3})(\d)/, "$1.$2").replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3").replace(/\.(\d{3})(\d)/, ".$1-$2");
+}
+function maskCep(input) {
+  const d = digits(input.value).slice(0, 8);
+  input.value = d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+}
+
+field("renda_mensal").addEventListener("input", (e) => maskMoney(e.target));
+field("cpf").addEventListener("input", (e) => maskCpf(e.target));
+field("pep_cpf").addEventListener("input", (e) => maskCpf(e.target));
+field("end_cep").addEventListener("input", (e) => { maskCep(e.target); if (digits(e.target.value).length === 8) lookupCep(); });
+
+/* ---------------------- CEP: preenche o endereço ---------------------- */
+let lastCep = "";
+async function lookupCep() {
+  const cep = digits(field("end_cep").value);
+  if (cep.length !== 8 || cep === lastCep) return;
+  lastCep = cep;
+  const hint = document.getElementById("cepHint");
+  hint.textContent = "Buscando endereço...";
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const d = await res.json();
+    if (d.erro) { hint.textContent = "CEP não encontrado. Preencha o endereço manualmente."; return; }
+    field("end_rua").value = d.logradouro || field("end_rua").value;
+    field("end_bairro").value = d.bairro || field("end_bairro").value;
+    field("end_cidade").value = d.localidade || "";
+    field("end_uf").value = d.uf || "";
+    hint.textContent = "";
+    field(d.logradouro ? "end_numero" : "end_rua").focus();
+  } catch (err) {
+    lastCep = "";
+    hint.textContent = "Não foi possível buscar o CEP agora. Preencha o endereço manualmente.";
+  }
+}
+
 function collect() {
   const data = {};
   for (const el of form.elements) {
     if (!el.name || el.type === "file" || el.type === "radio") continue;
     data[el.name] = el.value;
   }
+  data.renda_mensal = parseMoney(data.renda_mensal);
   const pep = form.querySelector('input[name="pep"]:checked');
   data.pep = pep ? pep.value === "sim" : null;
   return data;
@@ -45,7 +99,11 @@ function fill(kyc, customer) {
   for (const [k, v] of Object.entries(src)) {
     const el = field(k);
     if (!el || el.type === "file" || el.type === "radio") continue;
-    if (v !== "" && v != null) el.value = v;
+    if (v === "" || v == null) continue;
+    if (k === "renda_mensal") el.value = formatMoney(v);
+    else el.value = v;
+    if (k === "cpf" || k === "pep_cpf") maskCpf(el);
+    if (k === "end_cep") { maskCep(el); lastCep = digits(el.value); }
   }
   if (kyc && typeof kyc.pep === "boolean") {
     form.querySelector(`input[name="pep"][value="${kyc.pep ? "sim" : "nao"}"]`).checked = true;
@@ -67,8 +125,13 @@ function prefillFromCustomer(c) {
 function togglePep() {
   const yes = form.querySelector('input[name="pep"]:checked')?.value === "sim";
   document.getElementById("pepDetalheWrap").hidden = !yes;
+  // Nome, CPF e parentesco só se a pessoa exposta for outra (familiar/próxima).
+  const rel = field("pep_relacao").value;
+  const outra = yes && (rel === "familiar" || rel === "proximo");
+  for (const id of ["pepNomeWrap", "pepCpfWrap", "pepGrauWrap"]) document.getElementById(id).hidden = !outra;
 }
 form.querySelectorAll('input[name="pep"]').forEach((r) => r.addEventListener("change", togglePep));
+field("pep_relacao").addEventListener("change", togglePep);
 
 function markDoc(tipo, text, isError) {
   const box = document.querySelector(`.kyc-doc[data-tipo="${tipo}"] em`);

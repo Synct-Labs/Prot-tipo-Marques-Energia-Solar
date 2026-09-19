@@ -704,7 +704,7 @@ function kycDetailHTML(k){
       ${row("Endereço", `${k.end_rua}, ${k.end_numero} ${k.end_complemento} · ${k.end_bairro} · ${k.end_cidade}/${k.end_uf} · CEP ${k.end_cep}`)}
       ${row("Ocupação", k.ocupacao)}${row("Renda mensal", k.renda_mensal !== "" ? "R$ " + k.renda_mensal : "")}
       ${row("Origem dos recursos", k.origem_recursos)}${row("Finalidade", k.finalidade)}
-      ${row("PEP", k.pep === true ? "SIM — " + k.pep_detalhe : "Não")}
+      ${row("PEP", k.pep === true ? "SIM — " + ({propria: "o próprio cliente", familiar: "familiar", proximo: "pessoa próxima"}[k.pep_relacao] || "") + " · " + k.pep_cargo + " · " + k.pep_orgao + " · " + k.pep_periodo + (k.pep_relacao !== "propria" ? ` · ${k.pep_nome} (CPF ${fmtCpf(k.pep_cpf)}) · ${k.pep_grau}` : "") : "Não")}
       ${row("Consentimento", `${k.consentimento.versao || "-"} · ${k.consentimento.em ? MES.formatDate(k.consentimento.em) : "-"} · IP ${k.consentimento.ip || "-"}`)}
     </div>
     <div style="margin:16px 0; display:flex; gap:8px; flex-wrap:wrap;">${docs || "<em>Nenhum documento enviado.</em>"}</div>
