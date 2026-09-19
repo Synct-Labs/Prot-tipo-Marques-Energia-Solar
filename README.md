@@ -221,3 +221,11 @@ Para plugar o parceiro, tudo passa por `backend/src/payPartner.js`:
 1. Criar um provedor em `providers` (`submitKyc` envia dados e documentos; `parseEvent` traduz o webhook) e ligar com `PAY_PARTNER=<nome>`.
 2. Configurar `PAY_PARTNER_WEBHOOK_SECRET`; o parceiro chama `POST /api/webhooks/pay-partner` com o corpo assinado em HMAC-SHA256 no header `x-signature` (sem segredo, o webhook recusa tudo).
 3. Revisar com o jurídico o texto de consentimento (`CONSENT_VERSION` em `payKyc.js`) e os Termos/Política de Privacidade antes de abrir ao público: os documentos ficam guardados no Postgres, então vale definir prazo de retenção e backup.
+
+## Programa de Parceiros (vendas por indicação com comissão)
+
+A pessoa usa a conta de cliente, cadastra a chave PIX e aceita as condições (`parceiros.html`). Depois de aprovada no admin (aba **Parceiros**, só o dono), recebe um link `?ref=CODIGO` para a loja e para o crédito. `ref.js` guarda o código por 30 dias (último link vence) e o checkout e o formulário de crédito o enviam; o backend só atribui se o parceiro estiver ativo e não for o próprio comprador.
+
+Comissão: `prevista` (venda registrada) → `liberada` (pedido **entregue** ou crédito **convertido**) → `paga` (admin faz o PIX e anexa o comprovante, que o parceiro vê no painel) ou `cancelada` (pedido cancelado / crédito recusado). Padrão: 5% loja e 2% crédito (sobre `sim_valor_sistema`), editável em "Regras gerais" e por parceiro; vendas já registradas mantêm o percentual da data.
+
+Pontos que exigem decisão/jurídico antes de abrir ao público: `parceiros-termos.html` é um texto-base (prazo de pagamento de 15 dias e demais cláusulas são sugestão); quem indica **crédito** pode precisar ser formalizado como correspondente da instituição financeira; a nomenclatura evita "franquia" de propósito (franquia tem regime legal próprio). Percentuais padrão são sugestão, não regra de negócio definida.

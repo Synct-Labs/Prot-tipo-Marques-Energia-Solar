@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seja Parceiro Marques | Ganhe comissão vendendo energia solar e crédito</title>
+<meta name="description" content="Indique placas solares e crédito da Marques e ganhe comissão em cada venda concluída. Cadastro gratuito.">
+<link rel="icon" href="logo-mark-128.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="noise-overlay" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="loja.html" class="logo" aria-label="Marques - Início">
+      <img src="logo-mark-128.png" alt="Marques" class="logo-mark-img">
+      <span class="logo-text">Marques</span>
+    </a>
+    <nav class="main-nav" id="mainNav">
+      <a href="index.html" class="nav-link">Crédito Solar</a>
+      <a href="loja.html#catalogo" class="nav-link">Catálogo</a>
+      <a href="parceiros.html" class="nav-link active">Seja Parceiro</a>
+    </nav>
+    <div class="header-actions">
+      <a href="conta/entrar.html?redirect=parceiros.html" class="nav-account-link" id="accountLink">Entrar</a>
+    </div>
+  </div>
+</header>
+
+<main class="account-page">
+  <div class="hero-mesh" aria-hidden="true"></div>
+  <div class="container" style="max-width:860px;">
+
+    <!-- Apresentação (sempre visível para quem ainda não é parceiro ativo) -->
+    <section class="account-card" id="secIntro">
+      <span class="eyebrow"><span class="eyebrow-dot"></span>Programa de Parceiros</span>
+      <h1>Venda energia solar e crédito. Ganhe comissão em cada venda.</h1>
+      <p class="account-sub">Você recebe um link exclusivo. Quem comprar placas na loja ou pedir análise de crédito por ele fica registrado no seu nome, e você acompanha cada venda e cada comissão aqui, em tempo real.</p>
+      <div class="partner-benefits">
+        <div><strong>Loja de energia solar</strong><span>Kits e itens do catálogo, com comissão sobre o valor do pedido entregue.</span></div>
+        <div><strong>Crédito</strong><span>CLT, FGTS, consórcio e financiamento, com comissão sobre o crédito convertido.</span></div>
+        <div><strong>Pagamento por PIX</strong><span>Cada comissão paga vem com comprovante, disponível na sua área.</span></div>
+      </div>
+      <div id="introCta" style="margin-top:22px;"></div>
+    </section>
+
+    <!-- Cadastro -->
+    <section class="account-card" id="secApply" hidden>
+      <h1>Cadastro de parceiro</h1>
+      <p class="account-sub">Você usa a sua conta Marques. Só precisamos da chave PIX onde vai receber as comissões. Depois do cadastro, a equipe aprova e o seu link é liberado.</p>
+      <div class="account-error" id="applyMotivo"></div>
+      <div class="account-error" id="applyError"></div>
+      <form id="applyForm">
+        <div class="form-grid">
+          <label>Tipo da chave PIX
+            <select name="pixTipo">
+              <option value="">Selecione</option>
+              <option value="cpf">CPF</option>
+              <option value="email">E-mail</option>
+              <option value="telefone">Telefone</option>
+              <option value="aleatoria">Chave aleatória</option>
+            </select>
+          </label>
+          <label>Chave PIX
+            <input type="text" name="pixChave" maxlength="120">
+          </label>
+        </div>
+        <label class="pay-open-consent">
+          <input type="checkbox" id="aceiteTermos">
+          <span>Li e aceito as <a href="parceiros-termos.html" target="_blank" rel="noopener">condições do Programa de Parceiros</a> (comissões, prazos e regras de conduta) e a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.</span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-lg" id="applyBtn">Quero ser parceiro</button>
+      </form>
+    </section>
+
+    <!-- Status -->
+    <section class="account-card" id="secStatus" hidden>
+      <h1 id="statusTitle"></h1>
+      <p class="account-sub" id="statusText"></p>
+    </section>
+
+    <!-- Painel do parceiro ativo -->
+    <section id="secDashboard" hidden>
+      <div class="account-card">
+        <h1>Painel do parceiro</h1>
+        <p class="account-sub">Compartilhe seus links. Toda venda feita por eles é atribuída a você por 30 dias depois do clique.</p>
+        <div class="partner-links">
+          <div class="partner-link-row"><span>Link da loja (placas solares)</span><input type="text" id="linkLoja" readonly><button class="btn btn-outline" type="button" data-copy="linkLoja">Copiar</button></div>
+          <div class="partner-link-row"><span>Link do crédito</span><input type="text" id="linkCredito" readonly><button class="btn btn-outline" type="button" data-copy="linkCredito">Copiar</button></div>
+        </div>
+        <p class="pay-open-note" id="ratesNote"></p>
+      </div>
+
+      <div class="partner-stats">
+        <div class="partner-stat"><span>Prevista</span><strong id="stPrevista">R$ 0,00</strong><small>vendas em andamento</small></div>
+        <div class="partner-stat"><span>Liberada</span><strong id="stLiberada">R$ 0,00</strong><small>a receber</small></div>
+        <div class="partner-stat"><span>Paga</span><strong id="stPaga">R$ 0,00</strong><small>já recebido</small></div>
+        <div class="partner-stat"><span>Vendas</span><strong id="stVendas">0</strong><small id="stVendasDet"></small></div>
+      </div>
+
+      <div class="account-card">
+        <h2 class="kyc-h" style="margin-top:0;">Minhas comissões</h2>
+        <div id="commList"></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="api-config.js"></script>
+<script src="account-widget.js"></script>
+<script src="parceiros.js"></script>
+</body>
+</html>

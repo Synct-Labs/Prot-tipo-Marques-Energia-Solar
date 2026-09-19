@@ -3799,3 +3799,27 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
 .kyc-doc em.is-error{ color: var(--danger); }
 .kyc-actions{ display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
 #pepDetalheWrap[hidden]{ display: none; }
+
+/* ---- Programa de Parceiros ---- */
+.partner-benefits{ display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 18px; }
+.partner-benefits div{ padding: 14px 16px; background: var(--surface-2, rgba(255,255,255,0.03)); border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 12px; }
+.partner-benefits strong{ display: block; margin-bottom: 4px; color: var(--white); }
+.partner-benefits span{ font-size: .88rem; color: var(--muted); }
+.partner-links{ display: grid; gap: 12px; margin-top: 8px; }
+.partner-link-row{ display: grid; grid-template-columns: 1fr; gap: 6px; }
+.partner-link-row span{ font-size: .82rem; color: var(--muted); }
+.partner-link-row input{ width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border, rgba(255,255,255,0.1)); background: var(--surface-2, rgba(255,255,255,0.03)); color: var(--white); }
+.partner-stats{ display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 16px 0; }
+.partner-stat{ padding: 16px; border-radius: 14px; background: var(--surface, #141518); border: 1px solid var(--border, rgba(255,255,255,0.08)); display: grid; gap: 4px; }
+.partner-stat span{ font-size: .8rem; color: var(--muted); }
+.partner-stat strong{ font-size: 1.3rem; color: var(--white); }
+.partner-stat small{ color: var(--muted); font-size: .76rem; }
+.partner-table{ display: grid; gap: 10px; }
+.partner-row{ display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 12px; }
+.partner-row small{ display: block; color: var(--muted); margin-top: 2px; }
+.partner-row-right{ display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.partner-badge{ padding: 3px 10px; border-radius: 999px; font-size: .75rem; background: rgba(247,148,30,0.15); color: var(--orange-light); }
+.partner-badge.is-liberada{ background: rgba(79,142,247,0.15); color: #7fb0ff; }
+.partner-badge.is-paga{ background: rgba(52,211,153,0.15); color: var(--success); }
+.partner-badge.is-cancelada{ background: rgba(240,100,90,0.12); color: var(--danger); }
+#secApply[hidden], #secIntro[hidden], #secStatus[hidden], #secDashboard[hidden]{ display: none; }

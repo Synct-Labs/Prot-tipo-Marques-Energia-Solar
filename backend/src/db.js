@@ -159,6 +159,33 @@ async function initSchema() {
       created_at TEXT NOT NULL
     );
 
+    -- Programa de Parceiros: pessoa (com conta de cliente) que indica vendas
+    -- da loja e de crédito e ganha comissão. "codigo" é o que vai no link
+    -- (?ref=CODIGO). comissao_*_pct nulo = usa a regra geral (app_settings).
+    CREATE TABLE IF NOT EXISTS partners (
+      id                  SERIAL PRIMARY KEY,
+      customer_id         INTEGER UNIQUE NOT NULL REFERENCES customers(id),
+      codigo              TEXT UNIQUE NOT NULL,
+      status              TEXT NOT NULL DEFAULT 'pendente',
+      pix_tipo            TEXT,
+      pix_chave           TEXT,
+      comissao_loja_pct   DOUBLE PRECISION,
+      comissao_credito_pct DOUBLE PRECISION,
+      termos_versao       TEXT,
+      termos_aceite_em    TEXT,
+      termos_aceite_ip    TEXT,
+      motivo              TEXT,
+      revisado_por        TEXT,
+      revisado_em         TEXT,
+      created_at          TEXT NOT NULL,
+      updated_at          TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS app_settings (
+      chave TEXT PRIMARY KEY,
+      valor TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS customer_sessions (
       token       TEXT PRIMARY KEY,
       customer_id INTEGER NOT NULL REFERENCES customers(id),
@@ -339,6 +366,33 @@ async function initSchema() {
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS endereco_numero TEXT;
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS endereco_bairro TEXT;
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS endereco_complemento TEXT;
+
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS partner_id INTEGER REFERENCES partners(id);
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS partner_id INTEGER REFERENCES partners(id);
+
+    -- Uma comissão por venda indicada (pedido da loja ou solicitação de
+    -- crédito). prevista -> liberada (pedido entregue / crédito convertido)
+    -- -> paga (admin lança o PIX com comprovante) ou cancelada.
+    CREATE TABLE IF NOT EXISTS partner_commissions (
+      id               SERIAL PRIMARY KEY,
+      partner_id       INTEGER NOT NULL REFERENCES partners(id),
+      tipo             TEXT NOT NULL,
+      order_id         INTEGER UNIQUE REFERENCES orders(id),
+      lead_id          INTEGER UNIQUE REFERENCES credit_leads(id),
+      referencia       TEXT NOT NULL,
+      base_valor       DOUBLE PRECISION NOT NULL DEFAULT 0,
+      percentual       DOUBLE PRECISION NOT NULL DEFAULT 0,
+      valor            DOUBLE PRECISION NOT NULL DEFAULT 0,
+      status           TEXT NOT NULL DEFAULT 'prevista',
+      observacao       TEXT,
+      pago_em          TEXT,
+      comprovante_dados BYTEA,
+      comprovante_tipo  TEXT,
+      comprovante_nome  TEXT,
+      created_at       TEXT NOT NULL,
+      updated_at       TEXT NOT NULL
+    );
+
   `);
 
   // Garante que sempre exista pelo menos um "owner" (dono/admin geral que

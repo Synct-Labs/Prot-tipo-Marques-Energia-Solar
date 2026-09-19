@@ -457,6 +457,7 @@ $("#creditLeadForm")?.addEventListener("submit", async (e) => {
     sim_parcelas: lastSimResult?.values.parcelas || "",
     sim_fgts_disponivel: lastSimResult?.values.fgts || "",
     sim_parcela_estimada: lastSimResult?.result.compare?.type === "parcela" ? lastSimResult.result.compare.value : "",
+    ref: window.MES_REF ? window.MES_REF.get() : "",
   };
 
   try {

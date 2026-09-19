@@ -131,6 +131,8 @@ window.MES = (function(){
     if(payLink)    payLink.style.display    = hasCompanyAccess(admin, "promotora") ? "" : "none";
     if(catalogLink) catalogLink.style.display = hasCompanyAccess(admin, "energia_solar") ? "" : "none";
     if(staffLink)  staffLink.style.display  = admin.role === "owner" ? "" : "none";
+    const partnersLink = document.querySelector('.admin-nav-link[href="parceiros.html"]');
+    if(partnersLink) partnersLink.style.display = admin.role === "owner" ? "" : "none";
 
     const label = document.getElementById("adminUserLabel");
     if(label){

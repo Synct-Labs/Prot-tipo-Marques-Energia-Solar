@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Parceiros | Painel de Administrador | Marques</title>
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<header class="admin-topbar">
+  <div class="admin-brand">
+    <img src="../logo-mark-128.png" alt="Marques">
+    <span>Painel de Administrador</span>
+  </div>
+  <nav class="admin-nav">
+    <a href="dashboard.html" class="admin-nav-link">Pedidos</a>
+    <a href="credit-leads.html" class="admin-nav-link">Solicitações de Crédito</a>
+    <a href="marques-pay.html" class="admin-nav-link">Marques Pay</a>
+    <a href="catalogo.html" class="admin-nav-link">Catálogo</a>
+    <a href="parceiros.html" class="admin-nav-link active">Parceiros</a>
+    <a href="equipe.html" class="admin-nav-link">Equipe</a>
+  </nav>
+  <div class="admin-topbar-right">
+    <span class="admin-user" id="adminUserLabel"></span>
+    <button class="admin-btn admin-btn-ghost" id="logoutBtn">Sair</button>
+  </div>
+</header>
+
+<main class="admin-main">
+  <div class="admin-container">
+
+    <div class="admin-subtabs">
+      <button type="button" class="admin-subtab active" data-subtab="comissoes">Comissões</button>
+      <button type="button" class="admin-subtab" data-subtab="parceiros">Parceiros</button>
+      <button type="button" class="admin-subtab" data-subtab="regras">Regras gerais</button>
+    </div>
+
+    <!-- ========================= COMISSÕES ========================= -->
+    <div class="admin-subpanel active" data-subpanel="comissoes">
+      <div class="admin-toolbar">
+        <h2 style="font-size:1.15rem;">Comissões</h2>
+        <div class="admin-toolbar-filters">
+          <select id="commStatusFilter">
+            <option value="liberada">Liberadas (a pagar)</option>
+            <option value="prevista">Previstas</option>
+            <option value="paga">Pagas</option>
+            <option value="cancelada">Canceladas</option>
+            <option value="">Todas</option>
+          </select>
+          <button class="admin-btn admin-btn-ghost" id="commRefresh" type="button">Atualizar</button>
+        </div>
+      </div>
+      <p class="admin-customer-picked show" style="margin-bottom:14px;">Comissão liberada = pedido entregue ou crédito convertido. Pague por PIX na chave do parceiro e anexe o comprovante: ele fica disponível para o parceiro.</p>
+      <div id="commList"></div>
+    </div>
+
+    <!-- ========================= PARCEIROS ========================= -->
+    <div class="admin-subpanel" data-subpanel="parceiros">
+      <div class="admin-toolbar">
+        <h2 style="font-size:1.15rem;">Parceiros</h2>
+        <div class="admin-toolbar-filters">
+          <select id="partnerStatusFilter">
+            <option value="pendente">Pendentes</option>
+            <option value="ativo">Ativos</option>
+            <option value="suspenso">Suspensos</option>
+            <option value="recusado">Recusados</option>
+            <option value="">Todos</option>
+          </select>
+        </div>
+      </div>
+      <div id="partnerList"></div>
+    </div>
+
+    <!-- ========================= REGRAS ========================= -->
+    <div class="admin-subpanel" data-subpanel="regras">
+      <div class="admin-table-wrap" style="padding:22px; max-width:520px;">
+        <h2 style="font-size:1.15rem; margin-bottom:6px;">Comissão padrão</h2>
+        <p class="admin-note" style="margin-bottom:14px;">Vale para todo parceiro que não tem regra própria e para vendas futuras. Vendas já registradas mantêm o percentual da data.</p>
+        <div class="admin-error" id="ratesError"></div>
+        <form id="ratesForm">
+          <div class="admin-field"><label for="rateLoja">Loja (% sobre o valor do pedido)</label><input type="number" id="rateLoja" min="0" max="50" step="0.1" required></div>
+          <div class="admin-field"><label for="rateCredito">Crédito (% sobre o valor do sistema simulado)</label><input type="number" id="rateCredito" min="0" max="50" step="0.1" required></div>
+          <button type="submit" class="admin-btn">Salvar regras</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="../api-config.js"></script>
+<script src="admin.js"></script>
+<script>
+const API_BASE = window.MES_API_BASE || "";
+const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const brl = (v) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const TIPO = { loja: "Loja", credito: "Crédito" };
+const COMM_STATUS = { prevista: "Prevista", liberada: "Liberada", paga: "Paga", cancelada: "Cancelada" };
+const PARTNER_STATUS = { pendente: "Pendente", ativo: "Ativo", suspenso: "Suspenso", recusado: "Recusado" };
+const PIX_TIPO = { cpf: "CPF", email: "E-mail", telefone: "Telefone", aleatoria: "Aleatória" };
+
+document.querySelectorAll(".admin-subtab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".admin-subtab").forEach(b => b.classList.toggle("active", b === btn));
+    document.querySelectorAll(".admin-subpanel").forEach(p => p.classList.toggle("active", p.dataset.subpanel === btn.dataset.subtab));
+  });
+});
+
+/* ---------------------- COMISSÕES ---------------------- */
+async function loadComm(){
+  const status = document.getElementById("commStatusFilter").value;
+  const res = await MES.apiGet(`/api/admin/partner-commissions${status ? "?status=" + status : ""}`);
+  const box = document.getElementById("commList");
+  if(!res.ok){ box.innerHTML = `<p class="admin-empty">${esc(res.error || "Erro ao carregar.")}</p>`; return; }
+  if(!res.items.length){ box.innerHTML = `<p class="admin-empty">Nenhuma comissão nesta lista.</p>`; return; }
+  const today = new Date().toISOString().slice(0, 10);
+  box.innerHTML = res.items.map(c => `
+    <div class="admin-table-wrap" style="padding:16px 20px; margin-bottom:12px;" data-comm="${c.id}">
+      <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:space-between;">
+        <div><strong>${esc(c.parceiroNome)}</strong> <small>(${esc(c.codigo)})</small><br>
+          <small>${esc(TIPO[c.tipo])} · ${esc(c.referencia)} · base ${brl(c.baseValor)} × ${String(c.percentual).replace(".", ",")}% ${c.observacao ? " · " + esc(c.observacao) : ""}</small><br>
+          <small>PIX ${esc(PIX_TIPO[c.pixTipo] || c.pixTipo)}: <strong>${esc(c.pixChave)}</strong></small></div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <strong>${brl(c.valor)}</strong>
+          <span class="status-badge status-${c.status === "paga" ? "ativo" : c.status === "cancelada" ? "encerrado" : "pendente"}">${COMM_STATUS[c.status]}</span>
+          ${c.temComprovante ? `<a class="admin-btn admin-btn-ghost" target="_blank" rel="noopener" href="${API_BASE}/api/admin/partner-commissions/${c.id}/comprovante">Comprovante</a>` : ""}
+        </div>
+      </div>
+      ${c.status === "prevista" || c.status === "liberada" ? `
+      <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <input type="number" step="0.01" min="0" placeholder="Novo valor" data-adj-valor="${c.id}" style="width:120px;">
+        <input type="text" placeholder="Motivo do ajuste" data-adj-obs="${c.id}" style="min-width:200px; flex:1;">
+        <button type="button" class="admin-btn admin-btn-ghost" data-adjust="${c.id}">Ajustar valor</button>
+      </div>` : ""}
+      ${c.status === "liberada" ? `
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <input type="date" value="${today}" data-pay-date="${c.id}">
+        <input type="file" accept="image/jpeg,image/png,application/pdf" data-pay-file="${c.id}">
+        <button type="button" class="admin-btn" data-pay="${c.id}">Marcar como paga</button>
+      </div>` : ""}
+    </div>`).join("");
+}
+
+function readB64(file){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(",")[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+document.getElementById("commList").addEventListener("click", async (e) => {
+  const adj = e.target.closest("[data-adjust]");
+  const pay = e.target.closest("[data-pay]");
+  if(adj){
+    const id = adj.dataset.adjust;
+    const valor = document.querySelector(`[data-adj-valor="${id}"]`).value;
+    const observacao = document.querySelector(`[data-adj-obs="${id}"]`).value;
+    const res = await MES.apiPatch(`/api/admin/partner-commissions/${id}`, { valor: Number(valor), observacao });
+    if(!res.ok){ MES.showToast(res.error || "Erro ao ajustar."); return; }
+    MES.showToast("Valor ajustado."); loadComm();
+  }
+  if(pay){
+    const id = pay.dataset.pay;
+    const file = document.querySelector(`[data-pay-file="${id}"]`).files[0];
+    const pagoEm = document.querySelector(`[data-pay-date="${id}"]`).value;
+    if(!file){ MES.showToast("Anexe o comprovante do PIX."); return; }
+    if(!confirm("Confirmar que o PIX desta comissão foi feito?")) return;
+    const res = await MES.apiPost(`/api/admin/partner-commissions/${id}/pay`, {
+      pagoEm, comprovanteBase64: await readB64(file), comprovanteTipo: file.type, comprovanteNome: file.name,
+    });
+    if(!res.ok){ MES.showToast(res.error || "Erro ao registrar pagamento."); return; }
+    MES.showToast("Pagamento registrado."); loadComm();
+  }
+});
+document.getElementById("commStatusFilter").addEventListener("change", loadComm);
+document.getElementById("commRefresh").addEventListener("click", loadComm);
+
+/* ---------------------- PARCEIROS ---------------------- */
+async function loadPartners(){
+  const status = document.getElementById("partnerStatusFilter").value;
+  const res = await MES.apiGet(`/api/admin/partners${status ? "?status=" + status : ""}`);
+  const box = document.getElementById("partnerList");
+  if(!res.ok){ box.innerHTML = `<p class="admin-empty">${esc(res.error || "Erro ao carregar.")}</p>`; return; }
+  if(!res.items.length){ box.innerHTML = `<p class="admin-empty">Nenhum parceiro nesta lista.</p>`; return; }
+  box.innerHTML = res.items.map(p => `
+    <div class="admin-table-wrap" style="padding:16px 20px; margin-bottom:12px;" data-partner="${p.id}">
+      <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:space-between;">
+        <div><strong>${esc(p.nome)}</strong> <small>(${esc(p.codigo)})</small><br>
+          <small>${esc(p.email)} · ${esc(p.telefone)} · CPF ${esc(p.cpf)}</small><br>
+          <small>PIX ${esc(PIX_TIPO[p.pixTipo] || p.pixTipo)}: ${esc(p.pixChave)} · aceite ${esc(p.termos.versao)} em ${p.termos.em ? MES.formatDate(p.termos.em) : "-"} (IP ${esc(p.termos.ip)})</small><br>
+          <small>${p.vendas} venda(s) · a pagar ${brl(p.aPagar)} · já pago ${brl(p.pago)}</small>${p.motivo ? `<br><small>Motivo: ${esc(p.motivo)}</small>` : ""}</div>
+        <span class="status-badge status-${p.status === "ativo" ? "ativo" : p.status === "pendente" ? "pendente" : "encerrado"}">${PARTNER_STATUS[p.status]}</span>
+      </div>
+      <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        ${p.status !== "ativo" ? `<button type="button" class="admin-btn" data-set="ativo" data-id="${p.id}">Aprovar</button>` : ""}
+        <input type="text" placeholder="Motivo (para recusar/suspender)" data-motivo="${p.id}" style="min-width:200px; flex:1;">
+        ${p.status === "pendente" || p.status === "recusado" ? `<button type="button" class="admin-btn admin-btn-ghost" data-set="recusado" data-id="${p.id}">Recusar</button>` : ""}
+        ${p.status === "ativo" ? `<button type="button" class="admin-btn admin-btn-ghost" data-set="suspenso" data-id="${p.id}">Suspender</button>` : ""}
+      </div>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <small>Regra própria (vazio = padrão):</small>
+        <input type="number" step="0.1" min="0" max="50" placeholder="Loja %" value="${p.overrideLoja == null ? "" : p.overrideLoja}" data-ov-loja="${p.id}" style="width:100px;">
+        <input type="number" step="0.1" min="0" max="50" placeholder="Crédito %" value="${p.overrideCredito == null ? "" : p.overrideCredito}" data-ov-credito="${p.id}" style="width:110px;">
+        <button type="button" class="admin-btn admin-btn-ghost" data-override="${p.id}">Salvar regra</button>
+      </div>
+    </div>`).join("");
+}
+
+document.getElementById("partnerList").addEventListener("click", async (e) => {
+  const set = e.target.closest("[data-set]");
+  const ov = e.target.closest("[data-override]");
+  if(set){
+    const id = set.dataset.id;
+    const motivo = document.querySelector(`[data-motivo="${id}"]`).value;
+    const res = await MES.apiPatch(`/api/admin/partners/${id}`, { status: set.dataset.set, motivo });
+    if(!res.ok){ MES.showToast(res.error || "Erro ao atualizar."); return; }
+    MES.showToast("Parceiro atualizado."); loadPartners();
+  }
+  if(ov){
+    const id = ov.dataset.override;
+    const res = await MES.apiPatch(`/api/admin/partners/${id}`, {
+      overrideLoja: document.querySelector(`[data-ov-loja="${id}"]`).value,
+      overrideCredito: document.querySelector(`[data-ov-credito="${id}"]`).value,
+    });
+    if(!res.ok){ MES.showToast(res.error || "Erro ao salvar."); return; }
+    MES.showToast("Regra do parceiro salva."); loadPartners();
+  }
+});
+document.getElementById("partnerStatusFilter").addEventListener("change", loadPartners);
+
+/* ---------------------- REGRAS ---------------------- */
+async function loadRates(){
+  const res = await MES.apiGet("/api/admin/partners/rates");
+  if(!res.ok) return;
+  document.getElementById("rateLoja").value = res.rates.loja;
+  document.getElementById("rateCredito").value = res.rates.credito;
+}
+document.getElementById("ratesForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const box = document.getElementById("ratesError");
+  box.classList.remove("show");
+  const res = await MES.apiPost("/api/admin/partners/rates", {
+    loja: Number(document.getElementById("rateLoja").value),
+    credito: Number(document.getElementById("rateCredito").value),
+  });
+  if(!res.ok){ box.textContent = res.error || "Erro ao salvar."; box.classList.add("show"); return; }
+  MES.showToast("Regras salvas.");
+});
+
+async function init(){
+  const admin = await MES.requireAuth();
+  if(!admin) return;
+  if(admin.role !== "owner"){ document.querySelector(".admin-container").innerHTML = `<p class="admin-empty">Apenas o dono pode gerenciar o programa de parceiros.</p>`; return; }
+  await Promise.all([loadComm(), loadPartners(), loadRates()]);
+}
+document.getElementById("logoutBtn").addEventListener("click", () => MES.logout());
+init();
+</script>
+</body>
+</html>

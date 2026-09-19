@@ -21,6 +21,7 @@ const profitShare = require("./profitShare");
 const products = require("./products");
 const payAccounts = require("./payAccounts");
 const payKyc = require("./payKyc");
+const partners = require("./partners");
 const payPartner = require("./payPartner");
 const { parseJSONBody, sendJSON, sendBinary, getClientIP } = require("./http-utils");
 const { serveStatic } = require("./static");
@@ -272,6 +273,11 @@ async function handleApi(req, res, pathname) {
        - Pagamento: ver PONTO DE INTEGRAÇÃO DE PAGAMENTO em app.js.
        =================================================================== */
     const { id, orderNumber } = await orders.createOrder(body, customer.id);
+    // Venda indicada por parceiro: registra a comissão. Falha aqui nunca derruba o pedido.
+    try {
+      const partner = await partners.resolveAttribution(body.ref, customer.id);
+      if (partner) await partners.registerSale({ tipo: "loja", orderId: id, referencia: orderNumber, base: body.total, partner });
+    } catch (e) { console.error("[parceiros] falha ao registrar comissão do pedido:", e.message); }
     return sendJSON(res, 201, { ok: true, id, orderNumber });
   }
 
@@ -295,6 +301,10 @@ async function handleApi(req, res, pathname) {
        - Bureau de crédito: consulta automática de score, se aplicável.
        =================================================================== */
     const { id, leadNumber } = await creditLeads.createLead(body, customer.id);
+    try {
+      const partner = await partners.resolveAttribution(body.ref, customer.id);
+      if (partner) await partners.registerSale({ tipo: "credito", leadId: id, referencia: leadNumber, base: body.sim_valor_sistema, partner });
+    } catch (e) { console.error("[parceiros] falha ao registrar comissão do crédito:", e.message); }
     return sendJSON(res, 201, { ok: true, id, leadNumber });
   }
 
@@ -336,6 +346,7 @@ async function handleApi(req, res, pathname) {
       }
       const changed = await creditLeads.updateLeadStatus(id, body.status);
       if (!changed) return sendJSON(res, 404, { ok: false, error: "Solicitação não encontrada." });
+      await partners.syncStatus("lead", id, body.status);
       return sendJSON(res, 200, { ok: true, lead: await creditLeads.getLeadById(id) });
     }
   }
@@ -378,6 +389,7 @@ async function handleApi(req, res, pathname) {
       }
       const changed = await orders.updateOrderStatus(id, body.status);
       if (!changed) return sendJSON(res, 404, { ok: false, error: "Pedido não encontrado." });
+      await partners.syncStatus("order", id, body.status);
       return sendJSON(res, 200, { ok: true, order: await orders.getOrderById(id) });
     }
   }
@@ -967,6 +979,117 @@ async function handleApi(req, res, pathname) {
     }
     const result = await payPartner.handleWebhook(Buffer.concat(chunks).toString("utf8"), req.headers["x-signature"]);
     return sendJSON(res, result.status, result.ok ? { ok: true } : { ok: false, error: result.error });
+  }
+
+  // ---- PARCEIROS (programa de vendas por indicação) ----
+  // Reaproveita o kycGuard: erros de regra (4xx) viram resposta com mensagem.
+  if (pathname === "/api/partners/me" && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    return sendJSON(res, 200, {
+      ok: true,
+      partner: await partners.getByCustomer(customer.id),
+      rates: await partners.getRates(),
+      termsVersion: partners.TERMOS_VERSAO,
+    });
+  }
+
+  if (pathname === "/api/partners/me" && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const body = await parseJSONBody(req);
+    return kycGuard(async () => {
+      const partner = await partners.apply(customer.id, {
+        pixTipo: body.pixTipo, pixChave: body.pixChave, aceiteTermos: body.aceiteTermos, ip,
+      });
+      return sendJSON(res, 200, { ok: true, partner });
+    });
+  }
+
+  if (pathname === "/api/partners/me/summary" && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const row = await partners.getRowByCustomer(customer.id);
+    if (!row || row.status !== "ativo") return sendJSON(res, 403, { ok: false, error: "Seu cadastro de parceiro ainda não está ativo." });
+    return sendJSON(res, 200, { ok: true, ...(await partners.summaryForPartner(row.id)) });
+  }
+
+  const partnerMyComprovanteMatch = pathname.match(/^\/api\/partners\/me\/commissions\/(\d+)\/comprovante$/);
+  if (partnerMyComprovanteMatch && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const row = await partners.getRowByCustomer(customer.id);
+    if (!row) return sendJSON(res, 404, { ok: false, error: "Comprovante não encontrado." });
+    const c = await partners.getComprovanteForPartner(parseInt(partnerMyComprovanteMatch[1], 10), row.id);
+    if (!c) return sendJSON(res, 404, { ok: false, error: "Comprovante não encontrado." });
+    return sendBinary(res, 200, c.data, c.tipo, c.nome);
+  }
+
+  // ---- ADMIN: PARCEIROS E COMISSÕES (só o dono: envolve dinheiro das duas empresas) ----
+  if (pathname.startsWith("/api/admin/partner")) {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+    if (admin.role !== "owner") return sendJSON(res, 403, { ok: false, error: "Apenas o dono pode gerenciar o programa de parceiros." });
+    const autor = `admin:${admin.email}`;
+    const url = new URL(req.url, "http://localhost");
+
+    if (pathname === "/api/admin/partners/rates" && req.method === "GET") {
+      return sendJSON(res, 200, { ok: true, rates: await partners.getRates() });
+    }
+    if (pathname === "/api/admin/partners/rates" && req.method === "POST") {
+      const body = await parseJSONBody(req);
+      return kycGuard(async () => sendJSON(res, 200, { ok: true, rates: await partners.setRates({ loja: body.loja, credito: body.credito }) }));
+    }
+    if (pathname === "/api/admin/partners" && req.method === "GET") {
+      return sendJSON(res, 200, { ok: true, items: await partners.listPartners(url.searchParams.get("status") || null) });
+    }
+    const adminPartnerMatch = pathname.match(/^\/api\/admin\/partners\/(\d+)$/);
+    if (adminPartnerMatch && req.method === "PATCH") {
+      const id = parseInt(adminPartnerMatch[1], 10);
+      const body = await parseJSONBody(req);
+      return kycGuard(async () => {
+        if (body.status !== undefined) await partners.setStatus(id, body.status, autor, body.motivo);
+        if (body.overrideLoja !== undefined || body.overrideCredito !== undefined) {
+          await partners.setOverrides(id, { loja: body.overrideLoja, credito: body.overrideCredito });
+        }
+        return sendJSON(res, 200, { ok: true });
+      });
+    }
+    if (pathname === "/api/admin/partner-commissions" && req.method === "GET") {
+      const pid = url.searchParams.get("partnerId");
+      return sendJSON(res, 200, {
+        ok: true,
+        items: await partners.listCommissions({ status: url.searchParams.get("status") || null, partnerId: pid ? parseInt(pid, 10) : null }),
+      });
+    }
+    const adminCommMatch = pathname.match(/^\/api\/admin\/partner-commissions\/(\d+)(?:\/(pay|comprovante))?$/);
+    if (adminCommMatch) {
+      const id = parseInt(adminCommMatch[1], 10);
+      const action = adminCommMatch[2];
+      if (!action && req.method === "PATCH") {
+        const body = await parseJSONBody(req);
+        return kycGuard(async () => {
+          await partners.adjust(id, { valor: body.valor, observacao: body.observacao });
+          return sendJSON(res, 200, { ok: true });
+        });
+      }
+      if (action === "pay" && req.method === "POST") {
+        const body = await parseJSONBody(req, Math.ceil(partners.MAX_COMPROVANTE_BYTES * 1.4));
+        return kycGuard(async () => {
+          let buffer = null;
+          try { buffer = Buffer.from(String(body.comprovanteBase64 || ""), "base64"); } catch { buffer = null; }
+          await partners.markPaid(id, {
+            pagoEm: body.pagoEm, comprovanteBuffer: buffer, comprovanteTipo: body.comprovanteTipo, comprovanteNome: body.comprovanteNome,
+          });
+          return sendJSON(res, 200, { ok: true });
+        });
+      }
+      if (action === "comprovante" && req.method === "GET") {
+        const c = await partners.getComprovanteAdmin(id);
+        if (!c) return sendJSON(res, 404, { ok: false, error: "Comprovante não encontrado." });
+        return sendBinary(res, 200, c.data, c.tipo, c.nome);
+      }
+    }
   }
 
   // ---- CLIENTE: MEUS BOLETOS (empréstimos/financiamentos com a Marques) ----

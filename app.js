@@ -1387,6 +1387,7 @@ $("#checkoutForm").addEventListener("submit", async (e) => {
     // Só faz sentido no cartão — Pix/boleto são à vista (ver formatParcelamento/
     // MAX_PARCELAS_SEM_JUROS, mais acima).
     parcelas: formData.get("pagamento") === "cartao" ? Number(formData.get("parcelas")) || 1 : null,
+    ref: window.MES_REF ? window.MES_REF.get() : "",
     itens: state.cart.map(item => {
       const p = getProduct(item.id);
       return { id: p.id, nome: p.name, marca: p.brand, preco: effectivePrice(p), qty: item.qty };
