@@ -11,13 +11,13 @@ const { pool } = require("./db");
 const CONTRACT_STATUSES = ["ativo", "encerrado"];
 const MAX_COMPROVANTE_BYTES = 4 * 1024 * 1024; // 4MB é de sobra pra um recibo/print
 
-async function createContract({ customerId, numeroContrato, percentual, periodicidade, dataInicio }) {
+async function createContract({ customerId, numeroContrato, valorInvestido, percentual, periodicidade, dataInicio }) {
   const now = new Date().toISOString();
   const insert = await pool.query(
     `INSERT INTO profit_share_contracts
-      (customer_id, numero_contrato, percentual, periodicidade, data_inicio, status, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, 'ativo', $6, $6) RETURNING id`,
-    [customerId, numeroContrato, percentual, periodicidade || "", dataInicio, now]
+      (customer_id, numero_contrato, valor_investido, percentual, periodicidade, data_inicio, status, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, 'ativo', $7, $7) RETURNING id`,
+    [customerId, numeroContrato, valorInvestido, percentual, periodicidade || "", dataInicio, now]
   );
   return insert.rows[0].id;
 }
@@ -27,6 +27,7 @@ function rowToContract(row) {
     id: row.id,
     customerId: row.customer_id,
     numeroContrato: row.numero_contrato,
+    valorInvestido: row.valor_investido,
     percentual: row.percentual,
     periodicidade: row.periodicidade,
     dataInicio: row.data_inicio,

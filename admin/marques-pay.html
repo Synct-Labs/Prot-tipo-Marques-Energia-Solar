@@ -128,6 +128,10 @@
             <input type="text" id="npNumero" required placeholder="Ex: PL-2026-014">
           </div>
           <div class="admin-field">
+            <label for="npValorInvestido">Valor investido (R$)</label>
+            <input type="text" id="npValorInvestido" required inputmode="numeric" autocomplete="off" placeholder="R$ 0,00">
+          </div>
+          <div class="admin-field">
             <label for="npPercentual">Percentual de participação (%)</label>
             <input type="number" id="npPercentual" required min="0.01" max="100" step="0.01" placeholder="2.5">
           </div>
@@ -152,13 +156,14 @@
             <tr>
               <th>Cliente</th>
               <th>Contrato</th>
+              <th>Investido</th>
               <th>Percentual</th>
               <th>Início</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody id="psContractsTableBody">
-            <tr><td colspan="5" class="admin-loading">Carregando...</td></tr>
+            <tr><td colspan="6" class="admin-loading">Carregando...</td></tr>
           </tbody>
         </table>
       </div>
@@ -193,6 +198,14 @@ let allLoanContracts = [];
 let allPsContracts = [];
 const openLoanDetails = {};   // contractId -> installments[] já carregadas
 const openPsDetails = {};     // contractId -> payments[] já carregadas
+
+/* ---------------------- MOEDA (R$) ---------------------- */
+function brlMoney(v){ return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
+function parseMoneyInput(v){ const d = String(v || "").replace(/\D/g, ""); return d ? Number(d) / 100 : 0; }
+document.getElementById("npValorInvestido").addEventListener("input", (e) => {
+  const d = e.target.value.replace(/\D/g, "").replace(/^0+/, "");
+  e.target.value = d ? brlMoney(Number(d) / 100).replace(/ /g, " ") : "";
+});
 
 /* ---------------------- SUB-ABAS ---------------------- */
 document.querySelectorAll(".admin-subtab").forEach(btn => {
@@ -494,19 +507,20 @@ function psDetailHTML(contract){
 function renderPsContracts(list){
   const tbody = document.getElementById("psContractsTableBody");
   if(list.length === 0){
-    tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">Nenhum contrato de participação nos lucros cadastrado ainda.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="admin-empty">Nenhum contrato de participação nos lucros cadastrado ainda.</td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(c => `
     <tr class="admin-order-row" data-id="${c.id}" data-kind="ps">
       <td data-label="Cliente">${c.customer.nome}</td>
       <td data-label="Contrato">${c.numeroContrato}</td>
+      <td data-label="Investido">${c.valorInvestido != null ? brlMoney(c.valorInvestido) : "-"}</td>
       <td data-label="Percentual">${String(c.percentual).replace(".", ",")}%</td>
       <td data-label="Início">${c.dataInicio.split("-").reverse().join("/")}</td>
       <td data-label="Status"><span class="status-badge status-${c.status}">${MES.PROFIT_SHARE_STATUS_LABELS[c.status]}</span></td>
     </tr>
     <tr class="admin-order-detail" data-detail-for="ps-${c.id}">
-      <td colspan="5"><div class="admin-order-detail-inner" id="psDetailInner-${c.id}">${psDetailHTML(c)}</div></td>
+      <td colspan="6"><div class="admin-order-detail-inner" id="psDetailInner-${c.id}">${psDetailHTML(c)}</div></td>
     </tr>`).join("");
 }
 
@@ -524,7 +538,7 @@ function applyPsFilters(){
 }
 
 async function loadPsContracts(){
-  document.getElementById("psContractsTableBody").innerHTML = `<tr><td colspan="5" class="admin-loading">Carregando...</td></tr>`;
+  document.getElementById("psContractsTableBody").innerHTML = `<tr><td colspan="6" class="admin-loading">Carregando...</td></tr>`;
   const res = await MES.apiGet("/api/admin/profit-share/contracts");
   if(!res.ok){ MES.showToast(res.error || "Erro ao carregar contratos."); return; }
   allPsContracts = res.contracts;
@@ -556,6 +570,7 @@ document.getElementById("newPsForm").addEventListener("submit", async (e) => {
     const res = await MES.apiPost("/api/admin/profit-share/contracts", {
       customerId: Number(customerId),
       numeroContrato: document.getElementById("npNumero").value.trim(),
+      valorInvestido: parseMoneyInput(document.getElementById("npValorInvestido").value),
       percentual: Number(document.getElementById("npPercentual").value),
       periodicidade: document.getElementById("npPeriodicidade").value.trim(),
       dataInicio: document.getElementById("npDataInicio").value,

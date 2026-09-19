@@ -51,7 +51,25 @@ window.MES_ACCOUNT = (function () {
     }
   }
 
-  getCustomer().then(updateHeaderLink);
+  // Menu "Marques Pay": quem já tem conta (ou cadastro em andamento) vai
+  // direto pra ela em vez de cair na página de apresentação.
+  async function updatePayNavLink(customer) {
+    if (!customer) return;
+    const links = document.querySelectorAll('.main-nav a[href="conta-digital.html"], .nav-link[href="conta-digital.html"]');
+    if (!links.length) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/customers/me/pay-kyc`, { credentials: "include" });
+      const data = await res.json();
+      if (!data.ok) return;
+      const target = data.account ? "conta-digital-dashboard.html" : data.kyc ? "conta-digital-abrir.html" : null;
+      if (target) links.forEach((a) => (a.href = target));
+    } catch (e) { /* sem backend: o link continua levando à apresentação */ }
+  }
+
+  getCustomer().then((customer) => {
+    updateHeaderLink(customer);
+    updatePayNavLink(customer);
+  });
 
   return { getCustomer, requireLogin };
 })();

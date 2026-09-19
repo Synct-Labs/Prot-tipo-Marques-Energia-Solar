@@ -111,6 +111,7 @@ function contractCardHTML(contract) {
     <div class="pay-contract-grid">
       <div><span>Nº do contrato</span><strong>${contract.numeroContrato}</strong></div>
       <div><span>Início</span><strong>${formatDateBR(contract.dataInicio)}</strong></div>
+      <div><span>Valor investido</span><strong>${contract.valorInvestido != null ? formatBRL(contract.valorInvestido) : "-"}</strong></div>
       <div><span>Participação</span><strong>${String(contract.percentual).replace(".", ",")}% dos lucros líquidos</strong></div>
       <div><span>Repasse</span><strong>${contract.periodicidade || "-"}</strong></div>
     </div>

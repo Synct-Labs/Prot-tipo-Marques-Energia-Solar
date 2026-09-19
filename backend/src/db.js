@@ -367,6 +367,8 @@ async function initSchema() {
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS endereco_bairro TEXT;
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS endereco_complemento TEXT;
 
+    ALTER TABLE profit_share_contracts ADD COLUMN IF NOT EXISTS valor_investido DOUBLE PRECISION;
+
     ALTER TABLE pay_kyc ADD COLUMN IF NOT EXISTS pep_relacao TEXT;
     ALTER TABLE pay_kyc ADD COLUMN IF NOT EXISTS pep_cargo TEXT;
     ALTER TABLE pay_kyc ADD COLUMN IF NOT EXISTS pep_orgao TEXT;

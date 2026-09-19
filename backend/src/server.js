@@ -487,16 +487,18 @@ async function handleApi(req, res, pathname) {
     const customerId = parseInt(body.customerId, 10);
     const numeroContrato = String(body.numeroContrato || "").trim();
     const percentual = Number(body.percentual);
+    const valorInvestido = Number(body.valorInvestido);
     const dataInicio = String(body.dataInicio || "").trim();
     const periodicidade = String(body.periodicidade || "").trim();
 
     if (!customerId) return sendJSON(res, 400, { ok: false, error: "Selecione o cliente." });
     if (!numeroContrato) return sendJSON(res, 400, { ok: false, error: "Informe o número do contrato." });
+    if (!(valorInvestido > 0)) return sendJSON(res, 400, { ok: false, error: "Informe o valor investido." });
     if (!(percentual > 0 && percentual <= 100)) return sendJSON(res, 400, { ok: false, error: "Percentual inválido." });
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dataInicio)) return sendJSON(res, 400, { ok: false, error: "Data de início inválida." });
     if (!(await customers.findById(customerId))) return sendJSON(res, 404, { ok: false, error: "Cliente não encontrado." });
 
-    const id = await profitShare.createContract({ customerId, numeroContrato, percentual, periodicidade, dataInicio });
+    const id = await profitShare.createContract({ customerId, numeroContrato, valorInvestido, percentual, periodicidade, dataInicio });
     return sendJSON(res, 201, { ok: true, contract: await profitShare.getContractById(id) });
   }
 
