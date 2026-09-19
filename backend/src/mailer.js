@@ -1,41 +1,47 @@
 /* =====================================================================
    ENVIO DE E-MAIL (verificação em duas etapas por e-mail)
    ---------------------------------------------------------------------
-   Usa a API HTTP da Resend (https://resend.com) direto via fetch nativo
-   do Node — sem dependência nova no projeto. Sem RESEND_API_KEY
-   configurada (backend/.env), o e-mail não é enviado de verdade: o
-   conteúdo só aparece no log do servidor, pra dar pra testar o fluxo
-   sem precisar configurar nada primeiro.
+   Envia via SMTP do Gmail/Google Workspace (nodemailer), usando a mesma
+   conta contato@marquespromotora.com já configurada pro site. Sem
+   SMTP_USER/SMTP_PASS configurados (backend/.env), o e-mail não é
+   enviado de verdade: o conteúdo só aparece no log do servidor, pra dar
+   pra testar o fluxo sem precisar configurar nada primeiro.
    ===================================================================== */
+const nodemailer = require("nodemailer");
 const config = require("./config");
 
+let transporter = null;
+function getTransporter() {
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: { user: config.SMTP_USER, pass: config.SMTP_PASS },
+    });
+  }
+  return transporter;
+}
+
 async function sendEmail({ to, subject, text, html }) {
-  if (!config.RESEND_API_KEY) {
+  if (!config.SMTP_USER || !config.SMTP_PASS) {
     console.log(
-      `\n[e-mail simulado — configure RESEND_API_KEY em backend/.env pra enviar de verdade]\n` +
+      `\n[e-mail simulado — configure SMTP_USER/SMTP_PASS em backend/.env pra enviar de verdade]\n` +
       `Para: ${to}\nAssunto: ${subject}\n${text}\n`
     );
     return { simulated: true };
   }
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${config.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  try {
+    await getTransporter().sendMail({
       from: config.MAIL_FROM,
-      to: [to],
+      to,
       subject,
       text,
       html: html || `<p>${text}</p>`,
-    }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    console.error("[mailer] Falha ao enviar e-mail via Resend:", res.status, body);
+    });
+  } catch (err) {
+    console.error("[mailer] Falha ao enviar e-mail via SMTP:", err.message);
     throw new Error("Não foi possível enviar o e-mail agora. Tente novamente em instantes.");
   }
   return { simulated: false };
