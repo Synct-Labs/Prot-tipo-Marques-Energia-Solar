@@ -30,7 +30,8 @@ function renderDashboard(partner, rates, summary) {
   const base = siteBase();
   $("linkLoja").value = `${base}loja.html?ref=${partner.codigo}`;
   $("linkCredito").value = `${base}index.html?ref=${partner.codigo}#simulacao-credito`;
-  $("ratesNote").textContent = `Suas comissões: ${String(partner.comissaoLojaPct).replace(".", ",")}% sobre pedidos da loja e ${String(partner.comissaoCreditoPct).replace(".", ",")}% sobre o crédito. A comissão é liberada quando o pedido é entregue ou o crédito é convertido, e paga por PIX pela equipe Marques.`;
+  $("partnerCatalogLink").href = `loja.html?ref=${partner.codigo}#catalogo`;
+  $("ratesNote").textContent = `Suas comissões: ${String(partner.comissaoLojaPct).replace(".", ",")}% sobre pedidos da loja e ${String(partner.comissaoCreditoPct).replace(".", ",")}% sobre o crédito. Na compra pelo catálogo, você escolhe repassar até 10% como desconto ao cliente — o que sobra vira sua comissão. A comissão é liberada quando o pedido é entregue ou o crédito é convertido, e paga por PIX pela equipe Marques.`;
   $("stPrevista").textContent = brl(summary.totals.prevista);
   $("stLiberada").textContent = brl(summary.totals.liberada);
   $("stPaga").textContent = brl(summary.totals.paga);

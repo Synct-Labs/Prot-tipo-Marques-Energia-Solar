@@ -114,6 +114,10 @@ const state = {
   searchTerm: "",
   filters: { marca: new Set(), faixa: null },
   cart: [],              // [{ id, qty }]
+  // Compra assistida: só fica "active" quando o cliente logado é o próprio
+  // dono do código ?ref= ativo (ver checarCompraAssistida) — aí ele está
+  // comprando pelo catálogo em nome de um cliente, não pra si mesmo.
+  partnerAssisted: { active: false, tier: 0 },
   compareSelection: {},  // { [categoria]: [ids] }
   configurator: {
     active: false,
@@ -1135,6 +1139,64 @@ function cartTotalValue(){
   return state.cart.reduce((sum,i) => sum + effectivePrice(getProduct(i.id)) * i.qty, 0);
 }
 
+/* ======================================================================
+   COMPRA ASSISTIDA (parceiro comprando pelo catálogo pra um cliente)
+   ---------------------------------------------------------------------
+   Espelha ASSISTED_TIERS do backend (backend/src/partners.js): desconto
+   + comissão soma sempre 10. Só é oferecida quando o cliente logado é o
+   dono do próprio código ?ref= ativo — ver checarCompraAssistida, chamada
+   no checkout (é onde já checamos login).
+   ====================================================================== */
+const ASSISTED_TIERS = { 0: 10, 5: 5, 10: 0 };
+
+async function checarCompraAssistida(customer){
+  state.partnerAssisted.active = false;
+  const ref = window.MES_REF ? window.MES_REF.get() : "";
+  if(!ref || !customer) return;
+  try{
+    const res = await fetch(`${API_BASE}/api/partners/me`, { credentials: "include" });
+    const data = await res.json();
+    const partner = data.ok ? data.partner : null;
+    state.partnerAssisted.active = !!(partner && partner.status === "ativo" && partner.codigo === ref);
+  } catch(err){
+    // sem backend: segue como compra normal, sem o modo assistido.
+  }
+}
+
+function cartFinalTotal(){
+  const subtotal = cartTotalValue();
+  if(!state.partnerAssisted.active) return subtotal;
+  return subtotal * (1 - state.partnerAssisted.tier / 100);
+}
+
+function renderPartnerAssistedBox(){
+  const box = $("#checkoutPartnerBox");
+  const row = $("#checkoutDescontoRow");
+  if(!box) return;
+  box.hidden = !state.partnerAssisted.active;
+  if(row) row.hidden = !state.partnerAssisted.active;
+  if(!state.partnerAssisted.active) return;
+
+  const subtotal = cartTotalValue();
+  const tier = state.partnerAssisted.tier;
+  const descontoValor = subtotal * (tier / 100);
+  const comissaoPct = ASSISTED_TIERS[tier];
+  const comissaoValor = (subtotal - descontoValor) * (comissaoPct / 100);
+
+  $all('input[name="partnerDesconto"]').forEach(r => r.checked = Number(r.value) === tier);
+  if($("#checkoutDescontoValor")) $("#checkoutDescontoValor").textContent = `- ${formatBRL(descontoValor)}`;
+  if($("#checkoutPartnerComissaoPct")) $("#checkoutPartnerComissaoPct").textContent = `${comissaoPct}%`;
+  if($("#checkoutPartnerComissaoValor")) $("#checkoutPartnerComissaoValor").textContent = formatBRL(comissaoValor);
+}
+
+$all('input[name="partnerDesconto"]').forEach(radio => {
+  radio.addEventListener("change", () => {
+    state.partnerAssisted.tier = Number(radio.value) || 0;
+    renderPartnerAssistedBox();
+    atualizarTotaisCheckout();
+  });
+});
+
 function renderCart(){
   const list = $("#cartItemsList");
   const emptyMsg = `<p class="empty-msg" id="emptyCartMsg">Seu carrinho está vazio. <a href="#catalogo">Ver catálogo</a></p>`;
@@ -1262,6 +1324,8 @@ async function renderCheckout(){
     return;
   }
   preencherCheckoutComCliente(customer);
+  await checarCompraAssistida(customer);
+  if(!state.partnerAssisted.active) state.partnerAssisted.tier = 0;
 
   const list = $("#checkoutItemsList");
   list.innerHTML = state.cart.map(item => {
@@ -1269,8 +1333,14 @@ async function renderCheckout(){
     return `<div class="checkout-item-row"><span>${item.qty}x ${p.name}</span><span>${formatBRL(effectivePrice(p) * item.qty)}</span></div>`;
   }).join("");
 
-  const total = cartTotalValue();
-  $("#checkoutSubtotal").textContent = formatBRL(total);
+  renderPartnerAssistedBox();
+  atualizarTotaisCheckout();
+}
+
+function atualizarTotaisCheckout(){
+  const subtotal = cartTotalValue();
+  const total = cartFinalTotal();
+  $("#checkoutSubtotal").textContent = formatBRL(subtotal);
   $("#checkoutTotal").textContent = formatBRL(total);
   $("#checkoutParcelamento").textContent = `ou ${formatParcelamento(total)} no cartão`;
   popularParcelasCheckout(total);
@@ -1388,12 +1458,16 @@ $("#checkoutForm").addEventListener("submit", async (e) => {
     // MAX_PARCELAS_SEM_JUROS, mais acima).
     parcelas: formData.get("pagamento") === "cartao" ? Number(formData.get("parcelas")) || 1 : null,
     ref: window.MES_REF ? window.MES_REF.get() : "",
+    // Só tem efeito quando é o próprio parceiro comprando pra um cliente
+    // (ver checarCompraAssistida) — o backend confere isso de novo antes
+    // de aplicar; enviar esse campo fora desse caso não muda nada.
+    descontoParceiro: state.partnerAssisted.active ? state.partnerAssisted.tier : undefined,
     itens: state.cart.map(item => {
       const p = getProduct(item.id);
       return { id: p.id, nome: p.name, marca: p.brand, preco: effectivePrice(p), qty: item.qty };
     }),
     subtotal: cartTotalValue(),
-    total: cartTotalValue(),
+    total: cartFinalTotal(),
   };
 
   /* =====================================================================

@@ -229,3 +229,11 @@ A pessoa usa a conta de cliente, cadastra a chave PIX e aceita as condições (`
 Comissão: `prevista` (venda registrada) → `liberada` (pedido **entregue** ou crédito **convertido**) → `paga` (admin faz o PIX e anexa o comprovante, que o parceiro vê no painel) ou `cancelada` (pedido cancelado / crédito recusado). Padrão: 5% loja e 2% crédito (sobre `sim_valor_sistema`), editável em "Regras gerais" e por parceiro; vendas já registradas mantêm o percentual da data.
 
 Pontos que exigem decisão/jurídico antes de abrir ao público: `parceiros-termos.html` é um texto-base (prazo de pagamento de 15 dias e demais cláusulas são sugestão); quem indica **crédito** pode precisar ser formalizado como correspondente da instituição financeira; a nomenclatura evita "franquia" de propósito (franquia tem regime legal próprio). Percentuais padrão são sugestão, não regra de negócio definida.
+
+## Compra assistida do parceiro (desconto x comissão)
+
+Quando o próprio parceiro entra logado e acessa a loja pelo link do painel dele (`loja.html?ref=SEU_CODIGO`), o checkout mostra uma caixa "Você está comprando para um cliente" com 3 opções, sempre somando 10: sem desconto (comissão 10%), 5% de desconto (comissão 5%), 10% de desconto (sem comissão). O total e o parcelamento já saem com o desconto aplicado, e a comissão prevista aparece em R$ em tempo real. No checkout, o parceiro troca os dados pré-preenchidos (que são os dele) pelos do cliente antes de enviar.
+
+A comissão padrão da loja (regra geral, "Regras gerais" no admin) subiu de 5% para 10%, pra bater com o topo da faixa acima. Um cliente comum que só clica no link do parceiro (não é o parceiro logado) não vê essa caixa e continua gerando a comissão normal (regra geral ou override do parceiro), sem desconto nenhum — a troca desconto↔comissão só existe nessa compra assistida.
+
+Validado no backend: o nível de desconto só é aceito quando o código `?ref=` pertence à própria conta logada (`resolveSelfAssisted` em `backend/src/partners.js`); qualquer outra pessoa que tente forjar esse campo é ignorada e cai na atribuição normal.

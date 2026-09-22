@@ -20,10 +20,15 @@ const TERMOS_VERSAO = "parceiro-2026-09-v1";
 const PIX_TIPOS = ["cpf", "email", "telefone", "aleatoria"];
 const PARTNER_STATUS = ["pendente", "ativo", "suspenso", "recusado"];
 const COMMISSION_STATUS = ["prevista", "liberada", "paga", "cancelada"];
-const DEFAULT_RATES = { loja: 5, credito: 2 };
+const DEFAULT_RATES = { loja: 10, credito: 2 };
 const MAX_PCT = 50;
 const MAX_COMPROVANTE_BYTES = 4 * 1024 * 1024;
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+// "Compra assistida": o próprio parceiro compra pelo catálogo em nome de um
+// cliente e escolhe repassar parte (ou toda) a comissão como desconto. A
+// soma desconto + comissão é sempre 10 — ver ASSISTED_TIERS abaixo.
+const ASSISTED_TIERS = { 0: 10, 5: 5, 10: 0 };
 
 function err(status, message) { return Object.assign(new Error(message), { statusCode: status }); }
 function round2(n) { return Math.round(n * 100) / 100; }
@@ -130,12 +135,30 @@ async function resolveAttribution(refCode, buyerCustomerId) {
   return p;
 }
 
-// Registra a venda indicada e cria a comissão "prevista". Idempotente por pedido/lead.
-async function registerSale({ tipo, orderId, leadId, referencia, base, partner }) {
+// Só retorna o parceiro se o código for dele mesmo (compra assistida — ver
+// ASSISTED_TIERS). Diferente de resolveAttribution, aqui autocompra é o
+// caso esperado: é o parceiro comprando pelo catálogo em nome de um cliente.
+async function resolveSelfAssisted(refCode, buyerCustomerId) {
+  if (!buyerCustomerId) return null;
+  const code = String(refCode || "").trim().toUpperCase();
+  if (!/^[A-Z0-9]{4,12}$/.test(code)) return null;
+  const { rows } = await pool.query(
+    "SELECT * FROM partners WHERE codigo = $1 AND status = 'ativo' AND customer_id = $2",
+    [code, buyerCustomerId]
+  );
+  return rows[0] || null;
+}
+
+// Registra a venda indicada e cria a comissão "prevista". Idempotente por
+// pedido/lead. overridePct pula a regra geral/override do parceiro (usado
+// na compra assistida, onde o percentual vem do nível de desconto escolhido).
+async function registerSale({ tipo, orderId, leadId, referencia, base, partner, overridePct }) {
   const rates = await getRates();
-  const pct = tipo === "loja"
-    ? (partner.comissao_loja_pct != null ? partner.comissao_loja_pct : rates.loja)
-    : (partner.comissao_credito_pct != null ? partner.comissao_credito_pct : rates.credito);
+  const pct = overridePct != null
+    ? overridePct
+    : tipo === "loja"
+      ? (partner.comissao_loja_pct != null ? partner.comissao_loja_pct : rates.loja)
+      : (partner.comissao_credito_pct != null ? partner.comissao_credito_pct : rates.credito);
   const baseValor = Number(base) > 0 ? Number(base) : 0;
   const now = new Date().toISOString();
   await pool.query(
@@ -306,9 +329,9 @@ async function getComprovanteAdmin(id) {
 }
 
 module.exports = {
-  TERMOS_VERSAO, MAX_COMPROVANTE_BYTES, PARTNER_STATUS, COMMISSION_STATUS,
+  TERMOS_VERSAO, MAX_COMPROVANTE_BYTES, PARTNER_STATUS, COMMISSION_STATUS, ASSISTED_TIERS,
   getRates, setRates, getByCustomer, getRowByCustomer, apply,
-  resolveAttribution, registerSale, syncStatus,
+  resolveAttribution, resolveSelfAssisted, registerSale, syncStatus,
   summaryForPartner, getComprovanteForPartner,
   listPartners, setStatus, setOverrides, listCommissions, adjust, markPaid, getComprovanteAdmin,
 };

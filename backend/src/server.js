@@ -275,8 +275,15 @@ async function handleApi(req, res, pathname) {
     const { id, orderNumber } = await orders.createOrder(body, customer.id);
     // Venda indicada por parceiro: registra a comissão. Falha aqui nunca derruba o pedido.
     try {
-      const partner = await partners.resolveAttribution(body.ref, customer.id);
-      if (partner) await partners.registerSale({ tipo: "loja", orderId: id, referencia: orderNumber, base: body.total, partner });
+      // Compra assistida: o próprio parceiro comprou pelo catálogo pra um
+      // cliente e escolheu um nível de desconto (0/5/10%) — a comissão vem
+      // desse nível, não da regra geral/override. Só vale quando o código
+      // é do próprio comprador (resolveSelfAssisted já garante isso).
+      const tier = partners.ASSISTED_TIERS[Number(body.descontoParceiro)];
+      let partner = tier !== undefined ? await partners.resolveSelfAssisted(body.ref, customer.id) : null;
+      let overridePct = partner ? tier : undefined;
+      if (!partner) partner = await partners.resolveAttribution(body.ref, customer.id);
+      if (partner) await partners.registerSale({ tipo: "loja", orderId: id, referencia: orderNumber, base: body.total, partner, overridePct });
     } catch (e) { console.error("[parceiros] falha ao registrar comissão do pedido:", e.message); }
     return sendJSON(res, 201, { ok: true, id, orderNumber });
   }
