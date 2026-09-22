@@ -523,11 +523,20 @@ async function handleApi(req, res, pathname) {
 
     if (req.method === "PATCH") {
       const body = await parseJSONBody(req);
-      if (!profitShare.CONTRACT_STATUSES.includes(body.status)) {
-        return sendJSON(res, 400, { ok: false, error: `Status inválido. Use um de: ${profitShare.CONTRACT_STATUSES.join(", ")}` });
+      if (body.status === undefined && body.visivelCliente === undefined) {
+        return sendJSON(res, 400, { ok: false, error: "Nada para atualizar." });
       }
-      const changed = await profitShare.updateContractStatus(id, body.status);
-      if (!changed) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+      if (body.status !== undefined) {
+        if (!profitShare.CONTRACT_STATUSES.includes(body.status)) {
+          return sendJSON(res, 400, { ok: false, error: `Status inválido. Use um de: ${profitShare.CONTRACT_STATUSES.join(", ")}` });
+        }
+        const changed = await profitShare.updateContractStatus(id, body.status);
+        if (!changed) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+      }
+      if (body.visivelCliente !== undefined) {
+        const changed = await profitShare.setVisibility(id, body.visivelCliente === true);
+        if (!changed) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+      }
       return sendJSON(res, 200, { ok: true, contract: await profitShare.getContractById(id) });
     }
   }

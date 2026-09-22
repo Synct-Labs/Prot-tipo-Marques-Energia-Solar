@@ -477,6 +477,13 @@ function psDetailHTML(contract){
     <div class="admin-detail-block" style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
       <div><h4>Status do contrato</h4>${psContractStatusSelectHTML(contract.status, contract.id)}</div>
       <div><h4>Periodicidade</h4><p style="margin:0;">${contract.periodicidade || "-"}</p></div>
+      <div>
+        <h4>Visibilidade</h4>
+        <label class="admin-checkbox-row" style="margin:0;">
+          <input type="checkbox" class="ps-contract-visivel-toggle" data-contract-id="${contract.id}" ${contract.visivelCliente !== false ? "checked" : ""}>
+          Visível pro cliente no Marques Pay
+        </label>
+      </div>
     </div>
     <div class="admin-detail-block" style="grid-column: 1 / -1;" data-payments-for="${contract.id}">
       <h4>Repasses lançados</h4>
@@ -517,7 +524,7 @@ function renderPsContracts(list){
       <td data-label="Investido">${c.valorInvestido != null ? brlMoney(c.valorInvestido) : "-"}</td>
       <td data-label="Percentual">${String(c.percentual).replace(".", ",")}%</td>
       <td data-label="Início">${c.dataInicio.split("-").reverse().join("/")}</td>
-      <td data-label="Status"><span class="status-badge status-${c.status}">${MES.PROFIT_SHARE_STATUS_LABELS[c.status]}</span></td>
+      <td data-label="Status"><span class="status-badge status-${c.status}">${MES.PROFIT_SHARE_STATUS_LABELS[c.status]}</span>${c.visivelCliente === false ? ' <span class="status-badge">Oculto</span>' : ""}</td>
     </tr>
     <tr class="admin-order-detail" data-detail-for="ps-${c.id}">
       <td colspan="6"><div class="admin-order-detail-inner" id="psDetailInner-${c.id}">${psDetailHTML(c)}</div></td>
@@ -671,11 +678,14 @@ document.getElementById("psContractsTableBody").addEventListener("click", async 
 
 document.getElementById("psContractsTableBody").addEventListener("change", async (e) => {
   const select = e.target.closest(".ps-contract-status-select");
-  if(!select) return;
-  const id = select.dataset.contractId;
-  const res = await MES.apiPatch(`/api/admin/profit-share/contracts/${id}`, { status: select.value });
-  if(!res.ok){ MES.showToast(res.error || "Erro ao atualizar status."); return; }
-  MES.showToast("Status do contrato atualizado.");
+  const visivelToggle = e.target.closest(".ps-contract-visivel-toggle");
+  if(!select && !visivelToggle) return;
+
+  const id = (select || visivelToggle).dataset.contractId;
+  const body = select ? { status: select.value } : { visivelCliente: visivelToggle.checked };
+  const res = await MES.apiPatch(`/api/admin/profit-share/contracts/${id}`, body);
+  if(!res.ok){ MES.showToast(res.error || "Erro ao atualizar."); return; }
+  MES.showToast(select ? "Status do contrato atualizado." : (visivelToggle.checked ? "Contrato visível pro cliente." : "Contrato ocultado do cliente."));
   const idx = allPsContracts.findIndex(c => String(c.id) === String(id));
   if(idx > -1) allPsContracts[idx] = res.contract;
   applyPsFilters();

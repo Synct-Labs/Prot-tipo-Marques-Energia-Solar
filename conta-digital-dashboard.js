@@ -99,24 +99,6 @@ function updateBoletosStat(installments) {
     : "Nenhum boleto pendente este mês";
 }
 
-function contractCardHTML(contract) {
-  if (!contract) {
-    return `
-      <div class="pay-card-head"><h2>Seu contrato</h2></div>
-      <p class="pay-empty-note">Você ainda não tem um contrato de participação nos lucros ativo. Fale com a nossa equipe pra saber mais.</p>`;
-  }
-  const ativo = contract.status === "ativo";
-  return `
-    <div class="pay-card-head"><h2>Seu contrato</h2><span class="account-status-badge ${ativo ? "status-success" : ""}">${ativo ? "Ativo" : "Encerrado"}</span></div>
-    <div class="pay-contract-grid">
-      <div><span>Nº do contrato</span><strong>${contract.numeroContrato}</strong></div>
-      <div><span>Início</span><strong>${formatDateBR(contract.dataInicio)}</strong></div>
-      <div><span>Participação</span><strong>${contract.valorInvestido != null ? formatBRL(contract.valorInvestido) + " · " : ""}${String(contract.percentual).replace(".", ",")}% dos lucros líquidos</strong></div>
-      <div><span>Repasse</span><strong>${contract.periodicidade || "-"}</strong></div>
-    </div>
-    <p class="pay-empty-note" style="margin-top:14px;">Contrato cadastrado e atualizado pela equipe Marques. Alguma dúvida sobre os valores? Fale com a gente pelo WhatsApp.</p>`;
-}
-
 function paymentRowHTML(payment) {
   const comprovante = payment.temComprovante
     ? `<a class="pay-boleto-pay-btn pay-comprovante-btn" href="${API_BASE}/api/customers/me/profit-share/payments/${payment.id}/comprovante" target="_blank" rel="noopener">Ver comprovante</a>`
@@ -131,46 +113,97 @@ function paymentRowHTML(payment) {
     </div>`;
 }
 
-function renderParticipacaoLucros(contracts, payments) {
-  const contrato = contracts.find(c => c.status === "ativo") || contracts[0] || null;
-  const contractEl = document.getElementById("psContractCard");
-  if (contractEl) contractEl.innerHTML = contractCardHTML(contrato);
-  renderRoi(contrato, payments);
-  const paymentsEl = document.getElementById("psPaymentsList");
-  if (paymentsEl) {
-    paymentsEl.innerHTML = payments.length
-      ? payments.map(paymentRowHTML).join("")
-      : `<p class="pay-empty-note">Nenhum repasse lançado ainda.</p>`;
+// Cada contrato vira um bloco recolhível, com os repasses e o gráfico de
+// ROI presos a ele — fechar/encerrar o contrato leva tudo junto. Só o
+// contrato ativo abre sozinho, e só quando ele é o único ativo; havendo
+// mais de um ativo (ou nenhum), a pessoa escolhe clicando em cada um.
+function contractBlockHTML(contract, contractPayments, autoExpand) {
+  const ativo = contract.status === "ativo";
+  const investido = contract.valorInvestido != null ? Number(contract.valorInvestido) : null;
+  const ganhos = contractPayments.reduce((sum, p) => sum + Number(p.valor), 0);
+
+  let roiHTML = "";
+  if (investido != null && investido > 0) {
+    const roiPct = (ganhos / investido) * 100;
+    const max = Math.max(investido, ganhos, 1);
+    const barPct = (v) => (v > 0 ? Math.max((v / max) * 100, 3) : 0);
+    roiHTML = `
+      <div class="pay-card" style="margin-bottom:20px;">
+        <div class="pay-card-head"><h2>Retorno até agora</h2></div>
+        <div class="roi-summary">
+          <div>
+            <span>ROI</span>
+            <strong>${roiPct.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%</strong>
+            <small>${formatBRL(ganhos)} recebidos de ${formatBRL(investido)} investidos</small>
+          </div>
+        </div>
+        <div class="roi-chart">
+          <div class="roi-bar-col">
+            <span class="roi-bar-value">${formatBRL(investido)}</span>
+            <div class="roi-bar-track"><div class="roi-bar-fill is-investido" style="height:${barPct(investido)}%"></div></div>
+            <span class="roi-bar-label"><span class="roi-dot is-investido"></span>Investido</span>
+          </div>
+          <div class="roi-bar-col">
+            <span class="roi-bar-value">${formatBRL(ganhos)}</span>
+            <div class="roi-bar-track"><div class="roi-bar-fill is-ganhos" style="height:${barPct(ganhos)}%"></div></div>
+            <span class="roi-bar-label"><span class="roi-dot is-ganhos"></span>Ganhos</span>
+          </div>
+        </div>
+      </div>`;
   }
+
+  return `
+    <div class="ps-contract-block">
+      <button type="button" class="ps-contract-toggle" data-toggle-contract aria-expanded="${autoExpand ? "true" : "false"}">
+        <span class="ps-contract-toggle-main">
+          <strong>${contract.numeroContrato}</strong>
+          <span class="account-status-badge ${ativo ? "status-success" : ""}">${ativo ? "Ativo" : "Encerrado"}</span>
+        </span>
+        <span class="ps-contract-toggle-sub">${investido != null ? formatBRL(investido) + " · " : ""}${String(contract.percentual).replace(".", ",")}%</span>
+        <svg class="icon ps-contract-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="ps-contract-body"${autoExpand ? "" : " hidden"}>
+        <div class="pay-card" style="margin-bottom:20px;">
+          <div class="pay-contract-grid">
+            <div><span>Início</span><strong>${formatDateBR(contract.dataInicio)}</strong></div>
+            <div><span>Repasse</span><strong>${contract.periodicidade || "-"}</strong></div>
+          </div>
+          <p class="pay-empty-note" style="margin-top:14px;">Contrato cadastrado e atualizado pela equipe Marques. Alguma dúvida sobre os valores? Fale com a gente pelo WhatsApp.</p>
+        </div>
+        ${roiHTML}
+        <div class="pay-card">
+          <div class="pay-card-head"><h2>Repasses recebidos</h2></div>
+          <div class="pay-boletos-list">
+            ${contractPayments.length ? contractPayments.map(paymentRowHTML).join("") : `<p class="pay-empty-note">Nenhum repasse lançado ainda.</p>`}
+          </div>
+        </div>
+      </div>
+    </div>`;
 }
 
-// ROI = quanto já foi repassado (ganhos) sobre o valor investido, com um
-// gráfico de barras comparando os dois. Só aparece com valor investido
-// cadastrado (contratos antigos, sem esse dado, não têm base pra calcular).
-function renderRoi(contrato, payments) {
-  const card = document.getElementById("psRoiCard");
-  if (!card) return;
-  const investido = contrato && contrato.valorInvestido != null ? Number(contrato.valorInvestido) : null;
-  if (!investido || investido <= 0) { card.hidden = true; return; }
-  card.hidden = false;
-
-  const ganhos = payments
-    .filter(p => p.numeroContrato === contrato.numeroContrato)
-    .reduce((sum, p) => sum + Number(p.valor), 0);
-  const roiPct = (ganhos / investido) * 100;
-
-  document.getElementById("psRoiValor").textContent =
-    `${roiPct.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
-  document.getElementById("psRoiDetalhe").textContent =
-    `${formatBRL(ganhos)} recebidos de ${formatBRL(investido)} investidos`;
-
-  const max = Math.max(investido, ganhos, 1);
-  const barPct = (v) => (v > 0 ? Math.max((v / max) * 100, 3) : 0);
-  document.getElementById("roiInvestidoValor").textContent = formatBRL(investido);
-  document.getElementById("roiGanhosValor").textContent = formatBRL(ganhos);
-  document.getElementById("roiInvestidoBar").style.height = `${barPct(investido)}%`;
-  document.getElementById("roiGanhosBar").style.height = `${barPct(ganhos)}%`;
+function renderParticipacaoLucros(contracts, payments) {
+  const container = document.getElementById("psContractsList");
+  if (!container) return;
+  if (!contracts.length) {
+    container.innerHTML = `<div class="pay-card"><p class="pay-empty-note">Você ainda não tem um contrato de participação nos lucros ativo. Fale com a nossa equipe pra saber mais.</p></div>`;
+    return;
+  }
+  const ativos = contracts.filter(c => c.status === "ativo").length;
+  container.innerHTML = contracts.map(c => {
+    const autoExpand = c.status === "ativo" && ativos === 1;
+    const contractPayments = payments.filter(p => p.numeroContrato === c.numeroContrato);
+    return contractBlockHTML(c, contractPayments, autoExpand);
+  }).join("");
 }
+
+document.getElementById("psContractsList")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-toggle-contract]");
+  if (!btn) return;
+  const body = btn.nextElementSibling;
+  const expanded = btn.getAttribute("aria-expanded") === "true";
+  btn.setAttribute("aria-expanded", expanded ? "false" : "true");
+  body.hidden = expanded;
+});
 
 function updatePsStat(payments) {
   const labelEl = document.getElementById("statPsLabel");

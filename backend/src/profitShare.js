@@ -32,6 +32,7 @@ function rowToContract(row) {
     periodicidade: row.periodicidade,
     dataInicio: row.data_inicio,
     status: row.status,
+    visivelCliente: row.visivel_cliente,
     createdAt: row.created_at,
     customer: row.customer_nome
       ? { nome: row.customer_nome, email: row.customer_email }
@@ -75,9 +76,12 @@ async function getContractById(id) {
   return rows[0] ? rowToContract(rows[0]) : null;
 }
 
+// Usada só pela rota do cliente (/api/customers/me/profit-share) — por
+// isso já filtra os contratos que o admin marcou como ocultos. O admin
+// continua vendo tudo via listAllContracts/getContractById.
 async function listContractsByCustomer(customerId) {
   const { rows } = await pool.query(
-    "SELECT * FROM profit_share_contracts WHERE customer_id = $1 ORDER BY id DESC",
+    "SELECT * FROM profit_share_contracts WHERE customer_id = $1 AND visivel_cliente = true ORDER BY id DESC",
     [customerId]
   );
   return rows.map(rowToContract);
@@ -112,7 +116,7 @@ async function listPaymentsByCustomer(customerId) {
             profit_share_contracts.numero_contrato
      FROM profit_share_payments
      JOIN profit_share_contracts ON profit_share_contracts.id = profit_share_payments.contract_id
-     WHERE profit_share_contracts.customer_id = $1
+     WHERE profit_share_contracts.customer_id = $1 AND profit_share_contracts.visivel_cliente = true
      ORDER BY profit_share_payments.data_pagamento DESC`,
     [customerId]
   );
@@ -126,7 +130,8 @@ async function listPaymentsByCustomer(customerId) {
 async function getPaymentComprovante(paymentId, customerId = null) {
   let sql = `
     SELECT profit_share_payments.comprovante_dados, profit_share_payments.comprovante_tipo,
-           profit_share_payments.comprovante_nome, profit_share_contracts.customer_id
+           profit_share_payments.comprovante_nome, profit_share_contracts.customer_id,
+           profit_share_contracts.visivel_cliente
     FROM profit_share_payments
     JOIN profit_share_contracts ON profit_share_contracts.id = profit_share_payments.contract_id
     WHERE profit_share_payments.id = $1`;
@@ -134,7 +139,7 @@ async function getPaymentComprovante(paymentId, customerId = null) {
   const { rows } = await pool.query(sql, params);
   const row = rows[0];
   if (!row || !row.comprovante_dados) return null;
-  if (customerId !== null && row.customer_id !== customerId) return null;
+  if (customerId !== null && (row.customer_id !== customerId || !row.visivel_cliente)) return null;
   return { data: row.comprovante_dados, tipo: row.comprovante_tipo, nome: row.comprovante_nome };
 }
 
@@ -144,6 +149,17 @@ async function updateContractStatus(id, status) {
   const result = await pool.query(
     "UPDATE profit_share_contracts SET status = $1, updated_at = $2 WHERE id = $3",
     [status, now, id]
+  );
+  return result.rowCount > 0;
+}
+
+// Esconde/mostra o contrato (e seus repasses) pro cliente no Marques Pay —
+// o admin continua vendo e editando normalmente.
+async function setVisibility(id, visivel) {
+  const now = new Date().toISOString();
+  const result = await pool.query(
+    "UPDATE profit_share_contracts SET visivel_cliente = $1, updated_at = $2 WHERE id = $3",
+    [visivel, now, id]
   );
   return result.rowCount > 0;
 }
@@ -160,4 +176,5 @@ module.exports = {
   listPaymentsByCustomer,
   getPaymentComprovante,
   updateContractStatus,
+  setVisibility,
 };
