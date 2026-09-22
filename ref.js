@@ -1,11 +1,11 @@
 /* =====================================================================
-   INDICAÇÃO DE PARCEIRO: guarda o código do link (?ref=CODIGO) por 30
+   INDICAÇÃO DE PARCEIRO: guarda o código do link (?ref=CODIGO) por 7
    dias (último link vence) e o expõe pro checkout e pro formulário de
    crédito enviarem junto. Quem valida o código é o backend.
    ===================================================================== */
 window.MES_REF = (function () {
   const KEY = "mes_ref";
-  const TTL_MS = 30 * 24 * 60 * 60 * 1000;
+  const TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
   function read() {
     try {
