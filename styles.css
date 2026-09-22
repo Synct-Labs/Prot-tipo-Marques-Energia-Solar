@@ -1666,8 +1666,12 @@ input, select{ font-family: inherit; }
 .checkout-partner-tier input{ margin-right: 8px; }
 .checkout-partner-tier span{ flex: 1; color: var(--white); }
 .checkout-partner-tier small{ color: var(--muted); }
-.checkout-partner-commission{ font-size: 0.85rem !important; color: var(--white) !important; margin: 0 !important; }
-.checkout-partner-commission strong{ color: var(--success); }
+.checkout-partner-commission{
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px;
+  font-size: 0.78rem !important; color: var(--muted) !important; margin: 0 !important;
+}
+.checkout-partner-commission strong{ font-size: 0.85rem; color: var(--success); }
+.checkout-partner-commission span{ color: var(--muted); }
 .checkout-items-list{
   display: flex;
   flex-direction: column;
