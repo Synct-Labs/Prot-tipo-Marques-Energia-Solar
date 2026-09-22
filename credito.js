@@ -75,7 +75,7 @@ const CREDIT_MODES = {
     highlight: "Mais escolhido",
     description: "Se você tem carteira assinada, esse é o caminho mais direto: a parcela sai do contracheque todo mês, sem boleto pra esquecer e sem fiador. A análise costuma sair em poucos dias.",
     fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação. Use o número do seu orçamento." },
+      { key:"valor", label:"Valor desejado (R$)", type:"number", placeholder:"Ex: 18000", hint:"Quanto você quer contratar de crédito." },
       { key:"parcelas", label:"Número de parcelas", type:"select", options:[12,24,36,48,60] },
     ],
     calc(values){
@@ -99,24 +99,16 @@ const CREDIT_MODES = {
     icon: ICON_FGTS,
     description: "O saldo do saque-aniversário costuma ficar parado rendendo quase nada. Usado como entrada, ele reduz (ou até quita) o valor financiado sem mexer no seu salário do mês.",
     fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação. Use o número do seu orçamento." },
       { key:"fgts", label:"Valor disponível no FGTS (R$)", type:"number", placeholder:"Ex: 3000", hint:"Consulte no app FGTS, na opção “Saque-Aniversário”." },
     ],
     calc(values){
-      const valor = parseFloat(values.valor) || 0;
       const fgts = parseFloat(values.fgts) || 0;
-      const cobertoPeloFgts = Math.min(fgts, valor);
-      const restante = Math.max(0, valor - fgts);
-      const pct = valor > 0 ? Math.round((cobertoPeloFgts / valor) * 100) : 0;
       return {
         items: [
-          { label:"Valor coberto pelo FGTS", value: formatBRL(cobertoPeloFgts) },
-          { label:"Saldo restante a pagar ou financiar", value: formatBRL(restante) },
+          { label:"Valor disponível para usar como entrada", value: formatBRL(fgts) },
         ],
-        note: restante <= 0
-          ? "Esse saldo sozinho já paga o sistema inteiro. Você garante energia solar sem contratar nenhum crédito."
-          : `Esse saldo cobre ${pct}% do sistema. Os outros ${100 - pct}% podem entrar no CLT, no financiamento ou no consórcio. Dá pra combinar mais de uma modalidade.`,
-        compare: { type:"progress", value: pct },
+        note: "Use esse saldo como entrada ao contratar o financiamento, consórcio ou crédito CLT: ele reduz o valor financiado e a parcela.",
+        compare: { type:"fgts", value: fgts },
       };
     },
   },
@@ -197,31 +189,12 @@ function renderCreditModes(){
   `).join("");
 }
 
-/* Referência da conta de luz vinda da calculadora de dimensionamento da
-   loja (loja.html / app.js), se o cliente já calculou por lá. */
-function getContaAtual(){
-  const raw = localStorage.getItem("mes_conta_atual");
-  const val = parseFloat(raw);
-  return (!isNaN(val) && val > 0) ? val : null;
-}
-
-function renderCreditContext(){
-  const el = $("#creditContext");
-  if(!el) return;
-  const conta = getContaAtual();
-  el.innerHTML = conta
-    ? `${ICON_CHECK}<span>Comparando com a conta de <strong>${formatBRL(conta)}/mês</strong> que você informou na calculadora de dimensionamento da loja.</span>`
-    : `<span>Quer comparar com sua conta de luz? Calcule o tamanho do seu sistema <a href="loja.html#dimensionamento">na loja</a> antes de simular aqui.</span>`;
-  el.classList.toggle("has-value", !!conta);
-}
-
 function renderCreditSimCard(){
   const card = $("#creditSimCard");
   if(!card) return;
   const mode = CREDIT_MODES[currentCreditMode];
 
   card.innerHTML = `
-    <p class="credit-context" id="creditContext"></p>
     <div class="credit-sim-card-head">
       <span class="credit-mode-icon credit-mode-icon-lg">${mode.icon}</span>
       <div>
@@ -245,7 +218,6 @@ function renderCreditSimCard(){
     </div>
 
   `;
-  renderCreditContext();
 }
 
 let fgtsAuthShownOnce = false;
@@ -304,12 +276,13 @@ document.addEventListener("click", async (e) => {
   const values = {};
   $all("input, select", form).forEach(el => { values[el.name] = el.value; });
 
-  if(!(parseFloat(values.valor) > 0)){
-    showToast("Informe o valor do sistema para simular.");
+  const mode = CREDIT_MODES[currentCreditMode];
+  const requiredField = mode.fields[0];
+  if(!(parseFloat(values[requiredField.key]) > 0)){
+    showToast(`Informe ${requiredField.label.toLowerCase()} para simular.`);
     return;
   }
 
-  const mode = CREDIT_MODES[currentCreditMode];
   const result = mode.calc(values);
   lastSimResult = { modalidade: currentCreditMode, values, result };
   syncLeadModalidade();
@@ -356,11 +329,10 @@ function renderLeadSimSummary(){
   if(!box || !lastSimResult) return;
   const mode = CREDIT_MODES[lastSimResult.modalidade];
   const { modalidade, values } = lastSimResult;
-  const valor = parseFloat(values.valor) || 0;
 
   const detalhe = modalidade === "fgts"
-    ? `${formatBRL(valor)} de sistema, com ${formatBRL(parseFloat(values.fgts) || 0)} de FGTS disponível`
-    : `${formatBRL(valor)} em ${values.parcelas}x`;
+    ? `${formatBRL(parseFloat(values.fgts) || 0)} disponíveis no FGTS`
+    : `${formatBRL(parseFloat(values.valor) || 0)} em ${values.parcelas}x`;
 
   box.innerHTML = `${ICON_CHECK}<span>Simulação: <strong>${mode.label}</strong>, ${detalhe}. <a href="#simulacao-credito">Alterar simulação</a></span>`;
   box.hidden = false;
