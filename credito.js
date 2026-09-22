@@ -138,12 +138,12 @@ const CREDIT_MODES = {
     },
   },
   financiamento: {
-    label: "Financiamento Bancário",
+    label: "Financiamento Solar",
     tag: "Prazo mais longo",
     icon: ICON_FINANCIAMENTO,
-    description: "Linhas de banco criadas especificamente para energia solar, com prazos de até 96 meses. Quanto mais longo o prazo, menor a parcela, e menor a diferença pro que você já paga de conta de luz.",
+    description: "Linha de banco específica para financiar sistemas de energia solar, com prazos de até 96 meses. Quanto mais longo o prazo, menor a parcela, e menor a diferença pro que você já paga de conta de luz.",
     fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação. Use o número do seu orçamento." },
+      { key:"valor", label:"Valor do sistema solar (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema solar, já com instalação. Use o número do seu orçamento." },
       { key:"parcelas", label:"Número de parcelas", type:"select", options:[24,36,48,60,72,84,96] },
     ],
     calc(values){
