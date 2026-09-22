@@ -153,7 +153,7 @@ function contractBlockHTML(contract, contractPayments, autoExpand) {
   }
 
   return `
-    <div class="ps-contract-block">
+    <div class="ps-contract-block is-${contract.status}">
       <button type="button" class="ps-contract-toggle" data-toggle-contract aria-expanded="${autoExpand ? "true" : "false"}">
         <span class="ps-contract-toggle-main">
           <strong>${contract.numeroContrato}</strong>
