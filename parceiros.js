@@ -6,6 +6,14 @@ const $ = (id) => document.getElementById(id);
 const brl = (v) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+/* ---------------------- MENU MOBILE ---------------------- */
+document.getElementById("hamburgerBtn")?.addEventListener("click", () => {
+  document.getElementById("mainNav")?.classList.toggle("open");
+});
+document.getElementById("mainNav")?.addEventListener("click", (e) => {
+  if (e.target.closest("a")) document.getElementById("mainNav").classList.remove("open");
+});
+
 async function api(method, path, body) {
   const res = await fetch(`${API_BASE}${path}`, {
     method, credentials: "include",
