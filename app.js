@@ -152,15 +152,27 @@ function getProduct(id){ return PRODUCTS.find(p => p.id === id); }
 // riscado ao lado, só pra mostrar o desconto.
 function effectivePrice(p){ return (p.promoPrice != null && p.promoPrice > 0) ? p.promoPrice : p.price; }
 
+// Sua comissão em cima deste item, no nível cheio (sem desconto — ver
+// ASSISTED_TIERS mais abaixo). Só aparece pro parceiro em modo de compra
+// assistida (checarCompraAssistida); o nível de fato usado na venda é
+// escolhido depois, no carrinho.
+function partnerCommissionHTML(p){
+  if(!state.partnerAssisted.active) return "";
+  const pct = ASSISTED_TIERS[0];
+  const valor = effectivePrice(p) * (pct / 100);
+  return `<div class="partner-commission-tag">Sua comissão: <strong>${formatBRL(valor)}</strong> (${pct}%)</div>`;
+}
+
 // HTML do preço (usado no card do catálogo e na página do produto): preço
 // normal riscado + preço promocional, quando existe; senão só o preço.
 function priceHTML(p){
   const hasPromo = p.promoPrice != null && p.promoPrice > 0 && p.promoPrice < p.price;
   const eff = effectivePrice(p);
+  const commission = partnerCommissionHTML(p);
   if(hasPromo){
-    return `<span class="price-original">${formatBRL(p.price)}</span> ${formatBRL(eff)}<small>ou ${formatParcelamento(eff)}</small>`;
+    return `<span class="price-original">${formatBRL(p.price)}</span> ${formatBRL(eff)}<small>ou ${formatParcelamento(eff)}</small>${commission}`;
   }
-  return `${formatBRL(p.price)}<small>ou ${formatParcelamento(p.price)}</small>`;
+  return `${formatBRL(p.price)}<small>ou ${formatParcelamento(p.price)}</small>${commission}`;
 }
 function unidadePreco(p){
   const emb = String(p.embVenda || "").toLowerCase();
@@ -1144,8 +1156,9 @@ function cartTotalValue(){
    ---------------------------------------------------------------------
    Espelha ASSISTED_TIERS do backend (backend/src/partners.js): desconto
    + comissão soma sempre 10. Só é oferecida quando o cliente logado é o
-   dono do próprio código ?ref= ativo — ver checarCompraAssistida, chamada
-   no checkout (é onde já checamos login).
+   dono do próprio código ?ref= ativo — checarCompraAssistida roda uma vez
+   em initApp(), então o catálogo já mostra a comissão de cada item e o
+   carrinho já deixa escolher o nível de desconto, antes mesmo do checkout.
    ====================================================================== */
 const ASSISTED_TIERS = { 0: 10, 5: 5, 10: 0 };
 
@@ -1169,14 +1182,11 @@ function cartFinalTotal(){
   return subtotal * (1 - state.partnerAssisted.tier / 100);
 }
 
+// Atualiza as duas caixas (carrinho e checkout — mesma marcação, prefixos
+// "cart"/"checkout") de uma vez só, sempre que o total do carrinho ou o
+// nível de desconto mudam. Só um dos dois está visível por vez (SPA por
+// hash), mas manter as duas em dia evita reabrir a caixa desatualizada.
 function renderPartnerAssistedBox(){
-  const box = $("#checkoutPartnerBox");
-  const row = $("#checkoutDescontoRow");
-  if(!box) return;
-  box.hidden = !state.partnerAssisted.active;
-  if(row) row.hidden = !state.partnerAssisted.active;
-  if(!state.partnerAssisted.active) return;
-
   const subtotal = cartTotalValue();
   const tier = state.partnerAssisted.tier;
   const descontoValor = subtotal * (tier / 100);
@@ -1184,15 +1194,23 @@ function renderPartnerAssistedBox(){
   const comissaoValor = (subtotal - descontoValor) * (comissaoPct / 100);
 
   $all('input[name="partnerDesconto"]').forEach(r => r.checked = Number(r.value) === tier);
-  if($("#checkoutDescontoValor")) $("#checkoutDescontoValor").textContent = `- ${formatBRL(descontoValor)}`;
-  if($("#checkoutPartnerComissaoPct")) $("#checkoutPartnerComissaoPct").textContent = `${comissaoPct}%`;
-  if($("#checkoutPartnerComissaoValor")) $("#checkoutPartnerComissaoValor").textContent = formatBRL(comissaoValor);
+
+  ["cart", "checkout"].forEach(prefix => {
+    const box = $(`#${prefix}PartnerBox`);
+    const row = $(`#${prefix}DescontoRow`);
+    if(box) box.hidden = !state.partnerAssisted.active;
+    if(row) row.hidden = !state.partnerAssisted.active;
+    if(!state.partnerAssisted.active) return;
+    if($(`#${prefix}DescontoValor`)) $(`#${prefix}DescontoValor`).textContent = `- ${formatBRL(descontoValor)}`;
+    if($(`#${prefix}PartnerComissaoPct`)) $(`#${prefix}PartnerComissaoPct`).textContent = `${comissaoPct}%`;
+    if($(`#${prefix}PartnerComissaoValor`)) $(`#${prefix}PartnerComissaoValor`).textContent = formatBRL(comissaoValor);
+  });
 }
 
 $all('input[name="partnerDesconto"]').forEach(radio => {
   radio.addEventListener("change", () => {
     state.partnerAssisted.tier = Number(radio.value) || 0;
-    renderPartnerAssistedBox();
+    renderCart();
     atualizarTotaisCheckout();
   });
 });
@@ -1227,10 +1245,10 @@ function renderCart(){
     }).join("");
   }
 
-  const total = cartTotalValue();
-  $("#cartSubtotal").textContent = formatBRL(total);
-  $("#cartTotal").textContent = formatBRL(total);
+  $("#cartSubtotal").textContent = formatBRL(cartTotalValue());
+  $("#cartTotal").textContent = formatBRL(cartFinalTotal());
   $("#goCheckoutBtn").disabled = state.cart.length === 0;
+  renderPartnerAssistedBox();
 }
 
 $("#cartItemsList").addEventListener("click", (e) => {
@@ -1324,7 +1342,6 @@ async function renderCheckout(){
     return;
   }
   preencherCheckoutComCliente(customer);
-  await checarCompraAssistida(customer);
   if(!state.partnerAssisted.active) state.partnerAssisted.tier = 0;
 
   const list = $("#checkoutItemsList");
@@ -1579,6 +1596,10 @@ async function initApp(){
     }
   }
   loadCartFromStorage();
+  // Roda antes do primeiro render pra já mostrar a comissão do parceiro em
+  // cada item do catálogo e liberar o desconto no carrinho desde já.
+  const customer = window.MES_ACCOUNT ? await window.MES_ACCOUNT.getCustomer() : null;
+  await checarCompraAssistida(customer);
   renderFeatured();
   navigate();
   updateCartCount();

@@ -546,7 +546,32 @@
       </div>
       <aside class="cart-summary">
         <h2>Resumo do Pedido</h2>
+
+        <div class="checkout-partner-box" id="cartPartnerBox" hidden>
+          <div class="checkout-partner-head">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <strong>Você está comprando para um cliente</strong>
+          </div>
+          <p>Escolha quanto de desconto repassar. O que você não repassar vira sua comissão.</p>
+          <div class="checkout-partner-tiers">
+            <label class="checkout-partner-tier">
+              <input type="radio" name="partnerDesconto" value="0" checked>
+              <span>Sem desconto</span><small>Comissão 10%</small>
+            </label>
+            <label class="checkout-partner-tier">
+              <input type="radio" name="partnerDesconto" value="5">
+              <span>5% de desconto</span><small>Comissão 5%</small>
+            </label>
+            <label class="checkout-partner-tier">
+              <input type="radio" name="partnerDesconto" value="10">
+              <span>10% de desconto</span><small>Sem comissão</small>
+            </label>
+          </div>
+          <p class="checkout-partner-commission">Sua comissão nesta venda: <strong id="cartPartnerComissaoValor">R$ 0,00</strong> (<span id="cartPartnerComissaoPct">10%</span>)</p>
+        </div>
+
         <div class="summary-row"><span>Subtotal</span><span id="cartSubtotal">R$ 0,00</span></div>
+        <div class="summary-row" id="cartDescontoRow" hidden><span>Desconto do parceiro</span><span id="cartDescontoValor">- R$ 0,00</span></div>
         <div class="summary-row"><span>Frete</span><span class="frete-gratis-tag">Grátis (bônus de lançamento)</span></div>
         <div class="summary-row summary-total"><span>Total</span><span id="cartTotal">R$ 0,00</span></div>
         <button class="btn btn-primary btn-block" id="goCheckoutBtn">Finalizar Compra</button>

@@ -1214,6 +1214,14 @@ input, select{ font-family: inherit; }
   font-family: var(--font-body);
   margin-top: 2px;
 }
+.partner-commission-tag{
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 8px; padding: 4px 10px;
+  border-radius: 999px; border: 1px solid var(--border-orange, rgba(247,148,30,0.35));
+  background: rgba(247,148,30,0.08);
+  font-family: var(--font-body); font-size: 0.74rem; font-weight: 400; color: var(--orange-light);
+}
+.partner-commission-tag strong{ color: var(--orange-light); font-weight: 700; }
 .install-included-note{
   display: flex;
   align-items: center;
