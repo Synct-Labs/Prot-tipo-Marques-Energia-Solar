@@ -488,7 +488,7 @@ function psDetailHTML(contract){
         </div>
         <div class="admin-field">
           <label>Data do repasse</label>
-          <input type="date" class="ps-pay-data" required>
+          <input type="date" class="ps-pay-data" value="${new Date().toISOString().slice(0, 10)}" required>
         </div>
         <div class="admin-field">
           <label>Observação (opcional)</label>
