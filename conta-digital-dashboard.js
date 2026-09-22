@@ -59,16 +59,48 @@ function installmentRowHTML(inst, { showBadge }) {
     </div>`;
 }
 
-function renderMeusBoletos(installments) {
-  const el = document.getElementById("meusBoletosList");
-  if (!el) return;
-  if (!installments.length) {
-    el.innerHTML = `<p class="pay-empty-note">Você ainda não tem nenhum boleto de empréstimo com a Marques.</p>`;
+const LOAN_STATUS_BADGE = { ativo: "status-success", quitado: "status-neutral", cancelado: "status-danger" };
+const LOAN_STATUS_LABEL = { ativo: "Ativo", quitado: "Quitado", cancelado: "Cancelado" };
+
+// Cada empréstimo vira um bloco recolhível, igual à Participação nos
+// Lucros: as parcelas ficam presas ao próprio contrato, escondidas até a
+// pessoa clicar em cima dele. Só abre sozinho quando é o único ativo.
+function loanContractBlockHTML(contract, contractInstallments, autoExpand) {
+  const pendentes = contractInstallments.filter(i => i.status === "pendente").sort((a, b) => a.vencimento.localeCompare(b.vencimento));
+  const pagas = contractInstallments.filter(i => i.status === "pago").sort((a, b) => (b.pagoEm || "").localeCompare(a.pagoEm || ""));
+  const ordenadas = [...pendentes, ...pagas];
+
+  return `
+    <div class="ps-contract-block is-${contract.status}">
+      <button type="button" class="ps-contract-toggle" data-toggle-contract aria-expanded="${autoExpand ? "true" : "false"}">
+        <span class="ps-contract-toggle-main">
+          <strong>${contract.titulo}</strong>
+          <span class="account-status-badge ${LOAN_STATUS_BADGE[contract.status] || ""}">${LOAN_STATUS_LABEL[contract.status] || contract.status}</span>
+        </span>
+        <span class="ps-contract-toggle-sub">${formatBRL(contract.valorParcela)} · ${contract.totalParcelas}x${pendentes.length ? ` · ${pendentes.length} pendente${pendentes.length > 1 ? "s" : ""}` : ""}</span>
+        <svg class="icon ps-contract-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="ps-contract-body"${autoExpand ? "" : " hidden"}>
+        <div class="pay-boletos-list">
+          ${ordenadas.length ? ordenadas.map(i => installmentRowHTML(i, { showBadge: true })).join("") : `<p class="pay-empty-note">Nenhuma parcela cadastrada ainda.</p>`}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderMeusBoletos(contracts, installments) {
+  const container = document.getElementById("loanContractsList");
+  if (!container) return;
+  if (!contracts.length) {
+    container.innerHTML = `<div class="pay-card"><p class="pay-empty-note">Você ainda não tem nenhum boleto de empréstimo com a Marques.</p></div>`;
     return;
   }
-  const pendentes = installments.filter(i => i.status === "pendente").sort((a, b) => a.vencimento.localeCompare(b.vencimento));
-  const pagos = installments.filter(i => i.status === "pago").sort((a, b) => (b.pagoEm || "").localeCompare(a.pagoEm || ""));
-  el.innerHTML = [...pendentes, ...pagos].map(i => installmentRowHTML(i, { showBadge: true })).join("");
+  const ativos = contracts.filter(c => c.status === "ativo").length;
+  container.innerHTML = contracts.map(c => {
+    const autoExpand = c.status === "ativo" && ativos === 1;
+    const contractInstallments = installments.filter(i => i.contractId === c.id);
+    return loanContractBlockHTML(c, contractInstallments, autoExpand);
+  }).join("");
 }
 
 function renderProximosBoletos(installments) {
@@ -196,7 +228,10 @@ function renderParticipacaoLucros(contracts, payments) {
   }).join("");
 }
 
-document.getElementById("psContractsList")?.addEventListener("click", (e) => {
+// Um só listener pros dois: "Meus Boletos" e "Participação nos Lucros"
+// usam o mesmo bloco recolhível (.ps-contract-block).
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#loanContractsList, #psContractsList")) return;
   const btn = e.target.closest("[data-toggle-contract]");
   if (!btn) return;
   const body = btn.nextElementSibling;
@@ -271,7 +306,7 @@ async function initMarquesPayRealData() {
   ]);
 
   if (loansRes.ok) {
-    renderMeusBoletos(loansRes.installments);
+    renderMeusBoletos(loansRes.contracts, loansRes.installments);
     renderProximosBoletos(loansRes.installments);
     updateBoletosStat(loansRes.installments);
   }

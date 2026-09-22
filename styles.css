@@ -3804,7 +3804,8 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
   overflow: hidden;
 }
 .ps-contract-block.is-ativo{ border-color: rgba(52,211,153,0.35); }
-.ps-contract-block.is-encerrado{ border-color: var(--border-soft); }
+.ps-contract-block.is-encerrado, .ps-contract-block.is-quitado{ border-color: var(--border-soft); }
+.ps-contract-block.is-cancelado{ border-color: rgba(240,100,90,0.3); }
 .ps-contract-toggle{
   width: 100%; display: flex; align-items: center; gap: 14px;
   padding: 16px 20px; background: var(--surface); border: none;
