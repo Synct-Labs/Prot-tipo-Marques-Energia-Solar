@@ -3733,6 +3733,25 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
 .pay-virtual-card-bottom{ display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
 
 .pay-empty-note{ font-size: 0.8rem; color: var(--muted-2); line-height: 1.5; }
+
+.pay-locked-card{
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: 8px; padding: 40px 24px;
+}
+.pay-locked-icon{
+  width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-2); color: var(--muted); margin-bottom: 6px;
+}
+.pay-locked-icon .icon{ width: 22px; height: 22px; }
+.pay-locked-badge{
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 4px 12px; border-radius: 999px; background: rgba(247,148,30,0.15); color: var(--orange);
+}
+.pay-locked-value{ font-family: var(--font-display); font-size: 1.8rem; color: var(--muted); margin-top: 6px; }
+.pay-locked-label{ font-size: 0.85rem; color: var(--muted-2); }
+.pay-locked-note{ font-size: 0.82rem; color: var(--muted-2); line-height: 1.5; max-width: 420px; margin-top: 10px; }
+.pay-virtual-card.is-locked{ opacity: 0.55; filter: grayscale(0.4); }
 .pay-contract-grid{
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
