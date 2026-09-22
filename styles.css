@@ -3785,6 +3785,23 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
 }
 .pay-contract-grid span{ display: block; font-size: 0.74rem; color: var(--muted-2); margin-bottom: 4px; }
 .pay-contract-grid strong{ font-size: 0.9rem; color: var(--white); font-family: var(--font-display); }
+/* ---- ROI da participação nos lucros ---- */
+.roi-summary{ display: flex; gap: 24px; margin-bottom: 8px; }
+.roi-summary span{ display: block; font-size: 0.8rem; color: var(--muted); }
+.roi-summary strong{ font-family: var(--font-display); font-size: 2.1rem; color: var(--white); display: block; margin: 2px 0 4px; }
+.roi-summary small{ font-size: 0.78rem; color: var(--muted-2); }
+.roi-chart{ display: flex; align-items: flex-end; justify-content: center; gap: 48px; height: 160px; padding-top: 28px; }
+.roi-bar-col{ display: flex; flex-direction: column; align-items: center; gap: 10px; height: 100%; justify-content: flex-end; width: 90px; }
+.roi-bar-value{ font-family: var(--font-display); font-size: 0.85rem; font-weight: 700; color: var(--white); }
+.roi-bar-track{ width: 56px; flex: 1; display: flex; align-items: flex-end; background: var(--surface-2); border-radius: 10px; overflow: hidden; }
+.roi-bar-fill{ width: 100%; height: 0%; border-radius: 10px 10px 0 0; transition: height 0.6s ease; }
+.roi-bar-fill.is-investido{ background: var(--success); }
+.roi-bar-fill.is-ganhos{ background: var(--orange); }
+.roi-bar-label{ font-size: 0.78rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.roi-dot{ width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.roi-dot.is-investido{ background: var(--success); }
+.roi-dot.is-ganhos{ background: var(--orange); }
+
 .pay-comprovante-btn{ background: transparent; border: 1px solid var(--border-orange); color: var(--orange-light); }
 .pay-comprovante-btn:hover{ background: rgba(247,148,30,0.1); }
 .pay-link-row{

@@ -132,17 +132,44 @@ function paymentRowHTML(payment) {
 }
 
 function renderParticipacaoLucros(contracts, payments) {
+  const contrato = contracts.find(c => c.status === "ativo") || contracts[0] || null;
   const contractEl = document.getElementById("psContractCard");
-  if (contractEl) {
-    const contrato = contracts.find(c => c.status === "ativo") || contracts[0] || null;
-    contractEl.innerHTML = contractCardHTML(contrato);
-  }
+  if (contractEl) contractEl.innerHTML = contractCardHTML(contrato);
+  renderRoi(contrato, payments);
   const paymentsEl = document.getElementById("psPaymentsList");
   if (paymentsEl) {
     paymentsEl.innerHTML = payments.length
       ? payments.map(paymentRowHTML).join("")
       : `<p class="pay-empty-note">Nenhum repasse lançado ainda.</p>`;
   }
+}
+
+// ROI = quanto já foi repassado (ganhos) sobre o valor investido, com um
+// gráfico de barras comparando os dois. Só aparece com valor investido
+// cadastrado (contratos antigos, sem esse dado, não têm base pra calcular).
+function renderRoi(contrato, payments) {
+  const card = document.getElementById("psRoiCard");
+  if (!card) return;
+  const investido = contrato && contrato.valorInvestido != null ? Number(contrato.valorInvestido) : null;
+  if (!investido || investido <= 0) { card.hidden = true; return; }
+  card.hidden = false;
+
+  const ganhos = payments
+    .filter(p => p.numeroContrato === contrato.numeroContrato)
+    .reduce((sum, p) => sum + Number(p.valor), 0);
+  const roiPct = (ganhos / investido) * 100;
+
+  document.getElementById("psRoiValor").textContent =
+    `${roiPct.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+  document.getElementById("psRoiDetalhe").textContent =
+    `${formatBRL(ganhos)} recebidos de ${formatBRL(investido)} investidos`;
+
+  const max = Math.max(investido, ganhos, 1);
+  const barPct = (v) => (v > 0 ? Math.max((v / max) * 100, 3) : 0);
+  document.getElementById("roiInvestidoValor").textContent = formatBRL(investido);
+  document.getElementById("roiGanhosValor").textContent = formatBRL(ganhos);
+  document.getElementById("roiInvestidoBar").style.height = `${barPct(investido)}%`;
+  document.getElementById("roiGanhosBar").style.height = `${barPct(ganhos)}%`;
 }
 
 function updatePsStat(payments) {
