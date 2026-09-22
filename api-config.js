@@ -1,12 +1,12 @@
 /* =====================================================================
    CONFIGURAÇÃO DA API
    ---------------------------------------------------------------------
-   Em produção, o site (GitHub Pages) e o backend (Render) ficam em
-   domínios diferentes. Depois de publicar o backend no Render, troque a
-   URL abaixo pela URL do serviço (ex: "https://mes-backend.onrender.com"
-   (sem barra no final).
+   Site e backend rodam juntos no mesmo VPS/domínio (marquespromotora.com,
+   atrás do Nginx) — mesma origem, por isso "" (o site já assume o próprio
+   domínio; é o mesmo valor usado rodando local com "npm start").
 
-   Rodando tudo localmente com "npm start" (front + backend juntos),
-   deixe como está (""), o site já assume o mesmo domínio.
+   Se um dia o backend voltar a ficar num domínio separado do site (ex:
+   GitHub Pages pro site + API em outro host), troque para a URL completa
+   do backend aqui (sem barra no final) e confirme o CORS_ORIGIN dele.
    ===================================================================== */
-window.MES_API_BASE = "https://marques-energia-solar.onrender.com";
+window.MES_API_BASE = "";

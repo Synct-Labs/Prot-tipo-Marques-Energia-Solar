@@ -1,6 +1,6 @@
 # Marques Energia Solar — Site + Loja Online
 
-Site em HTML/CSS/JS puro (sem build) da **Marques Energia Solar** (Mato Grosso): simulação de crédito, catálogo/loja e um backend real (Node + Postgres) com painel de administrador. Em produção roda em três partes — GitHub Pages + Render + Supabase — ver "Deploy em produção" abaixo.
+Site em HTML/CSS/JS puro (sem build) da **Marques Energia Solar** (Mato Grosso): simulação de crédito, catálogo/loja e um backend real (Node + Postgres) com painel de administrador. Em produção, site e backend rodam juntos num VPS próprio (`marquespromotora.com`, atrás de Nginx) — ver "Deploy em produção" abaixo.
 
 > **Status:** infraestrutura de produção no ar (site publicado, backend publicado, banco real). O que ainda falta pra ser 100% real está listado em ["Pendências para produção"](#pendências-para-produção) — o principal é trocar o catálogo de exemplo por produtos/preços reais e decidir a forma de pagamento.
 
@@ -79,7 +79,7 @@ A calculadora de dimensionamento e o configurador de kit vivem os dois em `loja.
 - Pasta `backend/`, servidor HTTP em Node puro (módulos nativos: `http`, `crypto`, `fs`, `path`) + o pacote `pg` para falar com o Postgres.
 - Banco de dados: **Postgres, hospedado no Supabase** (antes era SQLite local — migrado para permitir hospedar o backend fora do GitHub Pages, ver seção abaixo). O schema é criado automaticamente na primeira execução (`CREATE TABLE IF NOT EXISTS...` em `db.js`).
 - Autenticação de administrador: sessão por cookie `HttpOnly` (token opaco guardado no banco, senha com hash `scrypt`). Só existe um administrador por padrão (criado a partir do `.env` na primeira execução); é possível trocar a senha pelo próprio painel.
-- CORS: liberado apenas para as origens listadas em `CORS_ORIGIN` (backend/.env) — necessário porque em produção o site (GitHub Pages) e a API (Render) ficam em domínios diferentes.
+- CORS: liberado apenas para as origens listadas em `CORS_ORIGIN` (backend/.env). Hoje site e API ficam na mesma origem (VPS), então não é estritamente necessário para o próprio site — mas continua valendo pra liberar qualquer outro domínio que também precise chamar a API (ex: uma cópia do front noutro host).
 - Conta de cliente obrigatória: desde a v2, `POST /api/orders` (checkout) e `POST /api/credit-leads` (solicitação de crédito) exigem sessão de cliente logado — sem conta, o site manda pra `conta/entrar.html` antes de deixar comprar ou simular.
 - Verificação em duas etapas (2FA) opcional pra clientes:
   - **Ativação sempre por e-mail** — código de 6 dígitos (`backend/src/mailer.js`, via API da [Resend](https://resend.com); ver "Configurar envio de e-mail" abaixo), pra provar que a pessoa tem acesso à caixa de entrada antes de ligar qualquer coisa.
@@ -97,54 +97,30 @@ A calculadora de dimensionamento e o configurador de kit vivem os dois em `loja.
 
 ### Configurar envio de e-mail (2FA por e-mail)
 
-Sem isso configurado, o 2FA por e-mail continua funcionando em **modo de teste**: o código de verificação aparece no log do servidor (terminal, ou "Logs" no painel do Render) em vez de chegar numa caixa de entrada de verdade. Bom pra testar o fluxo; não serve pra cliente real usar.
+Sem isso configurado, o 2FA por e-mail continua funcionando em **modo de teste**: o código de verificação aparece no log do servidor (terminal, ou no log do processo no VPS) em vez de chegar numa caixa de entrada de verdade. Bom pra testar o fluxo; não serve pra cliente real usar.
 
 1. Crie uma conta grátis em [resend.com](https://resend.com) (o plano grátis cobre 100 e-mails/dia, 3.000/mês).
 2. No painel da Resend, vá em **API Keys** → **Create API Key** e copie a chave gerada.
-3. Em `backend/.env` (local) ou nas variáveis de ambiente do serviço no Render (produção), defina:
+3. Em `backend/.env` (local ou no VPS, produção), defina:
    - `RESEND_API_KEY` — a chave copiada no passo 2.
-   - `MAIL_FROM` — quem aparece como remetente. Pra testar sem configurar mais nada, deixe o padrão `Marques <onboarding@resend.dev>` — mas repare que esse domínio de teste da Resend **só envia pro e-mail com que você criou a conta**. Pra mandar pra qualquer cliente de verdade, verifique um domínio próprio em **Domains** no painel da Resend e troque para algo como `Marques <verificacao@marquesenergiasolar.com.br>`.
-4. Reinicie o backend (local: pare e rode `npm start` de novo; Render: redeploy automático ao salvar a variável).
+   - `MAIL_FROM` — quem aparece como remetente. Pra testar sem configurar mais nada, deixe o padrão `Marques <onboarding@resend.dev>` — mas repare que esse domínio de teste da Resend **só envia pro e-mail com que você criou a conta**. Pra mandar pra qualquer cliente de verdade, verifique um domínio próprio em **Domains** no painel da Resend e troque para algo como `Marques <verificacao@marquespromotora.com>`.
+4. Reinicie o backend pra carregar a variável nova (ver "Deploy em produção" abaixo).
 
-## Deploy em produção (GitHub Pages + Render + Supabase)
+## Deploy em produção (VPS próprio)
 
-O GitHub Pages hospeda só arquivos estáticos — ele não executa este backend Node. Por isso a arquitetura em produção fica dividida em três partes:
+Site e backend rodam juntos, no mesmo processo Node, servidos pelo mesmo domínio (`marquespromotora.com`). O `server.js` já serve os arquivos estáticos do site (via `backend/src/static.js`) além de responder `/api/*` — é o mesmo modo usado em "Como rodar (local)" acima, só que num VPS com domínio e HTTPS de verdade (Nginx fazendo proxy reverso + TLS na frente do processo Node) em vez de `localhost`.
 
 | Peça | Onde roda | O que faz |
 |---|---|---|
-| Site (`index.html`, `loja.html`, `styles.css`, `app.js`, `credito.js`, `admin/`) | **GitHub Pages** (já publicado) | Front-end estático |
-| API (`backend/`) | **Render** (Web Service) | Roda o `server.js`, expõe `/api/*` |
-| Banco de dados | **Supabase** (Postgres) | Guarda admins, sessões, pedidos, solicitações de crédito |
+| Site + API (`server.js`, serve o front estático e `/api/*`) | **VPS próprio**, atrás de Nginx (TLS + proxy reverso pra `marquespromotora.com`) | Front-end + backend, mesma origem |
+| Banco de dados | **Postgres** (confirme se continua no Supabase ou se também migrou pro VPS) | Guarda admins, sessões, pedidos, solicitações de crédito, parceiros, KYC do Marques Pay etc. |
 
-### 1. Criar o banco no Supabase
-1. Crie uma conta e um novo projeto em [supabase.com](https://supabase.com) (escolha uma senha forte para o banco — vai precisar dela na connection string).
-2. Em **Project Settings → Database → Connection string**, copie a opção **Transaction pooler** (porta `6543` — funciona melhor com hosts como o Render do que a conexão direta).
-3. Guarde essa URL — é o `DATABASE_URL`.
+Como **não há deploy automático** (nada de GitHub Actions/Render republicando sozinho): depois de cada `git push` aqui, é preciso entrar no VPS e:
+1. `git pull` na pasta do projeto.
+2. Se algum `package.json` mudou, rodar `npm install` (dentro de `backend/`, se a mudança foi lá).
+3. Reiniciar o processo do backend (pm2, systemd, docker ou o que estiver usando no VPS) pra carregar o código novo — e o `initSchema()` do `db.js` cria sozinho qualquer tabela/coluna nova no Postgres nesse restart.
 
-### 2. Publicar o backend no Render
-1. Crie uma conta em [render.com](https://render.com) e clique em **New → Web Service**, apontando para este repositório do GitHub.
-2. Configure:
-   - **Root Directory**: `backend`
-   - **Build Command**: `npm install`
-   - **Start Command**: `npm start`
-3. Em **Environment**, adicione as variáveis (mesmas do `.env.example`):
-   - `DATABASE_URL` — a connection string do Supabase (passo 1)
-   - `CORS_ORIGIN` — a URL exata do site no GitHub Pages, ex: `https://synct-labs.github.io`
-   - `ADMIN_EMAIL` / `ADMIN_PASSWORD` — login inicial do admin
-   - `NODE_ENV` — `production`
-   - `SESSION_TTL_HOURS` — `168` (opcional, esse é o padrão)
-4. Depois do deploy, copie a URL pública do serviço (algo como `https://mes-backend.onrender.com`).
-
-> No plano gratuito, o Render "dorme" o serviço depois de ~15 min sem uso — a primeira requisição depois disso demora uns 30–50s pra responder (ele está "acordando"). É esperado, não é bug.
-
-### 3. Apontar o site para o backend
-1. Edite `api-config.js` (na raiz do projeto) e troque `window.MES_API_BASE = "";` pela URL do Render do passo 2, ex:
-   ```js
-   window.MES_API_BASE = "https://mes-backend.onrender.com";
-   ```
-2. Faça commit e push — o GitHub Pages republica automaticamente.
-
-Depois disso, checkout, formulário de crédito e login do admin funcionam de verdade também na versão publicada em `github.io`.
+`api-config.js` fica com `window.MES_API_BASE = "";` (mesma origem — não precisa apontar pra outro domínio). Se um dia o site e a API voltarem a ficar em domínios separados, troque esse valor pela URL completa do backend e confirme `CORS_ORIGIN` no `.env` dele.
 
 ## Pendências para produção
 
@@ -172,14 +148,13 @@ Depois disso, checkout, formulário de crédito e login do admin funcionam de ve
 
 ### ⚠️ Decisões/contas que só você pode resolver
 1. **Fornecedor definitivo do catálogo** — painéis, inversores, baterias, controlador, cabos e estrutura já têm preço/ficha técnica reais (referência: Apex Energia Solar, concorrente em Cuiabá-MT) com margem de 30% já aplicada por cima, mas ainda é preço de um concorrente, não o fornecedor que a Marques vai efetivamente fechar contrato. Falta decidir isso e trocar as fotos de estoque por fotos próprias (ver item 9) — e revisar se 30% é a margem certa depois de ter o custo real do fornecedor definitivo. Boa notícia: como o catálogo agora vive no banco (ver "Já resolvido nesta rodada"), ajustar preço/margem/fornecedor não precisa mais de deploy de código — é só editar pelo painel admin.
-2. **Domínio próprio** — hoje o site vive em `synct-labs.github.io` e a API em `onrender.com`. Se quiser `marquesenergiasolar.com.br` (aparece hoje só como texto no rodapé), é preciso registrar o domínio e configurar DNS (CNAME pro GitHub Pages + domínio customizado no Render).
+2. **Domínio próprio** — resolvido para a Promotora: o site já vive em `marquespromotora.com`. Falta decidir se a Marques Energia Solar (`index.html`/`loja.html`) também vai usar um domínio próprio (hoje aparece só como texto no rodapé, ex: `marquesenergiasolar.com.br`) ou continua no mesmo domínio da Promotora.
 3. **Supabase no plano gratuito pausa o projeto após ~7 dias sem nenhuma atividade** — isso derrubaria login do admin e o site inteiro até alguém reativar manualmente no painel do Supabase. Se o site vai ficar "no ar de verdade" recebendo pouco tráfego no início, vale considerar o plano pago (US$25/mês) ou algum ping periódico pra manter o projeto ativo.
-4. **Render no plano gratuito "dorme" após ~15 min sem uso** (primeira requisição demora 30-50s pra responder). Plano pago (~US$7/mês) elimina isso.
-5. **Integração de pagamento real** — ponto comentado em `app.js` (busque "PONTO DE INTEGRAÇÃO DE PAGAMENTO") e no handler de `POST /api/orders` em `backend/src/server.js`. Hoje o fluxo é "pedido registrado → equipe entra em contato pra combinar pagamento", o que é uma opção válida de lançamento — mas se quiser cobrança automática (Pix/cartão/boleto na hora), precisa integrar um gateway (Mercado Pago, PagSeguro, Stripe) e isso é um projeto à parte. Forma de pagamento e parcelas (1 a 10x, no cartão) já são capturadas no checkout e chegam prontas no payload do pedido — é só passar `payload.pagamento`/`payload.parcelas` pra API do gateway escolhido antes de confirmar o pedido.
-6. **Frete está grátis como bônus de lançamento, sem prazo definido pra acabar** — é uma decisão de negócio, não uma limitação técnica; quando quiser cobrar frete de novo, é só trocar o texto fixo "Grátis (bônus de lançamento)" no carrinho/checkout/home por um valor real. Pra isso vai precisar de cálculo de frete de verdade: testamos direto a API dos Correios e não dá — o endpoint público antigo (`CalcPrecoPrazo`) está fora do ar (timeout, descontinuado há anos) e a API nova oficial (`api.correios.com.br`) exige contrato empresarial ativo com "cartão de postagem" que a Marques não tem. Caminho realista: contratar uma API de frete que resolve isso por trás (Melhor Envio, Frenet etc. — cadastro simples, usam o contrato deles com os Correios) e alimentar peso/cubagem real de cada produto — outro projeto à parte.
-7. **E-mail/WhatsApp automático** avisando a equipe quando entra um pedido novo ou uma solicitação de crédito nova — hoje só aparece no painel admin, alguém precisa checar manualmente.
-8. **Backup do banco** — Supabase faz backup automático nos planos pagos; no gratuito, vale exportar o schema/dados periodicamente.
-9. **Fotos dos produtos são de revenda/fabricante, não do fornecedor real que a Marques vai usar.** Hoje os 29 produtos têm foto (buscamos uma por uma, sempre pelo SKU exato quando possível — a fonte de cada uma está comentada ao lado do campo `image` em `app.js`), mas vieram de sites de revenda (NeoSolar, Energia Total, Recarga Solar, Minha Casa Solar, Leroy Merlin) ou do site oficial do fabricante (Embrastec), não são fotos próprias da Marques nem necessariamente do fornecedor que ela vai fechar. Um ponto de atenção: várias vieram da **Energia Total**, que parece ser outra revenda de energia solar em Cuiabá-MT (mesmo DDD 65 do WhatsApp) — ou seja, possivelmente um concorrente local direto, não só uma loja nacional qualquer. Vale (a) confirmar com cada fornecedor/distribuidor se pode usar essas imagens comercialmente ou pedir fotos oficiais, e (b) o pn2 (TSUN 600W), bt2 (Epever lítio) e cb5 (Embrastec string box) usam foto de uma variante/linha próxima, não o SKU exato — está anotado no comentário de cada um.
+4. **Integração de pagamento real** — ponto comentado em `app.js` (busque "PONTO DE INTEGRAÇÃO DE PAGAMENTO") e no handler de `POST /api/orders` em `backend/src/server.js`. Hoje o fluxo é "pedido registrado → equipe entra em contato pra combinar pagamento", o que é uma opção válida de lançamento — mas se quiser cobrança automática (Pix/cartão/boleto na hora), precisa integrar um gateway (Mercado Pago, PagSeguro, Stripe) e isso é um projeto à parte. Forma de pagamento e parcelas (1 a 10x, no cartão) já são capturadas no checkout e chegam prontas no payload do pedido — é só passar `payload.pagamento`/`payload.parcelas` pra API do gateway escolhido antes de confirmar o pedido.
+5. **Frete está grátis como bônus de lançamento, sem prazo definido pra acabar** — é uma decisão de negócio, não uma limitação técnica; quando quiser cobrar frete de novo, é só trocar o texto fixo "Grátis (bônus de lançamento)" no carrinho/checkout/home por um valor real. Pra isso vai precisar de cálculo de frete de verdade: testamos direto a API dos Correios e não dá — o endpoint público antigo (`CalcPrecoPrazo`) está fora do ar (timeout, descontinuado há anos) e a API nova oficial (`api.correios.com.br`) exige contrato empresarial ativo com "cartão de postagem" que a Marques não tem. Caminho realista: contratar uma API de frete que resolve isso por trás (Melhor Envio, Frenet etc. — cadastro simples, usam o contrato deles com os Correios) e alimentar peso/cubagem real de cada produto — outro projeto à parte.
+6. **E-mail/WhatsApp automático** avisando a equipe quando entra um pedido novo ou uma solicitação de crédito nova — hoje só aparece no painel admin, alguém precisa checar manualmente.
+7. **Backup do banco** — Supabase faz backup automático nos planos pagos; no gratuito, vale exportar o schema/dados periodicamente.
+8. **Fotos dos produtos são de revenda/fabricante, não do fornecedor real que a Marques vai usar.** Hoje os 29 produtos têm foto (buscamos uma por uma, sempre pelo SKU exato quando possível — a fonte de cada uma está comentada ao lado do campo `image` em `app.js`), mas vieram de sites de revenda (NeoSolar, Energia Total, Recarga Solar, Minha Casa Solar, Leroy Merlin) ou do site oficial do fabricante (Embrastec), não são fotos próprias da Marques nem necessariamente do fornecedor que ela vai fechar. Um ponto de atenção: várias vieram da **Energia Total**, que parece ser outra revenda de energia solar em Cuiabá-MT (mesmo DDD 65 do WhatsApp) — ou seja, possivelmente um concorrente local direto, não só uma loja nacional qualquer. Vale (a) confirmar com cada fornecedor/distribuidor se pode usar essas imagens comercialmente ou pedir fotos oficiais, e (b) o pn2 (TSUN 600W), bt2 (Epever lítio) e cb5 (Embrastec string box) usam foto de uma variante/linha próxima, não o SKU exato — está anotado no comentário de cada um.
 
 ## Estrutura
 
@@ -188,7 +163,7 @@ index.html         → página "Crédito Solar" (simulação de crédito)
 credito.js         → lógica isolada de index.html (simulação, menu mobile)
 loja.html           → página da loja (SPA por hash: calculadora de kWp, catálogo, comparação, configurador, carrinho, checkout)
 app.js             → dados do catálogo + lógica da loja (calculadora de kWp, catálogo, comparação, carrinho, checkout, configurador)
-api-config.js      → URL do backend em produção (editar depois do deploy no Render — ver "Deploy em produção")
+api-config.js      → MES_API_BASE ("" = mesma origem do site; troque só se front e backend voltarem a ficar em domínios separados)
 styles.css         → sistema de design (cores, tipografia, componentes) — compartilhado pelas duas páginas
 logo-*.png         → logo oficial recortado em diferentes tamanhos
 admin/
