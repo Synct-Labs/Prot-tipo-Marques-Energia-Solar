@@ -118,7 +118,7 @@ const CREDIT_MODES = {
     icon: ICON_CONSORCIO,
     description: "Não é financiamento, é um grupo que se cotiza para comprar sistemas solares, sem juros. Você paga uma taxa de administração e aguarda o sorteio ou dá um lance para ser contemplado antes.",
     fields: [
-      { key:"valor", label:"Valor do sistema (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema, já com instalação. Use o número do seu orçamento." },
+      { key:"valor", label:"Valor do crédito desejado (R$)", type:"number", placeholder:"Ex: 18000", hint:"Quanto você quer contratar de crédito." },
       { key:"parcelas", label:"Número de parcelas", type:"select", options:[60,72,80,100] },
     ],
     calc(values){
