@@ -64,15 +64,15 @@ const LOAN_STATUS_LABEL = { ativo: "Ativo", quitado: "Quitado", cancelado: "Canc
 
 // Cada empréstimo vira um bloco recolhível, igual à Participação nos
 // Lucros: as parcelas ficam presas ao próprio contrato, escondidas até a
-// pessoa clicar em cima dele. Só abre sozinho quando é o único ativo.
-function loanContractBlockHTML(contract, contractInstallments, autoExpand) {
+// pessoa clicar em cima dele. Começa sempre recolhido.
+function loanContractBlockHTML(contract, contractInstallments) {
   const pendentes = contractInstallments.filter(i => i.status === "pendente").sort((a, b) => a.vencimento.localeCompare(b.vencimento));
   const pagas = contractInstallments.filter(i => i.status === "pago").sort((a, b) => (b.pagoEm || "").localeCompare(a.pagoEm || ""));
   const ordenadas = [...pendentes, ...pagas];
 
   return `
     <div class="ps-contract-block is-${contract.status}">
-      <button type="button" class="ps-contract-toggle" data-toggle-contract aria-expanded="${autoExpand ? "true" : "false"}">
+      <button type="button" class="ps-contract-toggle" data-toggle-contract aria-expanded="false">
         <span class="ps-contract-toggle-main">
           <strong>${contract.titulo}</strong>
           <span class="account-status-badge ${LOAN_STATUS_BADGE[contract.status] || ""}">${LOAN_STATUS_LABEL[contract.status] || contract.status}</span>
@@ -80,7 +80,7 @@ function loanContractBlockHTML(contract, contractInstallments, autoExpand) {
         <span class="ps-contract-toggle-sub">${formatBRL(contract.valorParcela)} · ${contract.totalParcelas}x${pendentes.length ? ` · ${pendentes.length} pendente${pendentes.length > 1 ? "s" : ""}` : ""}</span>
         <svg class="icon ps-contract-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
-      <div class="ps-contract-body"${autoExpand ? "" : " hidden"}>
+      <div class="ps-contract-body" hidden>
         <div class="pay-boletos-list">
           ${ordenadas.length ? ordenadas.map(i => installmentRowHTML(i, { showBadge: true })).join("") : `<p class="pay-empty-note">Nenhuma parcela cadastrada ainda.</p>`}
         </div>
@@ -95,11 +95,9 @@ function renderMeusBoletos(contracts, installments) {
     container.innerHTML = `<div class="pay-card"><p class="pay-empty-note">Você ainda não tem nenhum boleto de empréstimo com a Marques.</p></div>`;
     return;
   }
-  const ativos = contracts.filter(c => c.status === "ativo").length;
   container.innerHTML = contracts.map(c => {
-    const autoExpand = c.status === "ativo" && ativos === 1;
     const contractInstallments = installments.filter(i => i.contractId === c.id);
-    return loanContractBlockHTML(c, contractInstallments, autoExpand);
+    return loanContractBlockHTML(c, contractInstallments);
   }).join("");
 }
 
@@ -149,7 +147,7 @@ function paymentRowHTML(payment) {
 // ROI presos a ele — fechar/encerrar o contrato leva tudo junto. Só o
 // contrato ativo abre sozinho, e só quando ele é o único ativo; havendo
 // mais de um ativo (ou nenhum), a pessoa escolhe clicando em cada um.
-function contractBlockHTML(contract, contractPayments, autoExpand) {
+function contractBlockHTML(contract, contractPayments) {
   const ativo = contract.status === "ativo";
   const investido = contract.valorInvestido != null ? Number(contract.valorInvestido) : null;
   const ganhos = contractPayments.reduce((sum, p) => sum + Number(p.valor), 0);
@@ -186,7 +184,7 @@ function contractBlockHTML(contract, contractPayments, autoExpand) {
 
   return `
     <div class="ps-contract-block is-${contract.status}">
-      <button type="button" class="ps-contract-toggle" data-toggle-contract aria-expanded="${autoExpand ? "true" : "false"}">
+      <button type="button" class="ps-contract-toggle" data-toggle-contract aria-expanded="false">
         <span class="ps-contract-toggle-main">
           <strong>${contract.numeroContrato}</strong>
           <span class="account-status-badge ${ativo ? "status-success" : ""}">${ativo ? "Ativo" : "Encerrado"}</span>
@@ -194,7 +192,7 @@ function contractBlockHTML(contract, contractPayments, autoExpand) {
         <span class="ps-contract-toggle-sub">${investido != null ? formatBRL(investido) + " · " : ""}${String(contract.percentual).replace(".", ",")}%</span>
         <svg class="icon ps-contract-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
-      <div class="ps-contract-body"${autoExpand ? "" : " hidden"}>
+      <div class="ps-contract-body" hidden>
         <div class="pay-card" style="margin-bottom:20px;">
           <div class="pay-contract-grid">
             <div><span>Início</span><strong>${formatDateBR(contract.dataInicio)}</strong></div>
@@ -220,11 +218,9 @@ function renderParticipacaoLucros(contracts, payments) {
     container.innerHTML = `<div class="pay-card"><p class="pay-empty-note">Você ainda não tem um contrato de participação nos lucros ativo. Fale com a nossa equipe pra saber mais.</p></div>`;
     return;
   }
-  const ativos = contracts.filter(c => c.status === "ativo").length;
   container.innerHTML = contracts.map(c => {
-    const autoExpand = c.status === "ativo" && ativos === 1;
     const contractPayments = payments.filter(p => p.numeroContrato === c.numeroContrato);
-    return contractBlockHTML(c, contractPayments, autoExpand);
+    return contractBlockHTML(c, contractPayments);
   }).join("");
 }
 
