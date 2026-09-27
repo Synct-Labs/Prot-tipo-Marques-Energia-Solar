@@ -143,7 +143,7 @@ const CREDIT_MODES = {
     icon: ICON_FINANCIAMENTO,
     description: "Linha de banco específica para financiar sistemas de energia solar, com prazos de até 100 meses. Quanto mais longo o prazo, menor a parcela, e menor a diferença pro que você já paga de conta de luz.",
     fields: [
-      { key:"valor", label:"Valor do sistema solar (R$)", type:"number", placeholder:"Ex: 18000", hint:"Valor total do sistema solar, já com instalação. Use o número do seu orçamento." },
+      { key:"valor", label:"Kit solar", type:"kits", hint:"Escolha o kit mais próximo do seu consumo mensal. Consumo diferente ou orçamento personalizado? Fale com um especialista." },
       { key:"parcelas", label:"Número de parcelas", type:"select", options:[24,36,48,60,72,84,96,100] },
     ],
     calc(values){
@@ -165,13 +165,42 @@ const CREDIT_MODES = {
 
 let currentCreditMode = "clt";
 
+// Kits solares vendidos na loja (cat "kits"), carregados do catálogo real
+// pra alimentar o select de "Financiamento Solar" — ver loadKitOptions().
+let kitOptions = [];
+
 function creditFieldHTML(f){
   const hint = f.hint ? `<span class="credit-field-hint">${f.hint}</span>` : "";
+  if(f.type === "kits"){
+    if(!kitOptions.length){
+      return `<label>${f.label}<select name="${f.key}" disabled><option>Carregando kits...</option></select>${hint}</label>`;
+    }
+    const opts = kitOptions.map(k => `<option value="${k.price}">${escConsorcio(k.name)} — ${formatBRL(k.price)}</option>`).join("");
+    return `<label>${f.label}<select name="${f.key}"><option value="">Selecione um kit</option>${opts}</select>${hint}</label>`;
+  }
   if(f.type === "select"){
     const opts = f.options.map(o => `<option value="${o}">${o}x</option>`).join("");
     return `<label>${f.label}<select name="${f.key}">${opts}</select>${hint}</label>`;
   }
   return `<label>${f.label}<input type="number" min="0" name="${f.key}" placeholder="${f.placeholder || ""}">${hint}</label>`;
+}
+
+// Busca o catálogo real e filtra só os kits solares (mesmos vendidos na
+// loja), pra oferecer valores prontos em vez de pedir o valor do sistema
+// digitado à mão. Falha em silêncio: sem catálogo, o select só fica vazio.
+async function loadKitOptions(){
+  try {
+    const res = await fetch(`${API_BASE}/api/products`);
+    const data = await res.json();
+    if(!data.ok) return;
+    kitOptions = data.products
+      .filter(p => p.cat === "kits")
+      .map(p => ({ id: p.id, name: p.name, price: p.promoPrice ?? p.price }))
+      .sort((a, b) => a.price - b.price);
+    if(currentCreditMode === "financiamento") renderCreditSimCard();
+  } catch (err) {
+    console.error("[credito] falha ao carregar kits do catálogo:", err.message);
+  }
 }
 
 function renderCreditModes(){
@@ -700,6 +729,7 @@ $("#mainNav").addEventListener("click", (e) => {
    ====================================================================== */
 renderCreditModes();
 renderCreditSimCard();
+loadKitOptions();
 syncLeadModalidade();
 initScrollReveal();
 restorePendingLeadSim();
