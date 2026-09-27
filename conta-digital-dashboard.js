@@ -41,6 +41,8 @@ function formatDateBR(isoDate) {
 const ICON_LOAN = `<svg class="icon icon-sm" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>`;
 const ICON_PS = `<svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>`;
 const ICON_PAID = `<svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
+const ICON_LOJA = `<svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M20.5 7.3 12 3 3.5 7.3v9.4L12 21l8.5-4.3z"/><path d="m3.5 7.3 8.5 4.3 8.5-4.3"/><line x1="12" y1="11.6" x2="12" y2="21"/></svg>`;
+const ICON_CREDITO = `<svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
 
 function installmentRowHTML(inst, { showBadge }) {
   const pago = inst.status === "pago";
@@ -226,6 +228,47 @@ function renderParticipacaoLucros(contracts, payments) {
   }).join("");
 }
 
+/* ======================================================================
+   MEUS CONTRATOS: pedido da loja + solicitação de crédito com contrato
+   anexado pela equipe Marques (empréstimo/participação já têm seu
+   próprio "Baixar contrato" dentro do bloco do contrato).
+   ====================================================================== */
+function contratoItemHTML(item) {
+  const icon = item.tipo === "pedido" ? ICON_LOJA : ICON_CREDITO;
+  return `
+    <div class="pay-boleto-row">
+      <span class="pay-boleto-icon" style="background:rgba(247,148,30,0.15); color:var(--orange);">${icon}</span>
+      <div class="pay-boleto-body"><strong>${item.numero}</strong><span>${item.tipoLabel} · ${formatDateBR(item.createdAt.slice(0, 10))}</span></div>
+      <a class="pay-boleto-pay-btn pay-comprovante-btn" href="${API_BASE}${item.contratoUrl}" target="_blank" rel="noopener">Baixar contrato</a>
+    </div>`;
+}
+
+async function loadContratos() {
+  const box = document.getElementById("contratosList");
+  if (!box) return;
+  const [ordersRes, leadsRes] = await Promise.all([
+    fetchJSON("/api/customers/me/orders"),
+    fetchJSON("/api/customers/me/credit-leads"),
+  ]);
+  const items = [];
+  if (ordersRes.ok) {
+    ordersRes.orders.filter((o) => o.temContrato).forEach((o) => items.push({
+      tipo: "pedido", numero: o.orderNumber, createdAt: o.createdAt, tipoLabel: "Compra na loja",
+      contratoUrl: `/api/customers/me/orders/${o.id}/contrato`,
+    }));
+  }
+  if (leadsRes.ok) {
+    leadsRes.leads.filter((l) => l.temContrato).forEach((l) => items.push({
+      tipo: "credito", numero: l.leadNumber, createdAt: l.createdAt, tipoLabel: "Solicitação de crédito",
+      contratoUrl: `/api/customers/me/credit-leads/${l.id}/contrato`,
+    }));
+  }
+  items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  box.innerHTML = items.length
+    ? `<div class="pay-card"><div class="pay-boletos-list">${items.map(contratoItemHTML).join("")}</div></div>`
+    : `<div class="pay-card"><p class="pay-empty-note">Nenhum contrato anexado ainda. Assim que a equipe Marques anexar o contrato do seu pedido ou da sua solicitação de crédito, ele aparece aqui.</p></div>`;
+}
+
 // Um só listener pros dois: "Meus Boletos" e "Participação nos Lucros"
 // usam o mesmo bloco recolhível (.ps-contract-block).
 document.addEventListener("click", (e) => {
@@ -313,6 +356,7 @@ async function initMarquesPayRealData() {
     updatePsStat(psRes.payments);
   }
   loadConsorcioPendentes();
+  loadContratos();
 }
 
 /* ======================================================================

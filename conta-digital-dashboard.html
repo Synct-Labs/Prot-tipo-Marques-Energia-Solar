@@ -50,6 +50,10 @@
           <svg class="icon" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
           Participação nos Lucros
         </button>
+        <button class="pay-nav-btn" type="button" data-goto="contratos">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="17" x2="15" y2="17"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
+          Meus Contratos
+        </button>
         <button class="pay-nav-btn" type="button" data-goto="pix">
           <svg class="icon" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><circle cx="16" cy="14" r="1"/></svg>
           Pix
@@ -170,6 +174,14 @@
         <div class="pay-main-head"><div><h1>Participação nos Lucros</h1><p>Extrato dos seus contratos de participação nos lucros da Marques. Cada repasse é lançado pela nossa equipe e vem com comprovante.</p></div></div>
 
         <div id="psContractsList">
+          <div class="pay-card"><p class="pay-empty-note">Carregando...</p></div>
+        </div>
+      </div>
+
+      <!-- ---------- MEUS CONTRATOS ---------- -->
+      <div class="pay-panel" data-panel="contratos">
+        <div class="pay-main-head"><div><h1>Meus Contratos</h1><p>Contratos anexados pela equipe Marques — de compras na loja e de solicitações de crédito aprovadas.</p></div></div>
+        <div id="contratosList">
           <div class="pay-card"><p class="pay-empty-note">Carregando...</p></div>
         </div>
       </div>
