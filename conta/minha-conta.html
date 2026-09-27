@@ -64,6 +64,10 @@
           <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
           Solicitações de crédito
         </button>
+        <button class="account-nav-btn" data-tab="contratos" type="button">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="17" x2="15" y2="17"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
+          Meus contratos
+        </button>
         <button class="account-nav-btn" data-tab="senha" type="button">
           <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           Segurança
@@ -125,6 +129,17 @@
           <h2>Minhas solicitações de crédito</h2>
           <p class="account-sub">Solicitações de análise enviadas para a Marques Promotora.</p>
           <div class="account-list" id="leadsList">
+            <div class="account-list-empty">Carregando...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- MEUS CONTRATOS ---- -->
+      <div class="account-panel" data-panel="contratos">
+        <div class="account-card">
+          <h2>Meus contratos</h2>
+          <p class="account-sub">Contratos anexados pela equipe Marques — de compras na loja e de solicitações de crédito aprovadas.</p>
+          <div class="account-list" id="contratosList">
             <div class="account-list-empty">Carregando...</div>
           </div>
         </div>
@@ -255,6 +270,7 @@
 <script src="../api-config.js"></script>
 <script src="conta.js"></script>
 <script>
+const API_BASE = window.MES_API_BASE || "";
 let currentCustomer = null;
 
 function fillPerfilForm(customer) {
@@ -328,6 +344,53 @@ function leadItemHTML(lead) {
         <span class="item-detail">Modalidade: ${modalidade}</span>
       </div>
     </div>`;
+}
+
+function contratoItemHTML(item) {
+  const icon = item.tipo === "pedido"
+    ? `<svg class="icon" viewBox="0 0 24 24"><path d="M20.5 7.3 12 3 3.5 7.3v9.4L12 21l8.5-4.3z"/><path d="m3.5 7.3 8.5 4.3 8.5-4.3"/><line x1="12" y1="11.6" x2="12" y2="21"/></svg>`
+    : `<svg class="icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
+  return `
+    <div class="order-card">
+      <div class="order-card-head">
+        <div class="order-card-icon">${icon}</div>
+        <div class="order-card-head-info">
+          <span class="item-number">${item.numero}</span>
+          <span class="item-date">${CONTA.formatDate(item.createdAt)}</span>
+        </div>
+        <span class="account-status-badge">${item.tipoLabel}</span>
+      </div>
+      <div class="order-card-foot">
+        <a class="btn btn-outline" href="${API_BASE}${item.contratoUrl}" target="_blank" rel="noopener">Baixar contrato</a>
+      </div>
+    </div>`;
+}
+
+async function loadContratos() {
+  const box = document.getElementById("contratosList");
+  const [ordersRes, leadsRes] = await Promise.all([
+    CONTA.apiGet("/api/customers/me/orders"),
+    CONTA.apiGet("/api/customers/me/credit-leads"),
+  ]);
+  const items = [];
+  if (ordersRes.ok) {
+    ordersRes.orders.filter((o) => o.temContrato).forEach((o) => items.push({
+      tipo: "pedido", numero: o.orderNumber, createdAt: o.createdAt, tipoLabel: "Loja",
+      contratoUrl: `/api/customers/me/orders/${o.id}/contrato`,
+    }));
+  }
+  if (leadsRes.ok) {
+    leadsRes.leads.filter((l) => l.temContrato).forEach((l) => items.push({
+      tipo: "credito", numero: l.leadNumber, createdAt: l.createdAt, tipoLabel: "Crédito",
+      contratoUrl: `/api/customers/me/credit-leads/${l.id}/contrato`,
+    }));
+  }
+  items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  if (!items.length) {
+    box.innerHTML = `<div class="account-list-empty">Nenhum contrato anexado ainda. Assim que a equipe Marques anexar o contrato do seu pedido ou da sua solicitação de crédito, ele aparece aqui.</div>`;
+    return;
+  }
+  box.innerHTML = items.map(contratoItemHTML).join("");
 }
 
 async function loadOrders() {
@@ -616,6 +679,7 @@ document.getElementById("twoFaDisableForm").addEventListener("submit", async (e)
   renderTwoFaStatus();
   loadOrders();
   loadLeads();
+  loadContratos();
 })();
 </script>
 </body>

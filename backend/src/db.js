@@ -458,6 +458,15 @@ async function initSchema() {
     ALTER TABLE partner_commissions ADD COLUMN IF NOT EXISTS adesao_id INTEGER UNIQUE REFERENCES consorcio_adesoes(id);
     ALTER TABLE partners ADD COLUMN IF NOT EXISTS comissao_consorcio_pct DOUBLE PRECISION;
 
+    -- Anexo do contrato assinado (PDF/imagem), opcional, pra pedido da loja
+    -- e solicitação de crédito — aparece na aba "Meus Contratos" do cliente.
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS contrato_dados BYTEA;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS contrato_tipo TEXT;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS contrato_nome TEXT;
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS contrato_dados BYTEA;
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS contrato_tipo TEXT;
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS contrato_nome TEXT;
+
     -- Anexo do contrato assinado (PDF/imagem), opcional, pra empréstimo e
     -- participação nos lucros — guardado direto no Postgres, sem storage
     -- externo, mesmo padrão do comprovante de pagamento.

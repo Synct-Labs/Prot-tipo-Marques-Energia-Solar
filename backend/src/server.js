@@ -386,6 +386,29 @@ async function handleApi(req, res, pathname) {
     }
   }
 
+  const leadContratoMatch = pathname.match(/^\/api\/admin\/credit-leads\/(\d+)\/contrato$/);
+  if (leadContratoMatch) {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const id = parseInt(leadContratoMatch[1], 10);
+
+    if (req.method === "GET") {
+      const c = await creditLeads.getContrato(id);
+      if (!c) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+      return sendBinary(res, 200, c.data, c.tipo, c.nome);
+    }
+    if (req.method === "POST") {
+      const body = await parseJSONBody(req, Math.ceil(creditLeads.MAX_CONTRATO_BYTES * 1.4));
+      let contratoBuffer = null;
+      try { contratoBuffer = Buffer.from(String(body.contratoBase64 || ""), "base64"); } catch { contratoBuffer = null; }
+      if (!contratoBuffer || !contratoBuffer.length) return sendJSON(res, 400, { ok: false, error: "Anexe o arquivo do contrato." });
+      if (contratoBuffer.length > creditLeads.MAX_CONTRATO_BYTES) return sendJSON(res, 413, { ok: false, error: "Contrato maior que 8 MB." });
+      const changed = await creditLeads.setContrato(id, { contratoBuffer, contratoTipo: body.contratoTipo, contratoNome: body.contratoNome });
+      if (!changed) return sendJSON(res, 404, { ok: false, error: "Solicitação não encontrada." });
+      return sendJSON(res, 200, { ok: true, lead: await creditLeads.getLeadById(id) });
+    }
+  }
+
   // ---- ADMIN: PEDIDOS (só Energia Solar ou dono) ----
   if (pathname === "/api/admin/orders" && req.method === "GET") {
     const admin = await requireCompanyAccess(req, res, "energia_solar");
@@ -435,6 +458,29 @@ async function handleApi(req, res, pathname) {
         });
       } catch (e) { console.error("[notifications] falha ao avisar cliente do status do pedido:", e.message); }
       return sendJSON(res, 200, { ok: true, order });
+    }
+  }
+
+  const orderContratoMatch = pathname.match(/^\/api\/admin\/orders\/(\d+)\/contrato$/);
+  if (orderContratoMatch) {
+    const admin = await requireCompanyAccess(req, res, "energia_solar");
+    if (!admin) return;
+    const id = parseInt(orderContratoMatch[1], 10);
+
+    if (req.method === "GET") {
+      const c = await orders.getContrato(id);
+      if (!c) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+      return sendBinary(res, 200, c.data, c.tipo, c.nome);
+    }
+    if (req.method === "POST") {
+      const body = await parseJSONBody(req, Math.ceil(orders.MAX_CONTRATO_BYTES * 1.4));
+      let contratoBuffer = null;
+      try { contratoBuffer = Buffer.from(String(body.contratoBase64 || ""), "base64"); } catch { contratoBuffer = null; }
+      if (!contratoBuffer || !contratoBuffer.length) return sendJSON(res, 400, { ok: false, error: "Anexe o arquivo do contrato." });
+      if (contratoBuffer.length > orders.MAX_CONTRATO_BYTES) return sendJSON(res, 413, { ok: false, error: "Contrato maior que 8 MB." });
+      const changed = await orders.setContrato(id, { contratoBuffer, contratoTipo: body.contratoTipo, contratoNome: body.contratoNome });
+      if (!changed) return sendJSON(res, 404, { ok: false, error: "Pedido não encontrado." });
+      return sendJSON(res, 200, { ok: true, order: await orders.getOrderById(id) });
     }
   }
 
@@ -949,10 +995,28 @@ async function handleApi(req, res, pathname) {
     return sendJSON(res, 200, { ok: true, orders: await orders.listOrdersByCustomer(customer.id) });
   }
 
+  const orderContratoClienteMatch = pathname.match(/^\/api\/customers\/me\/orders\/(\d+)\/contrato$/);
+  if (orderContratoClienteMatch && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const c = await orders.getContrato(parseInt(orderContratoClienteMatch[1], 10), customer.id);
+    if (!c) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+    return sendBinary(res, 200, c.data, c.tipo, c.nome);
+  }
+
   if (pathname === "/api/customers/me/credit-leads" && req.method === "GET") {
     const customer = await requireCustomer(req, res);
     if (!customer) return;
     return sendJSON(res, 200, { ok: true, leads: await creditLeads.listLeadsByCustomer(customer.id) });
+  }
+
+  const leadContratoClienteMatch = pathname.match(/^\/api\/customers\/me\/credit-leads\/(\d+)\/contrato$/);
+  if (leadContratoClienteMatch && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const c = await creditLeads.getContrato(parseInt(leadContratoClienteMatch[1], 10), customer.id);
+    if (!c) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+    return sendBinary(res, 200, c.data, c.tipo, c.nome);
   }
 
   // ---- CLIENTE: CONTA MARQUES PAY (conta só existe depois do KYC aprovado) ----

@@ -39,6 +39,8 @@ const REQUIRED_ENDERECO_FIELDS = [
   "endereco_bairro",
 ];
 
+const MAX_CONTRATO_BYTES = 8 * 1024 * 1024; // 8MB é de sobra pra um contrato escaneado
+
 function rowToLead(row) {
   return {
     id: row.id,
@@ -78,6 +80,7 @@ function rowToLead(row) {
       bairro: row.endereco_bairro || "",
       complemento: row.endereco_complemento || "",
     },
+    temContrato: !!row.contrato_dados,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -184,6 +187,28 @@ async function getLeadById(id) {
   return rows[0] ? rowToLead(rows[0]) : null;
 }
 
+async function setContrato(id, { contratoBuffer, contratoTipo, contratoNome }) {
+  const now = new Date().toISOString();
+  const result = await pool.query(
+    "UPDATE credit_leads SET contrato_dados=$1, contrato_tipo=$2, contrato_nome=$3, updated_at=$4 WHERE id=$5",
+    [contratoBuffer, contratoTipo || null, contratoNome || null, now, id]
+  );
+  return result.rowCount > 0;
+}
+
+// customerId != null restringe ao dono da solicitação (uso do cliente);
+// passe null pra pular a checagem (uso do admin).
+async function getContrato(id, customerId = null) {
+  const { rows } = await pool.query(
+    "SELECT customer_id, contrato_dados, contrato_tipo, contrato_nome FROM credit_leads WHERE id = $1",
+    [id]
+  );
+  const row = rows[0];
+  if (!row || !row.contrato_dados) return null;
+  if (customerId !== null && row.customer_id !== customerId) return null;
+  return { data: row.contrato_dados, tipo: row.contrato_tipo, nome: row.contrato_nome };
+}
+
 async function listLeadsByCustomer(customerId) {
   const { rows } = await pool.query(
     "SELECT * FROM credit_leads WHERE customer_id = $1 ORDER BY id DESC",
@@ -216,6 +241,7 @@ async function getLeadStats() {
 
 module.exports = {
   VALID_STATUSES,
+  MAX_CONTRATO_BYTES,
   validateLeadPayload,
   createLead,
   listLeads,
@@ -223,4 +249,6 @@ module.exports = {
   listLeadsByCustomer,
   updateLeadStatus,
   getLeadStats,
+  setContrato,
+  getContrato,
 };

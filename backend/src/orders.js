@@ -11,6 +11,7 @@ const VALID_STATUSES = [
   "entregue",
   "cancelado",
 ];
+const MAX_CONTRATO_BYTES = 8 * 1024 * 1024; // 8MB é de sobra pra um contrato escaneado
 
 function rowToOrder(row) {
   return {
@@ -38,9 +39,32 @@ function rowToOrder(row) {
     itens: JSON.parse(row.itens_json),
     subtotal: row.subtotal,
     total: row.total,
+    temContrato: !!row.contrato_dados,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+async function setContrato(id, { contratoBuffer, contratoTipo, contratoNome }) {
+  const now = new Date().toISOString();
+  const result = await pool.query(
+    "UPDATE orders SET contrato_dados=$1, contrato_tipo=$2, contrato_nome=$3, updated_at=$4 WHERE id=$5",
+    [contratoBuffer, contratoTipo || null, contratoNome || null, now, id]
+  );
+  return result.rowCount > 0;
+}
+
+// customerId != null restringe ao dono do pedido (uso do cliente); passe
+// null pra pular a checagem (uso do admin).
+async function getContrato(id, customerId = null) {
+  const { rows } = await pool.query(
+    "SELECT customer_id, contrato_dados, contrato_tipo, contrato_nome FROM orders WHERE id = $1",
+    [id]
+  );
+  const row = rows[0];
+  if (!row || !row.contrato_dados) return null;
+  if (customerId !== null && row.customer_id !== customerId) return null;
+  return { data: row.contrato_dados, tipo: row.contrato_tipo, nome: row.contrato_nome };
 }
 
 async function createOrder(payload, customerId = null) {
@@ -148,10 +172,13 @@ async function getOrderStats() {
 
 module.exports = {
   VALID_STATUSES,
+  MAX_CONTRATO_BYTES,
   createOrder,
   listOrders,
   getOrderById,
   listOrdersByCustomer,
   updateOrderStatus,
   getOrderStats,
+  setContrato,
+  getContrato,
 };
