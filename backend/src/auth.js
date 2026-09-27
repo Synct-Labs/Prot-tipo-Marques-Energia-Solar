@@ -9,6 +9,7 @@
 const crypto = require("crypto");
 const { pool } = require("./db");
 const config = require("./config");
+const mailer = require("./mailer");
 
 const SESSION_COOKIE_NAME = "mes_admin_session";
 
@@ -40,6 +41,57 @@ function verifyPasswordSafe(password, storedHashOrNull) {
   return storedHashOrNull ? result : false;
 }
 
+/* ======================================================================
+   VERIFICAÇÃO EM DUAS ETAPAS DO ADMIN (obrigatória, sempre por e-mail)
+   ---------------------------------------------------------------------
+   Diferente do 2FA do cliente (opcional, com escolha de método), o do
+   admin é sempre ligado e sempre por e-mail — o painel mexe com dado
+   sensível (aprovação de KYC, comissão, crédito), então não dá pra
+   deixar como opção. Sem passo de "ativar": todo admin já nasce com
+   isso, em toda tentativa de login depois da senha certa.
+   ====================================================================== */
+const pendingAdminLogins = new Map(); // token -> { adminId, expiresAt, emailCode }
+const ADMIN_2FA_TTL_MS = 5 * 60 * 1000;
+
+function generateEmailCode() {
+  return String(crypto.randomInt(0, 1000000)).padStart(6, "0");
+}
+
+async function createPendingAdminLogin(adminId, email) {
+  const token = crypto.randomBytes(24).toString("hex");
+  const emailCode = generateEmailCode();
+  pendingAdminLogins.set(token, { adminId, expiresAt: Date.now() + ADMIN_2FA_TTL_MS, emailCode });
+  await mailer.sendEmail({
+    to: email,
+    subject: "Seu código de login — Painel Marques",
+    text: `Seu código de login é: ${emailCode}\nEle expira em 5 minutos. Se não foi você tentando entrar, ignore este e-mail.`,
+    html: mailer.verificationEmailHTML(emailCode),
+  });
+  return token;
+}
+
+// Não remove no simples "espiar" — só quando o código bate, pra dar pra
+// tentar de novo sem precisar reenviar e-mail a cada erro de digitação.
+function peekPendingAdminLogin(token) {
+  const entry = pendingAdminLogins.get(token);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    pendingAdminLogins.delete(token);
+    return null;
+  }
+  return entry;
+}
+
+function consumePendingAdminLogin(token) {
+  const entry = peekPendingAdminLogin(token);
+  if (entry) pendingAdminLogins.delete(token);
+  return entry;
+}
+
+function verifyAdminLoginCode(pendingEntry, code) {
+  return !!pendingEntry && pendingEntry.emailCode === String(code || "").trim();
+}
+
 /* ---------------------- BOOTSTRAP DO ADMIN ---------------------- */
 async function ensureAdminSeeded() {
   const { rows } = await pool.query("SELECT COUNT(*)::int as c FROM admins");
@@ -69,9 +121,9 @@ async function ensureAdminSeeded() {
 async function createSession(adminId) {
   const token = crypto.randomBytes(32).toString("hex");
   const now = new Date();
-  const expires = new Date(now.getTime() + config.SESSION_TTL_HOURS * 3600 * 1000);
+  const expires = new Date(now.getTime() + config.ADMIN_SESSION_TTL_HOURS * 3600 * 1000);
   await pool.query(
-    "INSERT INTO sessions (token, admin_id, created_at, expires_at) VALUES ($1, $2, $3, $4)",
+    "INSERT INTO sessions (token, admin_id, created_at, expires_at, last_seen_at) VALUES ($1, $2, $3, $4, $3)",
     [token, adminId, now.toISOString(), expires.toISOString()]
   );
   return { token, expiresAt: expires };
@@ -82,22 +134,34 @@ async function destroySession(token) {
   await pool.query("DELETE FROM sessions WHERE token = $1", [token]);
 }
 
+// Timeout por inatividade: além do expires_at absoluto (criação da
+// sessão), a sessão de admin também some se ficar N minutos sem uso —
+// ver ADMIN_IDLE_TIMEOUT_MINUTES em config.js.
 async function getAdminBySession(token) {
   if (!token) return null;
   const { rows } = await pool.query(
     `SELECT admins.id as id, admins.email as email, admins.name as name,
             admins.company as company, admins.role as role,
-            sessions.expires_at as expires_at
+            sessions.expires_at as expires_at, sessions.last_seen_at as last_seen_at,
+            sessions.created_at as created_at
      FROM sessions JOIN admins ON admins.id = sessions.admin_id
      WHERE sessions.token = $1`,
     [token]
   );
   const row = rows[0];
   if (!row) return null;
-  if (new Date(row.expires_at).getTime() < Date.now()) {
+  const now = Date.now();
+  if (new Date(row.expires_at).getTime() < now) {
     await destroySession(token);
     return null;
   }
+  const lastSeen = new Date(row.last_seen_at || row.created_at).getTime();
+  if (now - lastSeen > config.ADMIN_IDLE_TIMEOUT_MINUTES * 60 * 1000) {
+    await destroySession(token);
+    return null;
+  }
+  // Não bloqueia a resposta por causa disso — só marca "visto agora".
+  pool.query("UPDATE sessions SET last_seen_at = $1 WHERE token = $2", [new Date(now).toISOString(), token]).catch(() => {});
   return { id: row.id, email: row.email, name: row.name, company: row.company, role: row.role };
 }
 
@@ -245,6 +309,10 @@ module.exports = {
   hashPassword,
   verifyPassword,
   verifyPasswordSafe,
+  createPendingAdminLogin,
+  peekPendingAdminLogin,
+  consumePendingAdminLogin,
+  verifyAdminLoginCode,
   ensureAdminSeeded,
   createSession,
   destroySession,

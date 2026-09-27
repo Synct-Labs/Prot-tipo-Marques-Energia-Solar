@@ -45,10 +45,13 @@ async function initSchema() {
     );
 
     CREATE TABLE IF NOT EXISTS sessions (
-      token       TEXT PRIMARY KEY,
-      admin_id    INTEGER NOT NULL REFERENCES admins(id),
-      created_at  TEXT NOT NULL,
-      expires_at  TEXT NOT NULL
+      token        TEXT PRIMARY KEY,
+      admin_id     INTEGER NOT NULL REFERENCES admins(id),
+      created_at   TEXT NOT NULL,
+      expires_at   TEXT NOT NULL,
+      -- Atualizado a cada requisição autenticada — usado pra derrubar a
+      -- sessão por inatividade (timeout), separado do expires_at absoluto.
+      last_seen_at TEXT
     );
 
     CREATE TABLE IF NOT EXISTS customers (
@@ -476,6 +479,23 @@ async function initSchema() {
     ALTER TABLE profit_share_contracts ADD COLUMN IF NOT EXISTS contrato_dados BYTEA;
     ALTER TABLE profit_share_contracts ADD COLUMN IF NOT EXISTS contrato_tipo TEXT;
     ALTER TABLE profit_share_contracts ADD COLUMN IF NOT EXISTS contrato_nome TEXT;
+
+    -- Saldo do Marques Pay: por enquanto é lançado manualmente pelo admin
+    -- (representativo, até a integração de verdade com o banco parceiro
+    -- ficar pronta) — mesmo espírito de ledger dos repasses de participação
+    -- nos lucros: soma dos lançamentos, nunca um número solto editável.
+    CREATE TABLE IF NOT EXISTS pay_balance_entries (
+      id          SERIAL PRIMARY KEY,
+      account_id  INTEGER NOT NULL REFERENCES pay_accounts(id),
+      valor       DOUBLE PRECISION NOT NULL,
+      descricao   TEXT NOT NULL,
+      autor       TEXT NOT NULL,
+      created_at  TEXT NOT NULL
+    );
+
+    -- Verificação em duas etapas obrigatória do admin: sessão derruba se
+    -- ficar inativa (ver ADMIN_IDLE_TIMEOUT_MINUTES em config.js).
+    ALTER TABLE sessions ADD COLUMN IF NOT EXISTS last_seen_at TEXT;
 
     -- E-mails do dono/equipe que recebem aviso de evento novo (pedido,
     -- solicitação de crédito, solicitação de análise de conta Marques Pay).

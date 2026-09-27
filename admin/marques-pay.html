@@ -38,6 +38,7 @@
       <button type="button" class="admin-subtab active" data-subtab="emprestimos">Empréstimos</button>
       <button type="button" class="admin-subtab" data-subtab="participacao">Participação nos Lucros</button>
       <button type="button" class="admin-subtab" data-subtab="contas">Contas (KYC)</button>
+      <button type="button" class="admin-subtab" data-subtab="saldo">Saldo</button>
     </div>
 
     <!-- ========================= EMPRÉSTIMOS ========================= -->
@@ -197,6 +198,61 @@
       <div id="kycList"></div>
     </div>
 
+    <!-- ========================= SALDO (lançamento manual, representativo) ========================= -->
+    <div class="admin-subpanel" data-subpanel="saldo">
+
+      <div class="admin-toolbar">
+        <h2 style="font-size:1.15rem;">Saldo das contas Marques Pay</h2>
+        <div class="admin-toolbar-filters">
+          <button class="admin-btn admin-btn-ghost" id="newBalanceBtn">+ Lançar saldo</button>
+        </div>
+      </div>
+
+      <p class="admin-note" style="margin:0 0 16px;">Sem integração bancária de verdade ainda: o saldo é lançado manualmente pelo admin e serve como representação enquanto a integração com o banco parceiro não fica pronta.</p>
+
+      <div class="admin-table-wrap" id="newBalanceCard" style="display:none; padding:22px; margin-bottom:20px;">
+        <div class="admin-error" id="newBalanceError"></div>
+        <form id="newBalanceForm">
+          <div class="admin-field admin-customer-picker">
+            <label for="nbCustomerSearch">Cliente (nome ou e-mail)</label>
+            <input type="text" id="nbCustomerSearch" autocomplete="off" required placeholder="Digite pra buscar...">
+            <div class="admin-customer-results" id="nbCustomerResults"></div>
+            <p class="admin-customer-picked" id="nbCustomerPicked"></p>
+            <input type="hidden" id="nbCustomerId">
+          </div>
+          <div class="admin-field">
+            <label for="nbValor">Valor (R$) — use negativo pra debitar</label>
+            <input type="number" id="nbValor" required step="0.01" placeholder="150.00">
+          </div>
+          <div class="admin-field">
+            <label for="nbDescricao">Descrição</label>
+            <input type="text" id="nbDescricao" required placeholder="Ex: Depósito recebido via PIX">
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button type="submit" class="admin-btn" id="newBalanceSubmitBtn" style="width:auto;">Lançar</button>
+            <button type="button" class="admin-btn admin-btn-ghost" id="cancelNewBalanceBtn">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Valor</th>
+              <th>Descrição</th>
+              <th>Lançado por</th>
+              <th>Data</th>
+            </tr>
+          </thead>
+          <tbody id="balanceEntriesTableBody">
+            <tr><td colspan="5" class="admin-loading">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </main>
 
@@ -275,6 +331,12 @@ attachCustomerPicker(
   document.getElementById("npCustomerResults"),
   document.getElementById("npCustomerId"),
   document.getElementById("npCustomerPicked")
+);
+attachCustomerPicker(
+  document.getElementById("nbCustomerSearch"),
+  document.getElementById("nbCustomerResults"),
+  document.getElementById("nbCustomerId"),
+  document.getElementById("nbCustomerPicked")
 );
 
 /* ========================================================================
@@ -727,6 +789,75 @@ document.getElementById("psContractsTableBody").addEventListener("change", async
   applyPsFilters();
 });
 
+/* ========================================================================
+   SALDO (lançamento manual, representativo)
+   ======================================================================== */
+function renderBalanceEntries(list){
+  const tbody = document.getElementById("balanceEntriesTableBody");
+  if(list.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">Nenhum lançamento de saldo ainda.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(e => `
+    <tr>
+      <td data-label="Cliente">${e.customer.nome}</td>
+      <td data-label="Valor">${brlMoney(e.valor)}</td>
+      <td data-label="Descrição">${e.descricao}</td>
+      <td data-label="Lançado por">${e.autor}</td>
+      <td data-label="Data">${MES.formatDate(e.createdAt)}</td>
+    </tr>`).join("");
+}
+
+async function loadBalanceEntries(){
+  document.getElementById("balanceEntriesTableBody").innerHTML = `<tr><td colspan="5" class="admin-loading">Carregando...</td></tr>`;
+  const res = await MES.apiGet("/api/admin/pay/balance-entries");
+  if(!res.ok){ MES.showToast(res.error || "Erro ao carregar lançamentos."); return; }
+  renderBalanceEntries(res.entries);
+}
+
+document.getElementById("newBalanceBtn").addEventListener("click", () => document.getElementById("newBalanceCard").style.display = "block");
+document.getElementById("cancelNewBalanceBtn").addEventListener("click", () => {
+  document.getElementById("newBalanceCard").style.display = "none";
+  document.getElementById("newBalanceForm").reset();
+  document.getElementById("nbCustomerPicked").classList.remove("show");
+});
+
+document.getElementById("newBalanceForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("newBalanceError");
+  const btn = document.getElementById("newBalanceSubmitBtn");
+  errorBox.classList.remove("show");
+
+  const customerId = document.getElementById("nbCustomerId").value;
+  if(!customerId){
+    errorBox.textContent = "Busque e selecione o cliente na lista.";
+    errorBox.classList.add("show");
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = "Lançando...";
+  try{
+    const payload = {
+      customerId: Number(customerId),
+      valor: Number(document.getElementById("nbValor").value),
+      descricao: document.getElementById("nbDescricao").value.trim(),
+    };
+    const res = await MES.apiPost("/api/admin/pay/balance-entries", payload);
+    if(!res.ok){
+      errorBox.textContent = res.error || "Não foi possível lançar o saldo.";
+      errorBox.classList.add("show");
+      return;
+    }
+    document.getElementById("newBalanceForm").reset();
+    document.getElementById("newBalanceCard").style.display = "none";
+    document.getElementById("nbCustomerPicked").classList.remove("show");
+    MES.showToast("Saldo lançado.");
+    loadBalanceEntries();
+  } finally {
+    btn.disabled = false; btn.textContent = "Lançar";
+  }
+});
+
 /* ---------------------- CONTAS (KYC) ---------------------- */
 const KYC_STATUS = { em_analise: "Em análise", aprovado: "Aprovada", reprovado: "Reprovada" };
 const DOC_NAMES = { doc_frente: "Documento (frente)", doc_verso: "Documento (verso)", selfie: "Selfie com documento", comprovante_endereco: "Comprovante de endereço" };
@@ -819,7 +950,7 @@ document.getElementById("kycRefreshBtn").addEventListener("click", loadKyc);
 async function init(){
   const admin = await MES.requireAuth("promotora");
   if(!admin) return;
-  await Promise.all([loadLoanContracts(), loadPsContracts(), loadKyc()]);
+  await Promise.all([loadLoanContracts(), loadPsContracts(), loadKyc(), loadBalanceEntries()]);
 }
 
 document.getElementById("logoutBtn").addEventListener("click", () => MES.logout());

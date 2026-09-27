@@ -21,6 +21,7 @@ const profitShare = require("./profitShare");
 const products = require("./products");
 const payAccounts = require("./payAccounts");
 const payKyc = require("./payKyc");
+const payBalance = require("./payBalance");
 const partners = require("./partners");
 const consorcio = require("./consorcio");
 const notifications = require("./notifications");
@@ -195,20 +196,44 @@ async function handleApi(req, res, pathname) {
     }
 
     auth.clearAttempts(ip);
+    // Verificação em duas etapas é obrigatória pro admin: senha certa não
+    // fecha o login sozinha, sempre pede o código mandado por e-mail antes
+    // de abrir sessão (painel mexe com KYC, comissão e crédito).
+    const pendingToken = await auth.createPendingAdminLogin(record.id, record.email);
+    return sendJSON(res, 200, { ok: true, requires2FA: true, pendingToken });
+  }
+
+  if (pathname === "/api/auth/login/2fa" && req.method === "POST") {
+    if (auth.isRateLimited(ip)) {
+      return sendJSON(res, 429, { ok: false, error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." });
+    }
+    const body = await parseJSONBody(req);
+    const pendingToken = String(body.pendingToken || "");
+    const pending = auth.peekPendingAdminLogin(pendingToken);
+    if (!pending) {
+      return sendJSON(res, 401, { ok: false, error: "Sessão de verificação expirada. Faça login novamente.", expired: true });
+    }
+    if (!auth.verifyAdminLoginCode(pending, body.code)) {
+      auth.registerFailedAttempt(ip);
+      return sendJSON(res, 401, { ok: false, error: "Código inválido.", pendingToken });
+    }
+    auth.consumePendingAdminLogin(pendingToken);
+    auth.clearAttempts(ip);
+    const record = await auth.findAdminById(pending.adminId);
+    if (!record) return sendJSON(res, 404, { ok: false, error: "Conta não encontrada." });
     const { token, expiresAt } = await auth.createSession(record.id);
+    try {
+      await mailer.sendEmail({
+        to: record.email,
+        subject: "Novo login no painel Marques",
+        text: `Sua conta entrou no painel agora (IP ${ip}). Se não foi você, troque sua senha.`,
+        html: mailer.adminLoginNotificationHTML({ ip, quando: new Date().toLocaleString("pt-BR") }),
+      });
+    } catch (e) { console.error("[auth] falha ao avisar login do admin:", e.message); }
     return sendJSON(
       res,
       200,
-      {
-        ok: true,
-        admin: {
-          id: record.id,
-          email: record.email,
-          name: record.name,
-          company: record.company,
-          role: record.role,
-        },
-      },
+      { ok: true, admin: { id: record.id, email: record.email, name: record.name, company: record.company, role: record.role } },
       { "Set-Cookie": auth.buildSessionCookie(token, expiresAt) }
     );
   }
@@ -734,6 +759,29 @@ async function handleApi(req, res, pathname) {
     return sendBinary(res, 200, comprovante.data, comprovante.tipo, comprovante.nome);
   }
 
+  // ---- ADMIN: SALDO MARQUES PAY (lançamento manual, representativo até integrar com o banco) ----
+  if (pathname === "/api/admin/pay/balance-entries" && req.method === "GET") {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    return sendJSON(res, 200, { ok: true, entries: await payBalance.listRecentForAdmin() });
+  }
+
+  if (pathname === "/api/admin/pay/balance-entries" && req.method === "POST") {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const body = await parseJSONBody(req);
+    const customerId = parseInt(body.customerId, 10);
+    const valor = Number(body.valor);
+    const descricao = String(body.descricao || "").trim();
+    if (!customerId) return sendJSON(res, 400, { ok: false, error: "Selecione o cliente." });
+    if (!Number.isFinite(valor) || valor === 0) return sendJSON(res, 400, { ok: false, error: "Informe um valor diferente de zero." });
+    if (!descricao) return sendJSON(res, 400, { ok: false, error: "Informe uma descrição pro lançamento." });
+    const account = await payAccounts.getRowByCustomer(customerId);
+    if (!account) return sendJSON(res, 404, { ok: false, error: "Esse cliente ainda não tem conta Marques Pay aberta." });
+    const saldo = await payBalance.addEntry(account.id, { valor, descricao, autor: `admin:${admin.email}` });
+    return sendJSON(res, 201, { ok: true, saldo, entries: await payBalance.listEntriesByAccount(account.id) });
+  }
+
   // ---- CLIENTES: CADASTRO/LOGIN (conta única, loja + crédito) ----
   if (pathname === "/api/customers/register" && req.method === "POST") {
     const body = await parseJSONBody(req);
@@ -790,23 +838,9 @@ async function handleApi(req, res, pathname) {
     const adminRecord = email ? await auth.findAdminByEmail(email) : null;
     if (auth.verifyPasswordSafe(password, adminRecord && adminRecord.password_hash)) {
       auth.clearAttempts(ip);
-      const { token, expiresAt } = await auth.createSession(adminRecord.id);
-      return sendJSON(
-        res,
-        200,
-        {
-          ok: true,
-          kind: "admin",
-          admin: {
-            id: adminRecord.id,
-            email: adminRecord.email,
-            name: adminRecord.name,
-            company: adminRecord.company,
-            role: adminRecord.role,
-          },
-        },
-        { "Set-Cookie": auth.buildSessionCookie(token, expiresAt) }
-      );
+      // Mesma regra do /api/auth/login: 2FA por e-mail é obrigatório pro admin.
+      const pendingToken = await auth.createPendingAdminLogin(adminRecord.id, adminRecord.email);
+      return sendJSON(res, 200, { ok: true, kind: "admin", requires2FA: true, pendingToken });
     }
 
     const customerRecord = email ? await customers.findByEmail(email) : null;
@@ -1151,7 +1185,13 @@ async function handleApi(req, res, pathname) {
   if (pathname === "/api/customers/me/pay-account" && req.method === "GET") {
     const customer = await requireCustomer(req, res);
     if (!customer) return;
-    return sendJSON(res, 200, { ok: true, account: await payAccounts.getByCustomer(customer.id) });
+    const account = await payAccounts.getByCustomer(customer.id);
+    let saldo = 0;
+    if (account) {
+      const row = await payAccounts.getRowByCustomer(customer.id);
+      saldo = await payBalance.getSaldo(row.id);
+    }
+    return sendJSON(res, 200, { ok: true, account, saldo });
   }
 
   if (pathname === "/api/customers/me/pay-kyc" && req.method === "GET") {

@@ -16,6 +16,13 @@ async function getByCustomer(customerId) {
   return toPublic(rows[0]);
 }
 
+// Linha crua (com "id"), usada internamente pra lançar/consultar saldo —
+// toPublic() não expõe o id da conta pro cliente.
+async function getRowByCustomer(customerId) {
+  const { rows } = await pool.query("SELECT * FROM pay_accounts WHERE customer_id = $1", [customerId]);
+  return rows[0] || null;
+}
+
 function generateNumero() {
   const base = String(crypto.randomInt(0, 1000000)).padStart(6, "0");
   const dv = base.split("").reduce((s, d, i) => s + Number(d) * (i + 2), 0) % 11 % 10;
@@ -44,4 +51,4 @@ async function open(customerId) {
   throw new Error("Não foi possível gerar o número da conta.");
 }
 
-module.exports = { getByCustomer, open };
+module.exports = { getByCustomer, getRowByCustomer, open };

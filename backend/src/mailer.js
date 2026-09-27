@@ -74,6 +74,15 @@ function simpleEmailHTML(title, paragraphs, { ctaHref, ctaLabel } = {}) {
     </div>`;
 }
 
+function adminLoginNotificationHTML({ ip, quando }) {
+  return simpleEmailHTML("Novo login no painel Marques", [
+    `Sua conta de administrador acabou de entrar no painel.`,
+    `Quando: <strong>${quando}</strong>.`,
+    `IP: <strong>${ip}</strong>.`,
+    `Se não foi você, troque sua senha agora e avise o dono da conta.`,
+  ]);
+}
+
 /* ---------------------- AVISOS PRO ADMIN (evento novo) ---------------------- */
 function adminNovoPedidoHTML(order) {
   return simpleEmailHTML("Novo pedido na loja", [
@@ -147,4 +156,5 @@ module.exports = {
   sendEmail, verificationEmailHTML,
   adminNovoPedidoHTML, adminNovaSolicitacaoCreditoHTML, adminNovaSolicitacaoContaHTML,
   contaAprovadaHTML, contaRecusadaHTML, pedidoStatusHTML, leadStatusHTML,
+  adminLoginNotificationHTML,
 };

@@ -320,7 +320,7 @@ async function fetchJSON(path) {
 // Sem conta aprovada, o cliente é levado ao cadastro (KYC) / tela de análise.
 async function ensurePayAccount() {
   const res = await fetchJSON("/api/customers/me/pay-account");
-  if (res.ok && res.account) return res.account;
+  if (res.ok && res.account) return res;
   location.replace("conta-digital-abrir.html");
   return new Promise(() => {}); // a página vai ser trocada; não segue carregando o painel
 }
@@ -334,12 +334,26 @@ function applyPayAccount(account, customer) {
   if (el) el.textContent = `Ag ${account.agencia} · Conta ${account.numeroConta}`;
 }
 
+// Saldo lançado manualmente pelo admin (representativo, até a integração de
+// verdade com o parceiro bancário ficar pronta).
+function applySaldo(saldo) {
+  const formatted = formatBRL(saldo || 0);
+  const statValorEl = document.getElementById("statSaldoValor");
+  const statTrendEl = document.getElementById("statSaldoTrend");
+  const pixValorEl = document.getElementById("pixSaldoValor");
+  if (statValorEl) statValorEl.textContent = formatted;
+  if (statTrendEl) statTrendEl.textContent = "Lançado manualmente pelo Marques Pay";
+  if (pixValorEl) pixValorEl.textContent = formatted;
+}
+
 async function initMarquesPayRealData() {
   const customer = window.MES_ACCOUNT ? await window.MES_ACCOUNT.requireLogin() : null;
   if (!customer) return; // requireLogin já redirecionou pra tela de login
 
   applyCustomerGreeting(customer);
-  applyPayAccount(await ensurePayAccount(), customer);
+  const payAccountRes = await ensurePayAccount();
+  applyPayAccount(payAccountRes.account, customer);
+  applySaldo(payAccountRes.saldo);
 
   const [loansRes, psRes] = await Promise.all([
     fetchJSON("/api/customers/me/loans"),

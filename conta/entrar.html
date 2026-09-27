@@ -120,6 +120,7 @@ function adminRedirectTarget(){
 })();
 
 let pendingTwoFaToken = null;
+let pendingKind = "customer"; // "customer" ou "admin" — decide o endpoint de confirmação e o redirect
 
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -139,16 +140,15 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       errorBox.classList.add("show");
       return;
     }
-    if (res.kind === "admin") {
-      window.location.href = adminRedirectTarget();
-      return;
-    }
     if (res.requires2FA) {
+      pendingKind = res.kind === "admin" ? "admin" : "customer";
       pendingTwoFaToken = res.pendingToken;
       document.getElementById("twoFaSubtitle").textContent =
-        res.method === "app"
-          ? "Digite o código de 6 dígitos do seu app autenticador, ou um dos seus códigos de backup."
-          : "Digite o código de 6 dígitos que mandamos pro seu e-mail, ou um dos seus códigos de backup.";
+        pendingKind === "admin"
+          ? "Digite o código de 6 dígitos que mandamos pro seu e-mail."
+          : res.method === "app"
+            ? "Digite o código de 6 dígitos do seu app autenticador, ou um dos seus códigos de backup."
+            : "Digite o código de 6 dígitos que mandamos pro seu e-mail, ou um dos seus códigos de backup.";
       document.getElementById("loginForm").closest(".account-card").hidden = true;
       document.getElementById("twoFaCard").hidden = false;
       document.getElementById("twoFaCode").focus();
@@ -173,9 +173,10 @@ document.getElementById("twoFaForm").addEventListener("submit", async (e) => {
   btn.textContent = "Confirmando...";
 
   const code = document.getElementById("twoFaCode").value.trim();
+  const endpoint = pendingKind === "admin" ? "/api/auth/login/2fa" : "/api/customers/login/2fa";
 
   try {
-    const res = await CONTA.apiPost("/api/customers/login/2fa", { pendingToken: pendingTwoFaToken, code });
+    const res = await CONTA.apiPost(endpoint, { pendingToken: pendingTwoFaToken, code });
     if (!res.ok) {
       if (res.pendingToken) pendingTwoFaToken = res.pendingToken;
       errorBox.textContent = res.error || "Não foi possível confirmar o código.";
@@ -186,7 +187,7 @@ document.getElementById("twoFaForm").addEventListener("submit", async (e) => {
       }
       return;
     }
-    window.location.href = getRedirectTarget();
+    window.location.href = pendingKind === "admin" ? adminRedirectTarget() : getRedirectTarget();
   } catch (err) {
     errorBox.textContent = "Erro de conexão com o servidor. Tente novamente em instantes.";
     errorBox.classList.add("show");
