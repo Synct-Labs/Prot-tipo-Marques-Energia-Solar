@@ -113,7 +113,7 @@ const CREDIT_MODES = {
     },
   },
   consorcio: {
-    label: "Consórcio",
+    label: "Compra Programada",
     tag: "Zero juros",
     icon: ICON_CONSORCIO,
     description: "Não é financiamento, é um grupo que se cotiza para comprar sistemas solares, sem juros. Você paga uma taxa de administração e aguarda o sorteio ou dá um lance para ser contemplado antes.",
