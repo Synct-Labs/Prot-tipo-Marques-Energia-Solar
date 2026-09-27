@@ -23,6 +23,8 @@ const payAccounts = require("./payAccounts");
 const payKyc = require("./payKyc");
 const partners = require("./partners");
 const consorcio = require("./consorcio");
+const notifications = require("./notifications");
+const mailer = require("./mailer");
 const payPartner = require("./payPartner");
 const { parseJSONBody, sendJSON, sendBinary, getClientIP } = require("./http-utils");
 const { serveStatic } = require("./static");
@@ -286,6 +288,14 @@ async function handleApi(req, res, pathname) {
       if (!partner) partner = await partners.resolveAttribution(body.ref, customer.id);
       if (partner) await partners.registerSale({ tipo: "loja", orderId: id, referencia: orderNumber, base: body.total, partner, overridePct });
     } catch (e) { console.error("[parceiros] falha ao registrar comissão do pedido:", e.message); }
+    try {
+      const order = await orders.getOrderById(id);
+      await notifications.notifyAdmins({
+        subject: `Novo pedido ${orderNumber} — Marques Energia Solar`,
+        text: `Pedido ${orderNumber} de ${order.customer.nome}, total ${order.total}.`,
+        html: mailer.adminNovoPedidoHTML(order),
+      });
+    } catch (e) { console.error("[notifications] falha ao avisar admins do pedido novo:", e.message); }
     return sendJSON(res, 201, { ok: true, id, orderNumber });
   }
 
@@ -313,6 +323,14 @@ async function handleApi(req, res, pathname) {
       const partner = await partners.resolveAttribution(body.ref, customer.id);
       if (partner) await partners.registerSale({ tipo: "credito", leadId: id, referencia: leadNumber, base: body.sim_valor_sistema, partner });
     } catch (e) { console.error("[parceiros] falha ao registrar comissão do crédito:", e.message); }
+    try {
+      const lead = await creditLeads.getLeadById(id);
+      await notifications.notifyAdmins({
+        subject: `Nova solicitação de crédito ${leadNumber} — Marques Promotora`,
+        text: `Solicitação ${leadNumber} de ${lead.dadosBasicos.nome}, modalidade ${lead.modalidadeInteresse}.`,
+        html: mailer.adminNovaSolicitacaoCreditoHTML(lead),
+      });
+    } catch (e) { console.error("[notifications] falha ao avisar admins da solicitação nova:", e.message); }
     return sendJSON(res, 201, { ok: true, id, leadNumber });
   }
 
@@ -355,7 +373,16 @@ async function handleApi(req, res, pathname) {
       const changed = await creditLeads.updateLeadStatus(id, body.status);
       if (!changed) return sendJSON(res, 404, { ok: false, error: "Solicitação não encontrada." });
       await partners.syncStatus("lead", id, body.status);
-      return sendJSON(res, 200, { ok: true, lead: await creditLeads.getLeadById(id) });
+      const lead = await creditLeads.getLeadById(id);
+      try {
+        await mailer.sendEmail({
+          to: lead.dadosBasicos.email,
+          subject: `Solicitação ${lead.leadNumber}: ${body.status}`,
+          text: `Sua solicitação de crédito ${lead.leadNumber} agora está: ${body.status}.`,
+          html: mailer.leadStatusHTML(lead, body.status),
+        });
+      } catch (e) { console.error("[notifications] falha ao avisar cliente do status da solicitação:", e.message); }
+      return sendJSON(res, 200, { ok: true, lead });
     }
   }
 
@@ -398,7 +425,16 @@ async function handleApi(req, res, pathname) {
       const changed = await orders.updateOrderStatus(id, body.status);
       if (!changed) return sendJSON(res, 404, { ok: false, error: "Pedido não encontrado." });
       await partners.syncStatus("order", id, body.status);
-      return sendJSON(res, 200, { ok: true, order: await orders.getOrderById(id) });
+      const order = await orders.getOrderById(id);
+      try {
+        await mailer.sendEmail({
+          to: order.customer.email,
+          subject: `Pedido ${order.orderNumber}: ${body.status}`,
+          text: `Seu pedido ${order.orderNumber} agora está: ${body.status}.`,
+          html: mailer.pedidoStatusHTML(order, body.status),
+        });
+      } catch (e) { console.error("[notifications] falha ao avisar cliente do status do pedido:", e.message); }
+      return sendJSON(res, 200, { ok: true, order });
     }
   }
 
@@ -1035,6 +1071,13 @@ async function handleApi(req, res, pathname) {
       });
       // Repasse ao parceiro (no modo "manual" não faz nada). Falha aqui não desfaz o envio.
       try { await payPartner.onKycSubmitted(row.id); } catch (err) { console.error("[payPartner] falha ao enviar KYC:", err.message); }
+      try {
+        await notifications.notifyAdmins({
+          subject: `Nova solicitação de análise de conta — ${customer.nome}`,
+          text: `${customer.nome} (${customer.email}) enviou o cadastro Marques Pay pra análise.`,
+          html: mailer.adminNovaSolicitacaoContaHTML(customer),
+        });
+      } catch (err) { console.error("[notifications] falha ao avisar admins da solicitação de conta:", err.message); }
       return sendJSON(res, 200, { ok: true, kyc: await payKyc.getByCustomer(customer.id) });
     });
   }
@@ -1069,14 +1112,22 @@ async function handleApi(req, res, pathname) {
     if (action === "approve" && req.method === "POST") {
       return kycGuard(async () => {
         await payKyc.approve(id, autor);
-        return sendJSON(res, 200, { ok: true, item: await payKyc.getForAdmin(id) });
+        const item = await payKyc.getForAdmin(id);
+        try {
+          await mailer.sendEmail({ to: item.email, subject: "Sua conta Marques Pay foi aprovada!", text: "Seu cadastro foi aprovado. Sua conta digital já está ativa.", html: mailer.contaAprovadaHTML() });
+        } catch (e) { console.error("[notifications] falha ao avisar cliente da aprovação:", e.message); }
+        return sendJSON(res, 200, { ok: true, item });
       });
     }
     if (action === "reject" && req.method === "POST") {
       const body = await parseJSONBody(req);
       return kycGuard(async () => {
         await payKyc.reject(id, autor, body.motivo);
-        return sendJSON(res, 200, { ok: true, item: await payKyc.getForAdmin(id) });
+        const item = await payKyc.getForAdmin(id);
+        try {
+          await mailer.sendEmail({ to: item.email, subject: "Sua conta Marques Pay não foi aprovada", text: `Seu cadastro não foi aprovado. Motivo: ${body.motivo || "não informado"}.`, html: mailer.contaRecusadaHTML(body.motivo) });
+        } catch (e) { console.error("[notifications] falha ao avisar cliente da recusa:", e.message); }
+        return sendJSON(res, 200, { ok: true, item });
       });
     }
   }
@@ -1203,6 +1254,28 @@ async function handleApi(req, res, pathname) {
         return sendBinary(res, 200, c.data, c.tipo, c.nome);
       }
     }
+  }
+
+  // ---- ADMIN: E-MAILS DE NOTIFICAÇÃO (só o dono) ----
+  if (pathname === "/api/admin/notification-emails" && req.method === "GET") {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+    if (admin.role !== "owner") return sendJSON(res, 403, { ok: false, error: "Apenas o dono pode gerenciar as notificações." });
+    return sendJSON(res, 200, { ok: true, items: await notifications.listEmails() });
+  }
+  if (pathname === "/api/admin/notification-emails" && req.method === "POST") {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+    if (admin.role !== "owner") return sendJSON(res, 403, { ok: false, error: "Apenas o dono pode gerenciar as notificações." });
+    const body = await parseJSONBody(req);
+    return kycGuard(async () => sendJSON(res, 201, { ok: true, items: await notifications.addEmail(body.email) }));
+  }
+  const notificationEmailMatch = pathname.match(/^\/api\/admin\/notification-emails\/(\d+)$/);
+  if (notificationEmailMatch && req.method === "DELETE") {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+    if (admin.role !== "owner") return sendJSON(res, 403, { ok: false, error: "Apenas o dono pode gerenciar as notificações." });
+    return kycGuard(async () => sendJSON(res, 200, { ok: true, items: await notifications.removeEmail(parseInt(notificationEmailMatch[1], 10)) }));
   }
 
   // ---- CLIENTE: MEUS BOLETOS (empréstimos/financiamentos com a Marques) ----

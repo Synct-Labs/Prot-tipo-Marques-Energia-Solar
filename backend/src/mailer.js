@@ -57,4 +57,94 @@ function verificationEmailHTML(code) {
     </div>`;
 }
 
-module.exports = { sendEmail, verificationEmailHTML };
+// Wrapper simples reaproveitado por todos os e-mails de notificação abaixo
+// (aviso pro admin de evento novo, aviso pro cliente de status) — mesma
+// cara do e-mail de verificação, só muda o título e o corpo.
+function simpleEmailHTML(title, paragraphs, { ctaHref, ctaLabel } = {}) {
+  const body = paragraphs.map((p) => `<p style="color:#333; line-height:1.5;">${p}</p>`).join("");
+  const cta = ctaHref
+    ? `<p style="margin-top:20px;"><a href="${ctaHref}" style="background:#f7941e; color:#1a1200; font-weight:bold; text-decoration:none; padding:12px 20px; border-radius:8px; display:inline-block;">${ctaLabel || "Acessar"}</a></p>`
+    : "";
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+      <h2 style="color:#1a1200;">Marques</h2>
+      <h3 style="color:#1a1200;">${title}</h3>
+      ${body}
+      ${cta}
+    </div>`;
+}
+
+/* ---------------------- AVISOS PRO ADMIN (evento novo) ---------------------- */
+function adminNovoPedidoHTML(order) {
+  return simpleEmailHTML("Novo pedido na loja", [
+    `Pedido <strong>${order.orderNumber}</strong> de <strong>${order.customer.nome}</strong>.`,
+    `Total: <strong>${Number(order.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>.`,
+  ], { ctaHref: "https://marquespromotora.com/admin/dashboard.html", ctaLabel: "Ver pedido" });
+}
+
+function adminNovaSolicitacaoCreditoHTML(lead) {
+  return simpleEmailHTML("Nova solicitação de crédito", [
+    `Solicitação <strong>${lead.leadNumber}</strong> de <strong>${lead.dadosBasicos.nome}</strong>.`,
+    `Modalidade: <strong>${lead.modalidadeInteresse || "-"}</strong>.`,
+  ], { ctaHref: "https://marquespromotora.com/admin/credit-leads.html", ctaLabel: "Ver solicitação" });
+}
+
+function adminNovaSolicitacaoContaHTML(customer) {
+  return simpleEmailHTML("Nova solicitação de análise de conta (Marques Pay)", [
+    `<strong>${customer.nome}</strong> (${customer.email}) enviou o cadastro pra análise.`,
+  ], { ctaHref: "https://marquespromotora.com/admin/marques-pay.html", ctaLabel: "Analisar cadastro" });
+}
+
+/* ---------------------- AVISOS PRO CLIENTE ---------------------- */
+function contaAprovadaHTML() {
+  return simpleEmailHTML("Sua conta Marques Pay foi aprovada!", [
+    "Boa notícia: seu cadastro foi analisado e aprovado. Sua conta digital já está ativa.",
+  ], { ctaHref: "https://marquespromotora.com/conta-digital-dashboard.html", ctaLabel: "Acessar minha conta" });
+}
+
+function contaRecusadaHTML(motivo) {
+  return simpleEmailHTML("Sua conta Marques Pay não foi aprovada", [
+    "Seu cadastro foi analisado e, por enquanto, não foi aprovado.",
+    `Motivo: ${motivo || "não informado"}.`,
+    "Você pode corrigir os dados/documentos e enviar de novo quando quiser.",
+  ], { ctaHref: "https://marquespromotora.com/conta-digital-abrir.html", ctaLabel: "Corrigir e reenviar" });
+}
+
+const ORDER_STATUS_LABELS = {
+  novo: "Recebido",
+  confirmado: "Confirmado",
+  em_preparacao: "Em preparação",
+  enviado: "Enviado",
+  entregue: "Entregue",
+  cancelado: "Cancelado",
+};
+
+function pedidoStatusHTML(order, status) {
+  const label = ORDER_STATUS_LABELS[status] || status;
+  const titulo = status === "confirmado" ? "Seu pedido foi confirmado!" : `Seu pedido está: ${label}`;
+  return simpleEmailHTML(titulo, [
+    `O pedido <strong>${order.orderNumber}</strong> agora está com status <strong>${label}</strong>.`,
+  ], { ctaHref: "https://marquespromotora.com/loja.html", ctaLabel: "Ver na loja" });
+}
+
+const LEAD_STATUS_LABELS = {
+  novo: "Recebida",
+  em_analise: "Em análise",
+  contatado: "Contato feito",
+  proposta_enviada: "Proposta enviada",
+  convertido: "Aprovada/Convertida",
+  recusado: "Recusada",
+};
+
+function leadStatusHTML(lead, status) {
+  const label = LEAD_STATUS_LABELS[status] || status;
+  return simpleEmailHTML(`Sua solicitação de crédito: ${label}`, [
+    `A solicitação <strong>${lead.leadNumber}</strong> agora está com status <strong>${label}</strong>.`,
+  ], { ctaHref: "https://marquespromotora.com/index.html", ctaLabel: "Ver simulação" });
+}
+
+module.exports = {
+  sendEmail, verificationEmailHTML,
+  adminNovoPedidoHTML, adminNovaSolicitacaoCreditoHTML, adminNovaSolicitacaoContaHTML,
+  contaAprovadaHTML, contaRecusadaHTML, pedidoStatusHTML, leadStatusHTML,
+};

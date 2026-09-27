@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Notificações | Painel de Administrador | Marques</title>
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<header class="admin-topbar">
+  <div class="admin-brand">
+    <img src="../logo-mark-128.png" alt="Marques">
+    <span>Painel de Administrador</span>
+  </div>
+  <nav class="admin-nav">
+    <a href="dashboard.html" class="admin-nav-link">Pedidos</a>
+    <a href="credit-leads.html" class="admin-nav-link">Solicitações de Crédito</a>
+    <a href="marques-pay.html" class="admin-nav-link">Marques Pay</a>
+    <a href="catalogo.html" class="admin-nav-link">Catálogo</a>
+    <a href="parceiros.html" class="admin-nav-link">Parceiros</a>
+    <a href="compra-programada.html" class="admin-nav-link">Compra Programada</a>
+    <a href="equipe.html" class="admin-nav-link">Equipe</a>
+    <a href="notificacoes.html" class="admin-nav-link active">Notificações</a>
+  </nav>
+  <div class="admin-topbar-right">
+    <span class="admin-user" id="adminUserLabel"></span>
+    <button class="admin-btn admin-btn-ghost" id="logoutBtn">Sair</button>
+  </div>
+</header>
+
+<main class="admin-main">
+  <div class="admin-container">
+
+    <div class="admin-table-wrap" style="padding:22px; max-width:560px; margin-bottom:20px;">
+      <h2 style="font-size:1.15rem; margin-bottom:6px;">E-mails de aviso</h2>
+      <p class="admin-note" style="margin-bottom:14px;">Todo e-mail cadastrado aqui recebe aviso quando entrar um <strong>pedido novo</strong> na loja, uma <strong>solicitação de crédito nova</strong> ou uma <strong>solicitação de análise de conta</strong> (Marques Pay). Pode cadastrar mais de um.</p>
+      <div class="admin-error" id="emailError"></div>
+      <form id="emailForm" style="display:flex; gap:8px; align-items:flex-end;">
+        <div class="admin-field" style="flex:1; margin-bottom:0;">
+          <label for="newEmail">Novo e-mail</label>
+          <input type="email" id="newEmail" required placeholder="voce@marquespromotora.com">
+        </div>
+        <button type="submit" class="admin-btn" style="width:auto;">Adicionar</button>
+      </form>
+    </div>
+
+    <div class="admin-table-wrap" style="max-width:560px; padding:8px 0;">
+      <div id="emailList"></div>
+    </div>
+
+    <div class="admin-table-wrap" style="padding:22px; max-width:560px; margin-top:20px;">
+      <h2 style="font-size:1.15rem; margin-bottom:6px;">Avisos automáticos por e-mail</h2>
+      <p class="admin-note">Além dos avisos acima (pro dono/equipe), o próprio cliente recebe e-mail automaticamente quando: a conta Marques Pay dele é <strong>aprovada</strong> ou <strong>recusada</strong>, e sempre que o <strong>status do pedido</strong> ou da <strong>solicitação de crédito</strong> dele muda (inclusive quando o pedido é <strong>confirmado</strong>). Isso já funciona sozinho, sem precisar configurar nada aqui.</p>
+    </div>
+
+  </div>
+</main>
+
+<script src="../api-config.js"></script>
+<script src="admin.js"></script>
+<script>
+const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function renderEmails(items){
+  const box = document.getElementById("emailList");
+  box.innerHTML = items.length
+    ? items.map(e => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; border-bottom:1px solid var(--border);">
+        <span>${esc(e.email)}</span>
+        <button type="button" class="admin-btn admin-btn-ghost" data-remove="${e.id}">Remover</button>
+      </div>`).join("")
+    : `<p class="admin-empty">Nenhum e-mail cadastrado ainda.</p>`;
+}
+
+async function loadEmails(){
+  const res = await MES.apiGet("/api/admin/notification-emails");
+  if(!res.ok){ document.getElementById("emailList").innerHTML = `<p class="admin-empty">${esc(res.error || "Erro ao carregar.")}</p>`; return; }
+  renderEmails(res.items);
+}
+
+document.getElementById("emailForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const box = document.getElementById("emailError");
+  box.classList.remove("show");
+  const input = document.getElementById("newEmail");
+  const res = await MES.apiPost("/api/admin/notification-emails", { email: input.value });
+  if(!res.ok){ box.textContent = res.error || "Erro ao adicionar."; box.classList.add("show"); return; }
+  input.value = "";
+  renderEmails(res.items);
+  MES.showToast("E-mail adicionado.");
+});
+
+document.getElementById("emailList").addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-remove]");
+  if(!btn) return;
+  const res = await MES.apiDelete(`/api/admin/notification-emails/${btn.dataset.remove}`);
+  if(!res.ok){ MES.showToast(res.error || "Erro ao remover."); return; }
+  renderEmails(res.items);
+  MES.showToast("E-mail removido.");
+});
+
+async function init(){
+  const admin = await MES.requireAuth();
+  if(!admin) return;
+  if(admin.role !== "owner"){ document.querySelector(".admin-container").innerHTML = `<p class="admin-empty">Apenas o dono pode gerenciar as notificações.</p>`; return; }
+  await loadEmails();
+}
+document.getElementById("logoutBtn").addEventListener("click", () => MES.logout());
+init();
+</script>
+</body>
+</html>

@@ -457,6 +457,15 @@ async function initSchema() {
 
     ALTER TABLE partner_commissions ADD COLUMN IF NOT EXISTS adesao_id INTEGER UNIQUE REFERENCES consorcio_adesoes(id);
     ALTER TABLE partners ADD COLUMN IF NOT EXISTS comissao_consorcio_pct DOUBLE PRECISION;
+
+    -- E-mails do dono/equipe que recebem aviso de evento novo (pedido,
+    -- solicitação de crédito, solicitação de análise de conta Marques Pay).
+    -- Configurável pelo próprio admin (aba "Notificações", só dono).
+    CREATE TABLE IF NOT EXISTS notification_emails (
+      id         SERIAL PRIMARY KEY,
+      email      TEXT UNIQUE NOT NULL,
+      created_at TEXT NOT NULL
+    );
   `);
 
   // Garante que sempre exista pelo menos um "owner" (dono/admin geral que
