@@ -15,7 +15,7 @@ const crypto = require("crypto");
 const { pool } = require("./db");
 
 const CONSENT_VERSION = "kyc-2026-09-v1";
-const MAX_DOC_BYTES = 4 * 1024 * 1024;
+const MAX_DOC_BYTES = 15 * 1024 * 1024;
 const DOC_MIMES = ["image/jpeg", "image/png", "application/pdf"];
 const DOC_TIPOS = ["doc_frente", "doc_verso", "selfie", "comprovante_endereco"];
 const DOC_LABELS = {
@@ -190,7 +190,7 @@ async function saveDocument(customerId, tipo, { buffer, mime, nome }) {
   if (!DOC_TIPOS.includes(tipo)) throw badRequest("Tipo de documento inválido.");
   if (!DOC_MIMES.includes(mime)) throw badRequest("Envie JPG, PNG ou PDF.");
   if (!buffer || !buffer.length) throw badRequest("Arquivo vazio.");
-  if (buffer.length > MAX_DOC_BYTES) throw Object.assign(new Error("Arquivo maior que 4 MB."), { statusCode: 413 });
+  if (buffer.length > MAX_DOC_BYTES) throw Object.assign(new Error("Arquivo maior que 15 MB."), { statusCode: 413 });
   const row = await getRowByCustomer(customerId);
   if (!row) throw badRequest("Salve seus dados antes de enviar documentos.");
   if (!["rascunho", "reprovado"].includes(row.status)) {

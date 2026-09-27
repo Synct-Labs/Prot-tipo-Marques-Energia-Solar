@@ -7,7 +7,7 @@
 const API_BASE = window.MES_API_BASE || "";
 const form = document.getElementById("kycForm");
 const $err = document.getElementById("formError");
-const MAX_BYTES = 4 * 1024 * 1024;
+const MAX_BYTES = 15 * 1024 * 1024;
 const DOC_LABEL_OK = "Enviado";
 
 async function api(method, path, body) {
@@ -160,7 +160,7 @@ document.querySelectorAll(".kyc-doc input[type=file]").forEach((input) => {
     const tipo = input.closest(".kyc-doc").dataset.tipo;
     const file = input.files[0];
     if (!file) return;
-    if (file.size > MAX_BYTES) { markDoc(tipo, "Arquivo maior que 4 MB.", true); return; }
+    if (file.size > MAX_BYTES) { markDoc(tipo, "Arquivo maior que 15 MB.", true); return; }
     markDoc(tipo, "Enviando...");
     try {
       await saveDraft(); // o documento precisa de um cadastro já salvo
