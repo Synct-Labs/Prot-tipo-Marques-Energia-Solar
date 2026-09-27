@@ -10,14 +10,15 @@ const { pool } = require("./db");
 
 const CONTRACT_STATUSES = ["ativo", "encerrado"];
 const MAX_COMPROVANTE_BYTES = 4 * 1024 * 1024; // 4MB é de sobra pra um recibo/print
+const MAX_CONTRATO_BYTES = 8 * 1024 * 1024; // 8MB é de sobra pra um contrato escaneado
 
-async function createContract({ customerId, numeroContrato, valorInvestido, percentual, periodicidade, dataInicio }) {
+async function createContract({ customerId, numeroContrato, valorInvestido, percentual, periodicidade, dataInicio, contratoBuffer, contratoTipo, contratoNome }) {
   const now = new Date().toISOString();
   const insert = await pool.query(
     `INSERT INTO profit_share_contracts
-      (customer_id, numero_contrato, valor_investido, percentual, periodicidade, data_inicio, status, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, 'ativo', $7, $7) RETURNING id`,
-    [customerId, numeroContrato, valorInvestido, percentual, periodicidade || "", dataInicio, now]
+      (customer_id, numero_contrato, valor_investido, percentual, periodicidade, data_inicio, status, contrato_dados, contrato_tipo, contrato_nome, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, 'ativo', $7, $8, $9, $10, $10) RETURNING id`,
+    [customerId, numeroContrato, valorInvestido, percentual, periodicidade || "", dataInicio, contratoBuffer || null, contratoTipo || null, contratoNome || null, now]
   );
   return insert.rows[0].id;
 }
@@ -33,11 +34,26 @@ function rowToContract(row) {
     dataInicio: row.data_inicio,
     status: row.status,
     visivelCliente: row.visivel_cliente,
+    temContrato: !!row.contrato_dados,
     createdAt: row.created_at,
     customer: row.customer_nome
       ? { nome: row.customer_nome, email: row.customer_email }
       : undefined,
   };
+}
+
+// Devolve o binário do contrato. customerId != null restringe ao dono do
+// contrato E exige visivel_cliente (uso do cliente); passe null pra pular
+// as duas checagens (uso do admin).
+async function getContrato(contractId, customerId = null) {
+  const { rows } = await pool.query(
+    "SELECT customer_id, visivel_cliente, contrato_dados, contrato_tipo, contrato_nome FROM profit_share_contracts WHERE id = $1",
+    [contractId]
+  );
+  const row = rows[0];
+  if (!row || !row.contrato_dados) return null;
+  if (customerId !== null && (row.customer_id !== customerId || !row.visivel_cliente)) return null;
+  return { data: row.contrato_dados, tipo: row.contrato_tipo, nome: row.contrato_nome };
 }
 
 function rowToPayment(row) {
@@ -167,6 +183,7 @@ async function setVisibility(id, visivel) {
 module.exports = {
   CONTRACT_STATUSES,
   MAX_COMPROVANTE_BYTES,
+  MAX_CONTRATO_BYTES,
   createContract,
   listAllContracts,
   getContractById,
@@ -177,4 +194,5 @@ module.exports = {
   getPaymentComprovante,
   updateContractStatus,
   setVisibility,
+  getContrato,
 };

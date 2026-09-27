@@ -458,6 +458,16 @@ async function initSchema() {
     ALTER TABLE partner_commissions ADD COLUMN IF NOT EXISTS adesao_id INTEGER UNIQUE REFERENCES consorcio_adesoes(id);
     ALTER TABLE partners ADD COLUMN IF NOT EXISTS comissao_consorcio_pct DOUBLE PRECISION;
 
+    -- Anexo do contrato assinado (PDF/imagem), opcional, pra empréstimo e
+    -- participação nos lucros — guardado direto no Postgres, sem storage
+    -- externo, mesmo padrão do comprovante de pagamento.
+    ALTER TABLE loan_contracts ADD COLUMN IF NOT EXISTS contrato_dados BYTEA;
+    ALTER TABLE loan_contracts ADD COLUMN IF NOT EXISTS contrato_tipo TEXT;
+    ALTER TABLE loan_contracts ADD COLUMN IF NOT EXISTS contrato_nome TEXT;
+    ALTER TABLE profit_share_contracts ADD COLUMN IF NOT EXISTS contrato_dados BYTEA;
+    ALTER TABLE profit_share_contracts ADD COLUMN IF NOT EXISTS contrato_tipo TEXT;
+    ALTER TABLE profit_share_contracts ADD COLUMN IF NOT EXISTS contrato_nome TEXT;
+
     -- E-mails do dono/equipe que recebem aviso de evento novo (pedido,
     -- solicitação de crédito, solicitação de análise de conta Marques Pay).
     -- Configurável pelo próprio admin (aba "Notificações", só dono).

@@ -81,6 +81,7 @@ function loanContractBlockHTML(contract, contractInstallments) {
         <svg class="icon ps-contract-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       <div class="ps-contract-body" hidden>
+        ${contract.temContrato ? `<a class="btn btn-outline" style="margin-bottom:14px;" href="${API_BASE}/api/customers/me/loans/${contract.id}/contrato" target="_blank" rel="noopener">Baixar contrato assinado</a>` : ""}
         <div class="pay-boletos-list">
           ${ordenadas.length ? ordenadas.map(i => installmentRowHTML(i, { showBadge: true })).join("") : `<p class="pay-empty-note">Nenhuma parcela cadastrada ainda.</p>`}
         </div>
@@ -199,6 +200,7 @@ function contractBlockHTML(contract, contractPayments) {
             <div><span>Repasse</span><strong>${contract.periodicidade || "-"}</strong></div>
           </div>
           <p class="pay-empty-note" style="margin-top:14px;">Contrato cadastrado e atualizado pela equipe Marques. Alguma dúvida sobre os valores? Fale com a gente pelo WhatsApp.</p>
+          ${contract.temContrato ? `<a class="btn btn-outline" style="margin-top:14px;" href="${API_BASE}/api/customers/me/profit-share/${contract.id}/contrato" target="_blank" rel="noopener">Baixar contrato assinado</a>` : ""}
         </div>
         ${roiHTML}
         <div class="pay-card">

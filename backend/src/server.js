@@ -460,7 +460,7 @@ async function handleApi(req, res, pathname) {
   if (pathname === "/api/admin/loans/contracts" && req.method === "POST") {
     const admin = await requireCompanyAccess(req, res, "promotora");
     if (!admin) return;
-    const body = await parseJSONBody(req);
+    const body = await parseJSONBody(req, Math.ceil(loans.MAX_CONTRATO_BYTES * 1.4));
     const customerId = parseInt(body.customerId, 10);
     const titulo = String(body.titulo || "").trim();
     const valorParcela = Number(body.valorParcela);
@@ -474,7 +474,18 @@ async function handleApi(req, res, pathname) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dataPrimeiraParcela)) return sendJSON(res, 400, { ok: false, error: "Data da primeira parcela inválida." });
     if (!(await customers.findById(customerId))) return sendJSON(res, 404, { ok: false, error: "Cliente não encontrado." });
 
-    const id = await loans.createContract({ customerId, titulo, valorParcela, totalParcelas, dataPrimeiraParcela });
+    let contratoBuffer = null;
+    if (body.contratoBase64) {
+      try { contratoBuffer = Buffer.from(String(body.contratoBase64), "base64"); } catch { contratoBuffer = null; }
+      if (contratoBuffer && contratoBuffer.length > loans.MAX_CONTRATO_BYTES) {
+        return sendJSON(res, 413, { ok: false, error: "Contrato maior que 8 MB." });
+      }
+    }
+
+    const id = await loans.createContract({
+      customerId, titulo, valorParcela, totalParcelas, dataPrimeiraParcela,
+      contratoBuffer, contratoTipo: body.contratoTipo, contratoNome: body.contratoNome,
+    });
     return sendJSON(res, 201, { ok: true, contract: await loans.getContractById(id) });
   }
 
@@ -499,6 +510,15 @@ async function handleApi(req, res, pathname) {
       if (!changed) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
       return sendJSON(res, 200, { ok: true, contract: await loans.getContractById(id) });
     }
+  }
+
+  const loanContratoMatch = pathname.match(/^\/api\/admin\/loans\/contracts\/(\d+)\/contrato$/);
+  if (loanContratoMatch && req.method === "GET") {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const c = await loans.getContrato(parseInt(loanContratoMatch[1], 10));
+    if (!c) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+    return sendBinary(res, 200, c.data, c.tipo, c.nome);
   }
 
   const loanInstallmentIdMatch = pathname.match(/^\/api\/admin\/loans\/installments\/(\d+)$/);
@@ -527,7 +547,7 @@ async function handleApi(req, res, pathname) {
   if (pathname === "/api/admin/profit-share/contracts" && req.method === "POST") {
     const admin = await requireCompanyAccess(req, res, "promotora");
     if (!admin) return;
-    const body = await parseJSONBody(req);
+    const body = await parseJSONBody(req, Math.ceil(profitShare.MAX_CONTRATO_BYTES * 1.4));
     const customerId = parseInt(body.customerId, 10);
     const numeroContrato = String(body.numeroContrato || "").trim();
     const percentual = Number(body.percentual);
@@ -542,7 +562,18 @@ async function handleApi(req, res, pathname) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dataInicio)) return sendJSON(res, 400, { ok: false, error: "Data de início inválida." });
     if (!(await customers.findById(customerId))) return sendJSON(res, 404, { ok: false, error: "Cliente não encontrado." });
 
-    const id = await profitShare.createContract({ customerId, numeroContrato, valorInvestido, percentual, periodicidade, dataInicio });
+    let contratoBuffer = null;
+    if (body.contratoBase64) {
+      try { contratoBuffer = Buffer.from(String(body.contratoBase64), "base64"); } catch { contratoBuffer = null; }
+      if (contratoBuffer && contratoBuffer.length > profitShare.MAX_CONTRATO_BYTES) {
+        return sendJSON(res, 413, { ok: false, error: "Contrato maior que 8 MB." });
+      }
+    }
+
+    const id = await profitShare.createContract({
+      customerId, numeroContrato, valorInvestido, percentual, periodicidade, dataInicio,
+      contratoBuffer, contratoTipo: body.contratoTipo, contratoNome: body.contratoNome,
+    });
     return sendJSON(res, 201, { ok: true, contract: await profitShare.getContractById(id) });
   }
 
@@ -576,6 +607,15 @@ async function handleApi(req, res, pathname) {
       }
       return sendJSON(res, 200, { ok: true, contract: await profitShare.getContractById(id) });
     }
+  }
+
+  const profitShareContratoMatch = pathname.match(/^\/api\/admin\/profit-share\/contracts\/(\d+)\/contrato$/);
+  if (profitShareContratoMatch && req.method === "GET") {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+    const c = await profitShare.getContrato(parseInt(profitShareContratoMatch[1], 10));
+    if (!c) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+    return sendBinary(res, 200, c.data, c.tipo, c.nome);
   }
 
   const profitSharePaymentsMatch = pathname.match(/^\/api\/admin\/profit-share\/contracts\/(\d+)\/payments$/);
@@ -1289,6 +1329,15 @@ async function handleApi(req, res, pathname) {
     });
   }
 
+  const loanContratoClienteMatch = pathname.match(/^\/api\/customers\/me\/loans\/(\d+)\/contrato$/);
+  if (loanContratoClienteMatch && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const c = await loans.getContrato(parseInt(loanContratoClienteMatch[1], 10), customer.id);
+    if (!c) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+    return sendBinary(res, 200, c.data, c.tipo, c.nome);
+  }
+
   // ---- CLIENTE: PARTICIPAÇÃO NOS LUCROS ----
   if (pathname === "/api/customers/me/profit-share" && req.method === "GET") {
     const customer = await requireCustomer(req, res);
@@ -1298,6 +1347,15 @@ async function handleApi(req, res, pathname) {
       contracts: await profitShare.listContractsByCustomer(customer.id),
       payments: await profitShare.listPaymentsByCustomer(customer.id),
     });
+  }
+
+  const profitShareContratoClienteMatch = pathname.match(/^\/api\/customers\/me\/profit-share\/(\d+)\/contrato$/);
+  if (profitShareContratoClienteMatch && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const c = await profitShare.getContrato(parseInt(profitShareContratoClienteMatch[1], 10), customer.id);
+    if (!c) return sendJSON(res, 404, { ok: false, error: "Contrato não encontrado." });
+    return sendBinary(res, 200, c.data, c.tipo, c.nome);
   }
 
   const profitSharePaymentComprovanteMatch = pathname.match(/^\/api\/customers\/me\/profit-share\/payments\/(\d+)\/comprovante$/);

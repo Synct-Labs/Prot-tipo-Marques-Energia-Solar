@@ -78,6 +78,10 @@
             <input type="date" id="nlDataPrimeira" required>
           </div>
           <p class="admin-note" style="margin:0 0 16px;">As demais parcelas são geradas automaticamente, uma por mês, a partir dessa data.</p>
+          <div class="admin-field">
+            <label for="nlContratoFile">Anexar contrato (opcional)</label>
+            <input type="file" id="nlContratoFile" accept="image/*,application/pdf">
+          </div>
           <div style="display:flex; gap:10px;">
             <button type="submit" class="admin-btn" id="newLoanSubmitBtn" style="width:auto;">Criar contrato</button>
             <button type="button" class="admin-btn admin-btn-ghost" id="cancelNewLoanBtn">Cancelar</button>
@@ -144,6 +148,10 @@
           <div class="admin-field">
             <label for="npDataInicio">Início do contrato</label>
             <input type="date" id="npDataInicio" required>
+          </div>
+          <div class="admin-field">
+            <label for="npContratoFile">Anexar contrato (opcional)</label>
+            <input type="file" id="npContratoFile" accept="image/*,application/pdf">
           </div>
           <div style="display:flex; gap:10px;">
             <button type="submit" class="admin-btn" id="newPsSubmitBtn" style="width:auto;">Criar contrato</button>
@@ -302,6 +310,7 @@ function loanDetailHTML(contract){
   return `
     <div class="admin-detail-block" style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
       <div><h4>Status do contrato</h4>${loanContractStatusSelectHTML(contract.status, contract.id)}</div>
+      ${contract.temContrato ? `<div><h4>Contrato anexado</h4><a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/loans/contracts/${contract.id}/contrato" target="_blank" rel="noopener">Baixar contrato</a></div>` : ""}
     </div>
     <div class="admin-detail-block" style="grid-column: 1 / -1;" data-installments-for="${contract.id}">
       <h4>Parcelas</h4>
@@ -372,13 +381,25 @@ document.getElementById("newLoanForm").addEventListener("submit", async (e) => {
 
   btn.disabled = true; btn.textContent = "Criando...";
   try{
-    const res = await MES.apiPost("/api/admin/loans/contracts", {
+    const payload = {
       customerId: Number(customerId),
       titulo: document.getElementById("nlTitulo").value.trim(),
       valorParcela: Number(document.getElementById("nlValorParcela").value),
       totalParcelas: Number(document.getElementById("nlTotalParcelas").value),
       dataPrimeiraParcela: document.getElementById("nlDataPrimeira").value,
-    });
+    };
+    const contratoFile = document.getElementById("nlContratoFile").files[0];
+    if(contratoFile){
+      if(contratoFile.size > 8 * 1024 * 1024){
+        errorBox.textContent = "Contrato muito grande (máximo 8MB).";
+        errorBox.classList.add("show");
+        return;
+      }
+      payload.contratoBase64 = await fileToBase64(contratoFile);
+      payload.contratoTipo = contratoFile.type;
+      payload.contratoNome = contratoFile.name;
+    }
+    const res = await MES.apiPost("/api/admin/loans/contracts", payload);
     if(!res.ok){
       errorBox.textContent = res.error || "Não foi possível criar o contrato.";
       errorBox.classList.add("show");
@@ -486,6 +507,7 @@ function psDetailHTML(contract){
           Visível pro cliente no Marques Pay
         </label>
       </div>
+      ${contract.temContrato ? `<div><h4>Contrato anexado</h4><a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/profit-share/contracts/${contract.id}/contrato" target="_blank" rel="noopener">Baixar contrato</a></div>` : ""}
     </div>
     <div class="admin-detail-block" style="grid-column: 1 / -1;" data-payments-for="${contract.id}">
       <h4>Repasses lançados</h4>
@@ -576,14 +598,26 @@ document.getElementById("newPsForm").addEventListener("submit", async (e) => {
 
   btn.disabled = true; btn.textContent = "Criando...";
   try{
-    const res = await MES.apiPost("/api/admin/profit-share/contracts", {
+    const payload = {
       customerId: Number(customerId),
       numeroContrato: document.getElementById("npNumero").value.trim(),
       valorInvestido: parseMoneyInput(document.getElementById("npValorInvestido").value),
       percentual: Number(document.getElementById("npPercentual").value),
       periodicidade: document.getElementById("npPeriodicidade").value.trim(),
       dataInicio: document.getElementById("npDataInicio").value,
-    });
+    };
+    const contratoFile = document.getElementById("npContratoFile").files[0];
+    if(contratoFile){
+      if(contratoFile.size > 8 * 1024 * 1024){
+        errorBox.textContent = "Contrato muito grande (máximo 8MB).";
+        errorBox.classList.add("show");
+        return;
+      }
+      payload.contratoBase64 = await fileToBase64(contratoFile);
+      payload.contratoTipo = contratoFile.type;
+      payload.contratoNome = contratoFile.name;
+    }
+    const res = await MES.apiPost("/api/admin/profit-share/contracts", payload);
     if(!res.ok){
       errorBox.textContent = res.error || "Não foi possível criar o contrato.";
       errorBox.classList.add("show");

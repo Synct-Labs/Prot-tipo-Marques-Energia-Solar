@@ -11,6 +11,7 @@ const { pool } = require("./db");
 
 const CONTRACT_STATUSES = ["ativo", "quitado", "cancelado"];
 const INSTALLMENT_STATUSES = ["pendente", "pago"];
+const MAX_CONTRATO_BYTES = 8 * 1024 * 1024; // 8MB é de sobra pra um contrato escaneado
 
 function addMonths(dateStr, n) {
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -18,12 +19,12 @@ function addMonths(dateStr, n) {
   return date.toISOString().slice(0, 10);
 }
 
-async function createContract({ customerId, titulo, valorParcela, totalParcelas, dataPrimeiraParcela }) {
+async function createContract({ customerId, titulo, valorParcela, totalParcelas, dataPrimeiraParcela, contratoBuffer, contratoTipo, contratoNome }) {
   const now = new Date().toISOString();
   const insert = await pool.query(
-    `INSERT INTO loan_contracts (customer_id, titulo, valor_parcela, total_parcelas, status, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, 'ativo', $5, $5) RETURNING id`,
-    [customerId, titulo, valorParcela, totalParcelas, now]
+    `INSERT INTO loan_contracts (customer_id, titulo, valor_parcela, total_parcelas, status, contrato_dados, contrato_tipo, contrato_nome, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, 'ativo', $5, $6, $7, $8, $8) RETURNING id`,
+    [customerId, titulo, valorParcela, totalParcelas, contratoBuffer || null, contratoTipo || null, contratoNome || null, now]
   );
   const contractId = insert.rows[0].id;
 
@@ -46,12 +47,26 @@ function rowToContract(row) {
     valorParcela: row.valor_parcela,
     totalParcelas: row.total_parcelas,
     status: row.status,
+    temContrato: !!row.contrato_dados,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     customer: row.customer_nome
       ? { nome: row.customer_nome, email: row.customer_email }
       : undefined,
   };
+}
+
+// Devolve o binário do contrato. customerId != null restringe ao dono do
+// contrato (uso do cliente); passe null pra pular a checagem (uso do admin).
+async function getContrato(contractId, customerId = null) {
+  const { rows } = await pool.query(
+    "SELECT customer_id, contrato_dados, contrato_tipo, contrato_nome FROM loan_contracts WHERE id = $1",
+    [contractId]
+  );
+  const row = rows[0];
+  if (!row || !row.contrato_dados) return null;
+  if (customerId !== null && row.customer_id !== customerId) return null;
+  return { data: row.contrato_dados, tipo: row.contrato_tipo, nome: row.contrato_nome };
 }
 
 function rowToInstallment(row) {
@@ -148,6 +163,7 @@ async function updateContractStatus(id, status) {
 module.exports = {
   CONTRACT_STATUSES,
   INSTALLMENT_STATUSES,
+  MAX_CONTRATO_BYTES,
   createContract,
   listAllContracts,
   getContractById,
@@ -156,4 +172,5 @@ module.exports = {
   listInstallmentsByCustomer,
   updateInstallmentStatus,
   updateContractStatus,
+  getContrato,
 };
