@@ -138,11 +138,27 @@ function leadDetailHTML(lead){
       <p>Renda bruta: ${MES.formatBRL(dp.rendaBruta)}</p>
       <p>Renda líquida: ${MES.formatBRL(dp.rendaLiquida)}</p>
     </div>
+    ${enderecoDetailHTML(lead)}
     <div class="admin-detail-block">
       <h4>Simulação feita pelo cliente</h4>
       ${simulacaoDetailHTML(lead)}
     </div>
   `;
+}
+
+// Só CLT e Financiamento Solar pedem endereço no formulário — nas outras
+// modalidades o objeto vem vazio.
+function enderecoDetailHTML(lead){
+  const end = lead.endereco || {};
+  if(!end.cep && !end.rua) return "";
+  return `
+    <div class="admin-detail-block">
+      <h4>Endereço</h4>
+      <p>${end.rua}, ${end.numero}${end.complemento ? " - " + end.complemento : ""}</p>
+      <p>${end.bairro}</p>
+      <p>${end.cidade} / ${end.estado}</p>
+      <p>CEP ${end.cep}</p>
+    </div>`;
 }
 
 function simulacaoDetailHTML(lead){

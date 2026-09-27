@@ -27,6 +27,18 @@ const REQUIRED_FIELDS = [
   "renda_liquida",
 ];
 
+// Crédito CLT e Financiamento Solar precisam do endereço completo (análise
+// de crédito / instalação do sistema); as outras modalidades não.
+const MODALIDADES_COM_ENDERECO = ["clt", "financiamento"];
+const REQUIRED_ENDERECO_FIELDS = [
+  "endereco_cep",
+  "endereco_cidade",
+  "endereco_estado",
+  "endereco_rua",
+  "endereco_numero",
+  "endereco_bairro",
+];
+
 function rowToLead(row) {
   return {
     id: row.id,
@@ -57,13 +69,25 @@ function rowToLead(row) {
       fgtsDisponivel: row.sim_fgts_disponivel,
       parcelaEstimada: row.sim_parcela_estimada,
     },
+    endereco: {
+      cep: row.endereco_cep || "",
+      cidade: row.endereco_cidade || "",
+      estado: row.endereco_estado || "",
+      rua: row.endereco_rua || "",
+      numero: row.endereco_numero || "",
+      bairro: row.endereco_bairro || "",
+      complemento: row.endereco_complemento || "",
+    },
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
 function validateLeadPayload(payload) {
-  const missing = REQUIRED_FIELDS.filter((f) => {
+  const fields = MODALIDADES_COM_ENDERECO.includes(payload.modalidade_interesse)
+    ? [...REQUIRED_FIELDS, ...REQUIRED_ENDERECO_FIELDS]
+    : REQUIRED_FIELDS;
+  const missing = fields.filter((f) => {
     const v = payload[f];
     return v === undefined || v === null || String(v).trim() === "";
   });
@@ -87,9 +111,10 @@ async function createLead(payload, customerId = null) {
       lead_number, status, customer_id, modalidade_interesse,
       nome, cpf, data_nascimento, estado_civil, telefone, email, cidade_uf,
       profissao, tipo_vinculo, empresa, tempo_trabalho, renda_bruta, renda_liquida,
+      endereco_cep, endereco_cidade, endereco_estado, endereco_rua, endereco_numero, endereco_bairro, endereco_complemento,
       sim_valor_sistema, sim_parcelas, sim_fgts_disponivel, sim_parcela_estimada,
       created_at, updated_at
-    ) VALUES ($1, 'novo', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+    ) VALUES ($1, 'novo', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
     RETURNING id`,
     [
       tempNumber,
@@ -108,6 +133,13 @@ async function createLead(payload, customerId = null) {
       payload.tempo_trabalho,
       Number(payload.renda_bruta),
       Number(payload.renda_liquida),
+      payload.endereco_cep || null,
+      payload.endereco_cidade || null,
+      payload.endereco_estado || null,
+      payload.endereco_rua || null,
+      payload.endereco_numero || null,
+      payload.endereco_bairro || null,
+      payload.endereco_complemento || null,
       numOrNull(payload.sim_valor_sistema),
       payload.sim_parcelas ? parseInt(payload.sim_parcelas, 10) : null,
       numOrNull(payload.sim_fgts_disponivel),

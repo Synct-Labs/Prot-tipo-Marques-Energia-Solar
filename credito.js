@@ -345,7 +345,25 @@ document.addEventListener("click", (e) => {
 function syncLeadModalidade(){
   const select = $("#leadModalidade");
   if(select) select.value = currentCreditMode;
+  updateLeadEnderecoVisibility();
 }
+
+// Crédito CLT e Financiamento Solar precisam do endereço completo (análise
+// de crédito / instalação do sistema); as outras modalidades não.
+const MODALIDADES_COM_ENDERECO = ["clt", "financiamento"];
+
+function updateLeadEnderecoVisibility(){
+  const section = $("#leadEnderecoSection");
+  if(!section) return;
+  const modalidade = $("#leadModalidade")?.value;
+  const precisaEndereco = MODALIDADES_COM_ENDERECO.includes(modalidade);
+  section.hidden = !precisaEndereco;
+  $all("input", section).forEach((el) => {
+    if(el.name !== "endereco_complemento") el.required = precisaEndereco;
+  });
+}
+
+$("#leadModalidade")?.addEventListener("change", updateLeadEnderecoVisibility);
 
 /* Guarda a última simulação feita (modalidade + valores + resultado) pra
    levar junto quando a pessoa preencher e enviar o formulário de solicitação
@@ -522,6 +540,13 @@ $("#creditLeadForm")?.addEventListener("submit", async (e) => {
     tempo_trabalho: formData.get("tempo_trabalho"),
     renda_bruta: formData.get("renda_bruta"),
     renda_liquida: formData.get("renda_liquida"),
+    endereco_cep: formData.get("endereco_cep") || "",
+    endereco_cidade: formData.get("endereco_cidade") || "",
+    endereco_estado: formData.get("endereco_estado") || "",
+    endereco_rua: formData.get("endereco_rua") || "",
+    endereco_numero: formData.get("endereco_numero") || "",
+    endereco_bairro: formData.get("endereco_bairro") || "",
+    endereco_complemento: formData.get("endereco_complemento") || "",
     sim_valor_sistema: lastSimResult?.values.valor || "",
     sim_parcelas: lastSimResult?.values.parcelas || "",
     sim_fgts_disponivel: lastSimResult?.values.fgts || "",
@@ -590,6 +615,67 @@ async function restorePendingConsorcio(){
   renderCreditSimCard();
   await contratarGrupo(parseInt(pendingId, 10));
   $("#creditSimCard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* ---------------------- BUSCA DE CEP (autopreenchimento) ----------------------
+   Mesma ideia do checkout da loja: usa a ViaCEP pra preencher cidade,
+   estado, rua e bairro a partir do CEP. Campos continuam editáveis. */
+async function buscarEnderecoLeadPorCep(rawCep){
+  const cep = String(rawCep || "").replace(/\D/g, "");
+  const statusEl = $("#leadCepStatus");
+
+  if(cep.length !== 8){
+    if(statusEl) statusEl.hidden = true;
+    return;
+  }
+
+  if(statusEl){
+    statusEl.hidden = false;
+    statusEl.className = "field-hint";
+    statusEl.textContent = "Buscando endereço...";
+  }
+
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const data = await res.json();
+
+    if(data.erro){
+      if(statusEl){
+        statusEl.className = "field-hint field-hint-error";
+        statusEl.textContent = "CEP não encontrado. Preencha o endereço manualmente.";
+      }
+      return;
+    }
+
+    const cidadeEl = $("#leadCidade");
+    const estadoEl = $("#leadEstado");
+    const ruaEl = $("#leadRua");
+    const bairroEl = $("#leadBairro");
+    if(cidadeEl) cidadeEl.value = data.localidade || cidadeEl.value;
+    if(estadoEl) estadoEl.value = data.uf || estadoEl.value;
+    if(ruaEl) ruaEl.value = data.logradouro || ruaEl.value;
+    if(bairroEl) bairroEl.value = data.bairro || bairroEl.value;
+
+    if(statusEl){
+      statusEl.className = "field-hint field-hint-ok";
+      statusEl.textContent = "Endereço encontrado. Confira e complete se precisar.";
+    }
+  } catch(err){
+    if(statusEl){
+      statusEl.className = "field-hint field-hint-error";
+      statusEl.textContent = "Não foi possível buscar o CEP agora. Preencha manualmente.";
+    }
+  }
+}
+
+const leadCepInput = $("#leadCep");
+if(leadCepInput){
+  leadCepInput.addEventListener("input", () => {
+    const digits = leadCepInput.value.replace(/\D/g, "").slice(0, 8);
+    leadCepInput.value = digits.length > 5 ? `${digits.slice(0,5)}-${digits.slice(5)}` : digits;
+    if(digits.length === 8) buscarEnderecoLeadPorCep(digits);
+  });
+  leadCepInput.addEventListener("blur", () => buscarEnderecoLeadPorCep(leadCepInput.value));
 }
 
 /* ======================================================================

@@ -263,6 +263,38 @@
           </div>
         </fieldset>
 
+        <fieldset class="form-section" id="leadEnderecoSection" hidden>
+          <legend>
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Endereço
+          </legend>
+          <p class="field-hint">Direto no contracheque ou financiamento do sistema solar precisam do endereço pra análise/instalação.</p>
+          <div class="form-grid">
+            <label>CEP
+              <input type="text" name="endereco_cep" id="leadCep" placeholder="00000-000" inputmode="numeric" maxlength="9">
+              <span class="field-hint" id="leadCepStatus" hidden></span>
+            </label>
+            <label>Cidade
+              <input type="text" name="endereco_cidade" id="leadCidade" placeholder="Sua cidade">
+            </label>
+            <label>Estado
+              <input type="text" name="endereco_estado" id="leadEstado" placeholder="UF" maxlength="2">
+            </label>
+            <label class="col-span-2">Rua / Avenida
+              <input type="text" name="endereco_rua" id="leadRua" placeholder="Nome da rua">
+            </label>
+            <label>Número
+              <input type="text" name="endereco_numero" id="leadNumero" placeholder="123">
+            </label>
+            <label>Bairro
+              <input type="text" name="endereco_bairro" id="leadBairro" placeholder="Bairro">
+            </label>
+            <label class="col-span-2">Complemento (opcional)
+              <input type="text" name="endereco_complemento" id="leadComplemento" placeholder="Apto, bloco, referência...">
+            </label>
+          </div>
+        </fieldset>
+
         <label class="lead-form-consent">
           <input type="checkbox" name="consentimento" required>
           <span>Autorizo o uso dos meus dados para análise de crédito e contato pela Marques Promotora, conforme a <a href="privacidade-credito.html" target="_blank" rel="noopener">Política de Privacidade</a> (LGPD).</span>

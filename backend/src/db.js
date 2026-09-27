@@ -387,6 +387,17 @@ async function initSchema() {
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_fgts_disponivel DOUBLE PRECISION;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_parcela_estimada DOUBLE PRECISION;
 
+    -- Endereço: só é obrigatório no formulário pras modalidades CLT e
+    -- Financiamento Solar (análise de crédito / instalação do sistema),
+    -- mas a coluna fica opcional pra não quebrar leads antigos/outras modalidades.
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS endereco_cep TEXT;
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS endereco_cidade TEXT;
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS endereco_estado TEXT;
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS endereco_rua TEXT;
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS endereco_numero TEXT;
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS endereco_bairro TEXT;
+    ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS endereco_complemento TEXT;
+
     ALTER TABLE admins ADD COLUMN IF NOT EXISTS company TEXT NOT NULL DEFAULT 'ambas';
     ALTER TABLE admins ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'funcionario';
 
