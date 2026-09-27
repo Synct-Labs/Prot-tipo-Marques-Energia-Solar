@@ -334,15 +334,13 @@ function applyPayAccount(account, customer) {
   if (el) el.textContent = `Ag ${account.agencia} · Conta ${account.numeroConta}`;
 }
 
-// Saldo lançado manualmente pelo admin (representativo, até a integração de
-// verdade com o parceiro bancário ficar pronta).
 function applySaldo(saldo) {
   const formatted = formatBRL(saldo || 0);
   const statValorEl = document.getElementById("statSaldoValor");
   const statTrendEl = document.getElementById("statSaldoTrend");
   const pixValorEl = document.getElementById("pixSaldoValor");
   if (statValorEl) statValorEl.textContent = formatted;
-  if (statTrendEl) statTrendEl.textContent = "Lançado manualmente pelo Marques Pay";
+  if (statTrendEl) statTrendEl.textContent = "Disponível na sua conta";
   if (pixValorEl) pixValorEl.textContent = formatted;
 }
 

@@ -2703,16 +2703,6 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
   padding: 0 4px;
 }
 .footer-admin-link:hover{ opacity: 0.9; color: var(--orange-light); }
-.prototype-tag{
-  margin-top: 10px;
-  display: inline-block;
-  color: var(--orange-light);
-  background: rgba(247,148,30,0.08);
-  border: 1px solid var(--border-orange);
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 0.76rem;
-}
 
 @media (min-width: 700px){ .footer-inner{ grid-template-columns: repeat(3, 1fr); } }
 
