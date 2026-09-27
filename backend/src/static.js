@@ -24,7 +24,15 @@ const MIME_TYPES = {
 function safeJoin(root, requestPath) {
   const decoded = decodeURIComponent(requestPath.split("?")[0]);
   const target = path.normalize(path.join(root, decoded));
-  if (!target.startsWith(root)) return null; // bloqueia path traversal (../)
+  // Checa o separador de caminho, não só o prefixo: sem isso, "/site-evil"
+  // passaria no teste startsWith("/site") mesmo estando fora da raiz.
+  if (target !== root && !target.startsWith(root + path.sep)) return null; // bloqueia path traversal (../)
+
+  // Bloqueia qualquer segmento "oculto" (.git, .env, .DS_Store etc.) em
+  // qualquer nível do caminho — sem isso, /.git/config fica baixável.
+  const relative = path.relative(root, target);
+  if (relative.split(path.sep).some((seg) => seg.startsWith("."))) return null;
+
   return target;
 }
 

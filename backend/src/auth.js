@@ -28,6 +28,18 @@ function verifyPassword(password, stored) {
   return crypto.timingSafeEqual(candidate, expected);
 }
 
+// Hash fixo só pra gastar o mesmo tempo de scrypt quando o e-mail não
+// existe. Sem isso, login vaza por timing se um e-mail está cadastrado:
+// e-mail que existe faz um scrypt (mais lento), e-mail que não existe
+// responde na hora (sem hash nenhum) — dá pra enumerar contas medindo
+// o tempo de resposta.
+const DUMMY_HASH = hashPassword("dummy-password-so-a-resposta-demora-igual");
+
+function verifyPasswordSafe(password, storedHashOrNull) {
+  const result = verifyPassword(password, storedHashOrNull || DUMMY_HASH);
+  return storedHashOrNull ? result : false;
+}
+
 /* ---------------------- BOOTSTRAP DO ADMIN ---------------------- */
 async function ensureAdminSeeded() {
   const { rows } = await pool.query("SELECT COUNT(*)::int as c FROM admins");
@@ -166,12 +178,13 @@ function parseCookies(req) {
   return out;
 }
 
-/* Em produção o site (GitHub Pages) e o backend (Render) ficam em domínios
-   diferentes; cookie cross-site precisa de SameSite=None + Secure. Em
-   desenvolvimento local (mesmo domínio, http) usamos SameSite=Lax normal. */
+/* O site e o backend rodam no mesmo domínio (mesma origem) tanto em
+   desenvolvimento quanto em produção — não precisa de SameSite=None (que
+   só faz sentido pra cookie cross-site, e abre brecha de CSRF à toa).
+   Secure fica ligado em produção porque lá é sempre HTTPS. */
 function cookieSameSiteAttrs() {
   return config.NODE_ENV === "production"
-    ? ["SameSite=None", "Secure"]
+    ? ["SameSite=Lax", "Secure"]
     : ["SameSite=Lax"];
 }
 
@@ -231,6 +244,7 @@ module.exports = {
   VALID_ROLES,
   hashPassword,
   verifyPassword,
+  verifyPasswordSafe,
   ensureAdminSeeded,
   createSession,
   destroySession,

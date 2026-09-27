@@ -26,7 +26,7 @@ const consorcio = require("./consorcio");
 const notifications = require("./notifications");
 const mailer = require("./mailer");
 const payPartner = require("./payPartner");
-const { parseJSONBody, sendJSON, sendBinary, getClientIP } = require("./http-utils");
+const { parseJSONBody, sendJSON, sendBinary, getClientIP, isAllowedFileMime, ALLOWED_FILE_MIMES } = require("./http-utils");
 const { serveStatic } = require("./static");
 
 /* ---------------------- CORS ---------------------- */
@@ -51,8 +51,25 @@ function applySecurityHeaders(res) {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=()");
+  // 'unsafe-inline' em script/style é necessário porque o site inteiro usa
+  // <script>/style="" inline (sem build step) — mesmo assim, isso já
+  // bloqueia carregar script/frame/objeto de qualquer origem externa,
+  // hijack de <base> e submit de formulário pra fora do site.
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline'; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "img-src 'self' data:; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "connect-src 'self' https://viacep.com.br; " +
+    "object-src 'none'; " +
+    "base-uri 'self'; " +
+    "form-action 'self'; " +
+    "frame-ancestors 'none'"
+  );
   if (config.NODE_ENV === "production") {
-    // Só faz sentido com HTTPS (Render já serve tudo em HTTPS).
+    // Só faz sentido com HTTPS (a VPS serve tudo atrás do Nginx com TLS).
     res.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
   }
 }
@@ -172,7 +189,7 @@ async function handleApi(req, res, pathname) {
     const password = String(body.password || "");
     const record = email ? await auth.findAdminByEmail(email) : null;
 
-    if (!record || !auth.verifyPassword(password, record.password_hash)) {
+    if (!auth.verifyPasswordSafe(password, record && record.password_hash)) {
       auth.registerFailedAttempt(ip);
       return sendJSON(res, 401, { ok: false, error: "E-mail ou senha inválidos." });
     }
@@ -403,6 +420,7 @@ async function handleApi(req, res, pathname) {
       try { contratoBuffer = Buffer.from(String(body.contratoBase64 || ""), "base64"); } catch { contratoBuffer = null; }
       if (!contratoBuffer || !contratoBuffer.length) return sendJSON(res, 400, { ok: false, error: "Anexe o arquivo do contrato." });
       if (contratoBuffer.length > creditLeads.MAX_CONTRATO_BYTES) return sendJSON(res, 413, { ok: false, error: "Contrato maior que 8 MB." });
+      if (!isAllowedFileMime(body.contratoTipo)) return sendJSON(res, 400, { ok: false, error: `Arquivo deve ser um de: ${ALLOWED_FILE_MIMES.join(", ")}.` });
       const changed = await creditLeads.setContrato(id, { contratoBuffer, contratoTipo: body.contratoTipo, contratoNome: body.contratoNome });
       if (!changed) return sendJSON(res, 404, { ok: false, error: "Solicitação não encontrada." });
       return sendJSON(res, 200, { ok: true, lead: await creditLeads.getLeadById(id) });
@@ -478,6 +496,7 @@ async function handleApi(req, res, pathname) {
       try { contratoBuffer = Buffer.from(String(body.contratoBase64 || ""), "base64"); } catch { contratoBuffer = null; }
       if (!contratoBuffer || !contratoBuffer.length) return sendJSON(res, 400, { ok: false, error: "Anexe o arquivo do contrato." });
       if (contratoBuffer.length > orders.MAX_CONTRATO_BYTES) return sendJSON(res, 413, { ok: false, error: "Contrato maior que 8 MB." });
+      if (!isAllowedFileMime(body.contratoTipo)) return sendJSON(res, 400, { ok: false, error: `Arquivo deve ser um de: ${ALLOWED_FILE_MIMES.join(", ")}.` });
       const changed = await orders.setContrato(id, { contratoBuffer, contratoTipo: body.contratoTipo, contratoNome: body.contratoNome });
       if (!changed) return sendJSON(res, 404, { ok: false, error: "Pedido não encontrado." });
       return sendJSON(res, 200, { ok: true, order: await orders.getOrderById(id) });
@@ -526,6 +545,7 @@ async function handleApi(req, res, pathname) {
       if (contratoBuffer && contratoBuffer.length > loans.MAX_CONTRATO_BYTES) {
         return sendJSON(res, 413, { ok: false, error: "Contrato maior que 8 MB." });
       }
+      if (!isAllowedFileMime(body.contratoTipo)) return sendJSON(res, 400, { ok: false, error: `Arquivo deve ser um de: ${ALLOWED_FILE_MIMES.join(", ")}.` });
     }
 
     const id = await loans.createContract({
@@ -614,6 +634,7 @@ async function handleApi(req, res, pathname) {
       if (contratoBuffer && contratoBuffer.length > profitShare.MAX_CONTRATO_BYTES) {
         return sendJSON(res, 413, { ok: false, error: "Contrato maior que 8 MB." });
       }
+      if (!isAllowedFileMime(body.contratoTipo)) return sendJSON(res, 400, { ok: false, error: `Arquivo deve ser um de: ${ALLOWED_FILE_MIMES.join(", ")}.` });
     }
 
     const id = await profitShare.createContract({
@@ -689,6 +710,7 @@ async function handleApi(req, res, pathname) {
       if (comprovanteBuffer.length > profitShare.MAX_COMPROVANTE_BYTES) {
         return sendJSON(res, 400, { ok: false, error: "Comprovante muito grande (máximo 4MB)." });
       }
+      if (!isAllowedFileMime(body.comprovanteTipo)) return sendJSON(res, 400, { ok: false, error: `Arquivo deve ser um de: ${ALLOWED_FILE_MIMES.join(", ")}.` });
     }
 
     const id = await profitShare.addPayment(contractId, {
@@ -766,7 +788,7 @@ async function handleApi(req, res, pathname) {
     const password = String(body.password || "");
 
     const adminRecord = email ? await auth.findAdminByEmail(email) : null;
-    if (adminRecord && auth.verifyPassword(password, adminRecord.password_hash)) {
+    if (auth.verifyPasswordSafe(password, adminRecord && adminRecord.password_hash)) {
       auth.clearAttempts(ip);
       const { token, expiresAt } = await auth.createSession(adminRecord.id);
       return sendJSON(
@@ -788,7 +810,7 @@ async function handleApi(req, res, pathname) {
     }
 
     const customerRecord = email ? await customers.findByEmail(email) : null;
-    if (customerRecord && auth.verifyPassword(password, customerRecord.password_hash)) {
+    if (auth.verifyPasswordSafe(password, customerRecord && customerRecord.password_hash)) {
       auth.clearAttempts(ip);
       if (customerRecord.two_factor_enabled) {
         const pendingToken = await customers.createPending2FALogin(
@@ -826,7 +848,7 @@ async function handleApi(req, res, pathname) {
     const password = String(body.password || "");
     const record = email ? await customers.findByEmail(email) : null;
 
-    if (!record || !auth.verifyPassword(password, record.password_hash)) {
+    if (!auth.verifyPasswordSafe(password, record && record.password_hash)) {
       auth.registerFailedAttempt(ip);
       return sendJSON(res, 401, { ok: false, error: "E-mail ou senha inválidos." });
     }

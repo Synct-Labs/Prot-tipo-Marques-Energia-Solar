@@ -4,6 +4,16 @@
 
 const MAX_BODY_BYTES = 1024 * 1024; // 1 MB é mais que suficiente para um pedido
 
+// Mesmo allowlist usado em todo upload de arquivo do site (comprovante,
+// contrato, documento de KYC) — nunca confia no Content-Type que o
+// navegador manda sem checar contra essa lista antes de gravar no banco
+// (senão dá pra "servir" HTML/SVG malicioso como se fosse o arquivo).
+const ALLOWED_FILE_MIMES = ["image/jpeg", "image/png", "application/pdf"];
+
+function isAllowedFileMime(mime) {
+  return ALLOWED_FILE_MIMES.includes(mime);
+}
+
 function parseJSONBody(req, maxBytes = MAX_BODY_BYTES) {
   return new Promise((resolve, reject) => {
     let size = 0;
@@ -57,4 +67,4 @@ function sendBinary(res, statusCode, buffer, contentType, filename) {
   res.end(buffer);
 }
 
-module.exports = { parseJSONBody, sendJSON, sendBinary, getClientIP };
+module.exports = { parseJSONBody, sendJSON, sendBinary, getClientIP, ALLOWED_FILE_MIMES, isAllowedFileMime };
