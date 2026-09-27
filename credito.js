@@ -107,7 +107,7 @@ const CREDIT_MODES = {
         items: [
           { label:"Valor disponível para usar como entrada", value: formatBRL(fgts) },
         ],
-        note: "Use esse saldo como entrada ao contratar o financiamento, consórcio ou crédito CLT: ele reduz o valor financiado e a parcela.",
+        note: "Use esse saldo como entrada ao contratar o financiamento, a compra programada ou o crédito CLT: ele reduz o valor financiado e a parcela.",
         compare: { type:"fgts", value: fgts },
       };
     },
@@ -194,6 +194,31 @@ function renderCreditSimCard(){
   if(!card) return;
   const mode = CREDIT_MODES[currentCreditMode];
 
+  // Compra Programada não é uma simulação de parcela — é um catálogo de
+  // grupos com cotas limitadas, criados pelo admin. O cliente escolhe um
+  // grupo já pronto e contrata na hora (sem formulário de análise).
+  if(currentCreditMode === "consorcio"){
+    card.innerHTML = `
+      <div class="credit-sim-card-head">
+        <span class="credit-mode-icon credit-mode-icon-lg">${mode.icon}</span>
+        <div>
+          <h3>${mode.label}</h3>
+          <p>${mode.description}</p>
+        </div>
+      </div>
+      <div id="consorcioGruposList"><p class="pay-empty-note">Carregando grupos...</p></div>
+      <div class="credit-sim-cta">
+        <p>Ficou com dúvida sobre qual modalidade escolher?</p>
+        <a href="https://wa.me/5565996591300" target="_blank" rel="noopener" class="btn btn-outline">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          Falar com um especialista
+        </a>
+      </div>
+    `;
+    loadConsorcioGrupos();
+    return;
+  }
+
   card.innerHTML = `
     <div class="credit-sim-card-head">
       <span class="credit-mode-icon credit-mode-icon-lg">${mode.icon}</span>
@@ -218,6 +243,78 @@ function renderCreditSimCard(){
     </div>
 
   `;
+}
+
+/* ======================================================================
+   COMPRA PROGRAMADA: CATÁLOGO DE GRUPOS
+   ---------------------------------------------------------------------
+   Diferente das outras modalidades: não simula, lista os grupos que o
+   admin liberou (visivelSite) e deixa o cliente contratar uma cota na
+   hora. Sem login, guarda o grupo escolhido e manda pra entrar/cadastrar,
+   retomando sozinho quando a pessoa voltar (ver restorePendingConsorcio).
+   ====================================================================== */
+function escConsorcio(v){
+  return String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function grupoCardHTML(g){
+  const semVaga = g.vagasRestantes <= 0;
+  return `
+    <div class="credit-sim-form consorcio-grupo-card" style="border:1px solid var(--border-soft); border-radius:var(--radius-sm); padding:16px; margin-bottom:12px;">
+      <strong>${escConsorcio(g.nome)}</strong>
+      <p style="color:var(--muted); font-size:0.88rem; margin:6px 0 10px;">
+        ${formatBRL(g.valorCota)}/cota · ${g.prazoMeses}x · taxa adm. ${String(g.taxaAdministracaoPct).replace(".", ",")}%
+        · ${semVaga ? "sem vagas no momento" : g.vagasRestantes + " vaga(s) disponível(is)"}
+      </p>
+      ${g.regras ? `<p style="color:var(--muted); font-size:0.82rem; margin:0 0 10px;">${escConsorcio(g.regras)}</p>` : ""}
+      <button type="button" class="btn btn-primary" data-contratar-grupo="${g.id}" ${semVaga ? "disabled" : ""}>${semVaga ? "Sem vagas" : "Contratar"}</button>
+    </div>
+  `;
+}
+
+async function loadConsorcioGrupos(){
+  const box = $("#consorcioGruposList");
+  if(!box) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/consorcio/grupos`).then(r => r.json());
+    if(!res.ok) throw new Error(res.error || "Erro ao carregar grupos.");
+    box.innerHTML = res.grupos.length
+      ? res.grupos.map(grupoCardHTML).join("")
+      : `<p class="pay-empty-note">Nenhum grupo disponível no momento. Fale com a gente pelo WhatsApp pra saber quando abrir novas turmas.</p>`;
+  } catch(e) {
+    box.innerHTML = `<p class="pay-empty-note">Não foi possível carregar os grupos agora. Tente novamente em instantes.</p>`;
+  }
+}
+
+async function contratarGrupo(grupoId){
+  const customer = window.MES_ACCOUNT ? await window.MES_ACCOUNT.getCustomer() : null;
+  if(!customer){
+    localStorage.setItem("mes_pending_consorcio_grupo", String(grupoId));
+    window.location.href = "conta/entrar.html?redirect=" + encodeURIComponent("index.html#simulacao-credito");
+    return;
+  }
+  try {
+    const res = await CONTA_apiPost(`/api/consorcio/grupos/${grupoId}/contratar`, {
+      ref: window.MES_REF ? window.MES_REF.get() : "",
+    });
+    if(!res.ok){ showToast(res.error || "Não foi possível contratar esse grupo."); return; }
+    showToast("Cota reservada! Sua adesão já está confirmada.");
+    loadConsorcioGrupos();
+  } catch(e) {
+    showToast("Erro de conexão. Tente novamente.");
+  }
+}
+
+// Pequeno helper local (credito.js não carrega conta.js) só pra POST com
+// cookie de sessão — mesmo padrão do fetch usado no restante do arquivo.
+async function CONTA_apiPost(path, body){
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(body || {}),
+  });
+  return res.json();
 }
 
 let fgtsAuthShownOnce = false;
@@ -471,6 +568,30 @@ $("#creditLeadForm")?.addEventListener("submit", async (e) => {
   }
 });
 
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-contratar-grupo]");
+  if(!btn || btn.disabled) return;
+  contratarGrupo(parseInt(btn.dataset.contratarGrupo, 10));
+});
+
+/* Se a pessoa clicou "Contratar" num grupo, foi mandada pra login/cadastro
+   e voltou logada, retoma a contratação sozinha em vez de pedir pra
+   escolher o grupo de novo. */
+async function restorePendingConsorcio(){
+  const pendingId = localStorage.getItem("mes_pending_consorcio_grupo");
+  if(!pendingId) return;
+  localStorage.removeItem("mes_pending_consorcio_grupo");
+
+  const customer = window.MES_ACCOUNT ? await window.MES_ACCOUNT.getCustomer() : null;
+  if(!customer) return;
+
+  currentCreditMode = "consorcio";
+  renderCreditModes();
+  renderCreditSimCard();
+  await contratarGrupo(parseInt(pendingId, 10));
+  $("#creditSimCard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 /* ======================================================================
    MENU MOBILE
    ====================================================================== */
@@ -496,3 +617,4 @@ renderCreditSimCard();
 syncLeadModalidade();
 initScrollReveal();
 restorePendingLeadSim();
+restorePendingConsorcio();

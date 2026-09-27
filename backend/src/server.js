@@ -22,6 +22,7 @@ const products = require("./products");
 const payAccounts = require("./payAccounts");
 const payKyc = require("./payKyc");
 const partners = require("./partners");
+const consorcio = require("./consorcio");
 const payPartner = require("./payPartner");
 const { parseJSONBody, sendJSON, sendBinary, getClientIP } = require("./http-utils");
 const { serveStatic } = require("./static");
@@ -891,6 +892,100 @@ async function handleApi(req, res, pathname) {
     }
   };
 
+  // ---- COMPRA PROGRAMADA: CATÁLOGO PÚBLICO ----
+  if (pathname === "/api/consorcio/grupos" && req.method === "GET") {
+    return sendJSON(res, 200, { ok: true, grupos: await consorcio.listGruposPublicos() });
+  }
+
+  // ---- COMPRA PROGRAMADA: CLIENTE CONTRATA DIRETO PELO CATÁLOGO ----
+  const consorcioContratarMatch = pathname.match(/^\/api\/consorcio\/grupos\/(\d+)\/contratar$/);
+  if (consorcioContratarMatch && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const body = await parseJSONBody(req);
+    return kycGuard(async () => {
+      const adesao = await consorcio.contratarComoCliente(customer.id, parseInt(consorcioContratarMatch[1], 10), {
+        nome: body.nome || customer.nome, telefone: body.telefone || customer.telefone, email: body.email || customer.email, refCode: body.ref,
+      });
+      return sendJSON(res, 201, { ok: true, adesao });
+    });
+  }
+
+  // ---- COMPRA PROGRAMADA: ADESÕES DO CLIENTE (inclui pendentes lançadas por parceiro) ----
+  if (pathname === "/api/customers/me/consorcio-adesoes" && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const proprias = await consorcio.listAdesoesByCustomer(customer.id);
+    const pendentesPorEmail = await consorcio.listAdesoesPendentesPorEmail(customer.email);
+    const ids = new Set(proprias.map((a) => a.id));
+    const items = [...proprias, ...pendentesPorEmail.filter((a) => !ids.has(a.id))];
+    return sendJSON(res, 200, { ok: true, adesoes: items });
+  }
+
+  const consorcioConfirmarMatch = pathname.match(/^\/api\/customers\/me\/consorcio-adesoes\/(\d+)\/confirmar$/);
+  if (consorcioConfirmarMatch && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    return kycGuard(async () => {
+      const adesao = await consorcio.confirmarAdesao(customer.id, parseInt(consorcioConfirmarMatch[1], 10));
+      return sendJSON(res, 200, { ok: true, adesao });
+    });
+  }
+
+  // ---- COMPRA PROGRAMADA: ÁREA DO PARCEIRO ----
+  if (pathname === "/api/partners/me/consorcio-grupos" && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const row = await partners.getRowByCustomer(customer.id);
+    if (!row || row.status !== "ativo") return sendJSON(res, 403, { ok: false, error: "Seu cadastro de parceiro ainda não está ativo." });
+    return sendJSON(res, 200, { ok: true, grupos: await consorcio.listGruposParceiro() });
+  }
+
+  if (pathname === "/api/partners/me/consorcio-adesoes" && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const row = await partners.getRowByCustomer(customer.id);
+    if (!row || row.status !== "ativo") return sendJSON(res, 403, { ok: false, error: "Seu cadastro de parceiro ainda não está ativo." });
+    const body = await parseJSONBody(req);
+    return kycGuard(async () => {
+      const adesao = await consorcio.lancarComoParceiro(row, Number(body.grupoId), {
+        nome: body.nome, telefone: body.telefone, email: body.email,
+      });
+      return sendJSON(res, 201, { ok: true, adesao });
+    });
+  }
+
+  // ---- ADMIN: COMPRA PROGRAMADA (grupos e adesões — só Promotora ou dono) ----
+  if (pathname.startsWith("/api/admin/consorcio")) {
+    const admin = await requireCompanyAccess(req, res, "promotora");
+    if (!admin) return;
+
+    if (pathname === "/api/admin/consorcio/grupos" && req.method === "GET") {
+      return sendJSON(res, 200, { ok: true, grupos: await consorcio.listGruposAdmin() });
+    }
+    if (pathname === "/api/admin/consorcio/grupos" && req.method === "POST") {
+      const body = await parseJSONBody(req);
+      return kycGuard(async () => sendJSON(res, 201, { ok: true, grupo: await consorcio.createGrupo(body) }));
+    }
+    const grupoIdMatch = pathname.match(/^\/api\/admin\/consorcio\/grupos\/(\d+)$/);
+    if (grupoIdMatch && req.method === "PATCH") {
+      const body = await parseJSONBody(req);
+      return kycGuard(async () => sendJSON(res, 200, { ok: true, grupo: await consorcio.updateGrupo(parseInt(grupoIdMatch[1], 10), body) }));
+    }
+    if (pathname === "/api/admin/consorcio/adesoes" && req.method === "GET") {
+      const url = new URL(req.url, "http://localhost");
+      const grupoId = url.searchParams.get("grupoId");
+      return sendJSON(res, 200, { ok: true, adesoes: await consorcio.listAdesoesAdmin({ grupoId: grupoId ? parseInt(grupoId, 10) : null }) });
+    }
+    const adesaoCancelarMatch = pathname.match(/^\/api\/admin\/consorcio\/adesoes\/(\d+)\/cancelar$/);
+    if (adesaoCancelarMatch && req.method === "POST") {
+      return kycGuard(async () => {
+        await consorcio.cancelarAdesao(parseInt(adesaoCancelarMatch[1], 10));
+        return sendJSON(res, 200, { ok: true });
+      });
+    }
+  }
+
   if (pathname === "/api/customers/me/pay-account" && req.method === "GET") {
     const customer = await requireCustomer(req, res);
     if (!customer) return;
@@ -1056,7 +1151,7 @@ async function handleApi(req, res, pathname) {
     }
     if (pathname === "/api/admin/partners/rates" && req.method === "POST") {
       const body = await parseJSONBody(req);
-      return kycGuard(async () => sendJSON(res, 200, { ok: true, rates: await partners.setRates({ loja: body.loja, credito: body.credito }) }));
+      return kycGuard(async () => sendJSON(res, 200, { ok: true, rates: await partners.setRates({ loja: body.loja, credito: body.credito, consorcio: body.consorcio }) }));
     }
     if (pathname === "/api/admin/partners" && req.method === "GET") {
       return sendJSON(res, 200, { ok: true, items: await partners.listPartners(url.searchParams.get("status") || null) });
@@ -1067,8 +1162,8 @@ async function handleApi(req, res, pathname) {
       const body = await parseJSONBody(req);
       return kycGuard(async () => {
         if (body.status !== undefined) await partners.setStatus(id, body.status, autor, body.motivo);
-        if (body.overrideLoja !== undefined || body.overrideCredito !== undefined) {
-          await partners.setOverrides(id, { loja: body.overrideLoja, credito: body.overrideCredito });
+        if (body.overrideLoja !== undefined || body.overrideCredito !== undefined || body.overrideConsorcio !== undefined) {
+          await partners.setOverrides(id, { loja: body.overrideLoja, credito: body.overrideCredito, consorcio: body.overrideConsorcio });
         }
         return sendJSON(res, 200, { ok: true });
       });

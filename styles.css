@@ -3904,6 +3904,10 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
 .partner-row{ display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 12px; }
 .partner-row small{ display: block; color: var(--muted); margin-top: 2px; }
 .partner-row-right{ display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.partner-lancar-form{ display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+.partner-lancar-form[hidden]{ display: none; }
+.partner-lancar-form label{ flex: 1; min-width: 140px; font-size: 0.82rem; color: var(--muted); }
+.partner-lancar-form input{ display: block; width: 100%; margin-top: 4px; }
 .partner-badge{ padding: 3px 10px; border-radius: 999px; font-size: .75rem; background: rgba(247,148,30,0.15); color: var(--orange-light); }
 .partner-badge.is-liberada{ background: rgba(79,142,247,0.15); color: #7fb0ff; }
 .partner-badge.is-paga{ background: rgba(52,211,153,0.15); color: var(--success); }

@@ -21,6 +21,7 @@
     <a href="marques-pay.html" class="admin-nav-link">Marques Pay</a>
     <a href="catalogo.html" class="admin-nav-link">Catálogo</a>
     <a href="parceiros.html" class="admin-nav-link active">Parceiros</a>
+    <a href="compra-programada.html" class="admin-nav-link">Compra Programada</a>
     <a href="equipe.html" class="admin-nav-link">Equipe</a>
   </nav>
   <div class="admin-topbar-right">
@@ -83,6 +84,7 @@
         <form id="ratesForm">
           <div class="admin-field"><label for="rateLoja">Loja (% sobre o valor do pedido)</label><input type="number" id="rateLoja" min="0" max="50" step="0.1" required></div>
           <div class="admin-field"><label for="rateCredito">Crédito (% sobre o valor do sistema simulado)</label><input type="number" id="rateCredito" min="0" max="50" step="0.1" required></div>
+          <div class="admin-field"><label for="rateConsorcio">Compra Programada (% sobre o valor da cota)</label><input type="number" id="rateConsorcio" min="0" max="50" step="0.1" required></div>
           <button type="submit" class="admin-btn">Salvar regras</button>
         </form>
       </div>
@@ -97,7 +99,7 @@
 const API_BASE = window.MES_API_BASE || "";
 const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const brl = (v) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const TIPO = { loja: "Loja", credito: "Crédito" };
+const TIPO = { loja: "Loja", credito: "Crédito", consorcio: "Compra Programada" };
 const COMM_STATUS = { prevista: "Prevista", liberada: "Liberada", paga: "Paga", cancelada: "Cancelada" };
 const PARTNER_STATUS = { pendente: "Pendente", ativo: "Ativo", suspenso: "Suspenso", recusado: "Recusado" };
 const PIX_TIPO = { cpf: "CPF", email: "E-mail", telefone: "Telefone", aleatoria: "Aleatória" };
@@ -206,6 +208,7 @@ async function loadPartners(){
         <small>Regra própria (vazio = padrão):</small>
         <input type="number" step="0.1" min="0" max="50" placeholder="Loja %" value="${p.overrideLoja == null ? "" : p.overrideLoja}" data-ov-loja="${p.id}" style="width:100px;">
         <input type="number" step="0.1" min="0" max="50" placeholder="Crédito %" value="${p.overrideCredito == null ? "" : p.overrideCredito}" data-ov-credito="${p.id}" style="width:110px;">
+        <input type="number" step="0.1" min="0" max="50" placeholder="Compra Prog. %" value="${p.overrideConsorcio == null ? "" : p.overrideConsorcio}" data-ov-consorcio="${p.id}" style="width:130px;">
         <button type="button" class="admin-btn admin-btn-ghost" data-override="${p.id}">Salvar regra</button>
       </div>
     </div>`).join("");
@@ -226,6 +229,7 @@ document.getElementById("partnerList").addEventListener("click", async (e) => {
     const res = await MES.apiPatch(`/api/admin/partners/${id}`, {
       overrideLoja: document.querySelector(`[data-ov-loja="${id}"]`).value,
       overrideCredito: document.querySelector(`[data-ov-credito="${id}"]`).value,
+      overrideConsorcio: document.querySelector(`[data-ov-consorcio="${id}"]`).value,
     });
     if(!res.ok){ MES.showToast(res.error || "Erro ao salvar."); return; }
     MES.showToast("Regra do parceiro salva."); loadPartners();
@@ -239,6 +243,7 @@ async function loadRates(){
   if(!res.ok) return;
   document.getElementById("rateLoja").value = res.rates.loja;
   document.getElementById("rateCredito").value = res.rates.credito;
+  document.getElementById("rateConsorcio").value = res.rates.consorcio;
 }
 document.getElementById("ratesForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -247,6 +252,7 @@ document.getElementById("ratesForm").addEventListener("submit", async (e) => {
   const res = await MES.apiPost("/api/admin/partners/rates", {
     loja: Number(document.getElementById("rateLoja").value),
     credito: Number(document.getElementById("rateCredito").value),
+    consorcio: Number(document.getElementById("rateConsorcio").value),
   });
   if(!res.ok){ box.textContent = res.error || "Erro ao salvar."; box.classList.add("show"); return; }
   MES.showToast("Regras salvas.");

@@ -75,15 +75,17 @@
 
 .admin-field{ display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
 .admin-field label{ font-size:.82rem; color:var(--muted); }
-.admin-field input, .admin-field select{
+.admin-field input, .admin-field select, .admin-field textarea{
   background: var(--surface-2);
   border:1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 11px 13px;
   color: var(--white);
   font-size:.95rem;
+  font-family: inherit;
+  resize: vertical;
 }
-.admin-field input:focus, .admin-field select:focus{ border-color: var(--border-orange); }
+.admin-field input:focus, .admin-field select:focus, .admin-field textarea:focus{ border-color: var(--border-orange); }
 label.admin-field{ font-size:.82rem; color:var(--muted); }
 
 /* ---------- formulário de produto (catálogo) ---------- */

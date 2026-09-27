@@ -20,7 +20,7 @@ const TERMOS_VERSAO = "parceiro-2026-09-v1";
 const PIX_TIPOS = ["cpf", "email", "telefone", "aleatoria"];
 const PARTNER_STATUS = ["pendente", "ativo", "suspenso", "recusado"];
 const COMMISSION_STATUS = ["prevista", "liberada", "paga", "cancelada"];
-const DEFAULT_RATES = { loja: 10, credito: 2 };
+const DEFAULT_RATES = { loja: 10, credito: 2, consorcio: 2 };
 const MAX_PCT = 50;
 const MAX_COMPROVANTE_BYTES = 4 * 1024 * 1024;
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -35,11 +35,12 @@ function round2(n) { return Math.round(n * 100) / 100; }
 
 /* ---------------------- REGRAS GERAIS ---------------------- */
 async function getRates() {
-  const { rows } = await pool.query("SELECT chave, valor FROM app_settings WHERE chave IN ('comissao_loja_pct','comissao_credito_pct')");
+  const { rows } = await pool.query("SELECT chave, valor FROM app_settings WHERE chave IN ('comissao_loja_pct','comissao_credito_pct','comissao_consorcio_pct')");
   const map = Object.fromEntries(rows.map((r) => [r.chave, Number(r.valor)]));
   return {
     loja: Number.isFinite(map.comissao_loja_pct) ? map.comissao_loja_pct : DEFAULT_RATES.loja,
     credito: Number.isFinite(map.comissao_credito_pct) ? map.comissao_credito_pct : DEFAULT_RATES.credito,
+    consorcio: Number.isFinite(map.comissao_consorcio_pct) ? map.comissao_consorcio_pct : DEFAULT_RATES.consorcio,
   };
 }
 
@@ -48,9 +49,9 @@ function validPct(v) {
   return Number.isFinite(n) && n >= 0 && n <= MAX_PCT;
 }
 
-async function setRates({ loja, credito }) {
-  if (!validPct(loja) || !validPct(credito)) throw err(400, `Percentuais devem estar entre 0 e ${MAX_PCT}.`);
-  for (const [k, v] of [["comissao_loja_pct", loja], ["comissao_credito_pct", credito]]) {
+async function setRates({ loja, credito, consorcio }) {
+  if (!validPct(loja) || !validPct(credito) || !validPct(consorcio)) throw err(400, `Percentuais devem estar entre 0 e ${MAX_PCT}.`);
+  for (const [k, v] of [["comissao_loja_pct", loja], ["comissao_credito_pct", credito], ["comissao_consorcio_pct", consorcio]]) {
     await pool.query(
       "INSERT INTO app_settings (chave, valor) VALUES ($1,$2) ON CONFLICT (chave) DO UPDATE SET valor = EXCLUDED.valor",
       [k, String(Number(v))]
@@ -78,6 +79,7 @@ function toPublic(row, rates) {
     pixChave: row.pix_chave,
     comissaoLojaPct: row.comissao_loja_pct != null ? row.comissao_loja_pct : rates.loja,
     comissaoCreditoPct: row.comissao_credito_pct != null ? row.comissao_credito_pct : rates.credito,
+    comissaoConsorcioPct: row.comissao_consorcio_pct != null ? row.comissao_consorcio_pct : rates.consorcio,
     criadoEm: row.created_at,
   };
 }
@@ -152,23 +154,26 @@ async function resolveSelfAssisted(refCode, buyerCustomerId) {
 // Registra a venda indicada e cria a comissão "prevista". Idempotente por
 // pedido/lead. overridePct pula a regra geral/override do parceiro (usado
 // na compra assistida, onde o percentual vem do nível de desconto escolhido).
-async function registerSale({ tipo, orderId, leadId, referencia, base, partner, overridePct }) {
+async function registerSale({ tipo, orderId, leadId, adesaoId, referencia, base, partner, overridePct }) {
   const rates = await getRates();
   const pct = overridePct != null
     ? overridePct
     : tipo === "loja"
       ? (partner.comissao_loja_pct != null ? partner.comissao_loja_pct : rates.loja)
-      : (partner.comissao_credito_pct != null ? partner.comissao_credito_pct : rates.credito);
+      : tipo === "consorcio"
+        ? (partner.comissao_consorcio_pct != null ? partner.comissao_consorcio_pct : rates.consorcio)
+        : (partner.comissao_credito_pct != null ? partner.comissao_credito_pct : rates.credito);
   const baseValor = Number(base) > 0 ? Number(base) : 0;
   const now = new Date().toISOString();
   await pool.query(
-    `INSERT INTO partner_commissions (partner_id, tipo, order_id, lead_id, referencia, base_valor, percentual, valor, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$9)
+    `INSERT INTO partner_commissions (partner_id, tipo, order_id, lead_id, adesao_id, referencia, base_valor, percentual, valor, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10)
      ON CONFLICT DO NOTHING`,
-    [partner.id, tipo, orderId || null, leadId || null, referencia, baseValor, pct, round2((baseValor * pct) / 100), now]
+    [partner.id, tipo, orderId || null, leadId || null, adesaoId || null, referencia, baseValor, pct, round2((baseValor * pct) / 100), now]
   );
   if (orderId) await pool.query("UPDATE orders SET partner_id = $1 WHERE id = $2", [partner.id, orderId]);
   if (leadId) await pool.query("UPDATE credit_leads SET partner_id = $1 WHERE id = $2", [partner.id, leadId]);
+  if (adesaoId) await pool.query("UPDATE consorcio_adesoes SET partner_id = $1 WHERE id = $2", [partner.id, adesaoId]);
 }
 
 const ORDER_MAP = { entregue: "liberada", cancelado: "cancelada" };
@@ -208,7 +213,7 @@ async function summaryForPartner(partnerId) {
     [partnerId]
   );
   const totals = { prevista: 0, liberada: 0, paga: 0, cancelada: 0 };
-  const counts = { loja: 0, credito: 0 };
+  const counts = { loja: 0, credito: 0, consorcio: 0 };
   for (const r of rows) {
     totals[r.status] = round2((totals[r.status] || 0) + r.valor);
     if (r.status !== "cancelada") counts[r.tipo] = (counts[r.tipo] || 0) + 1;
@@ -245,7 +250,7 @@ async function listPartners(status) {
   return rows.map((r) => ({
     ...toPublic(r, rates),
     nome: r.nome, email: r.email, cpf: r.cpf, telefone: r.telefone,
-    overrideLoja: r.comissao_loja_pct, overrideCredito: r.comissao_credito_pct,
+    overrideLoja: r.comissao_loja_pct, overrideCredito: r.comissao_credito_pct, overrideConsorcio: r.comissao_consorcio_pct,
     aPagar: round2(Number(r.a_pagar)), pago: round2(Number(r.pago)), vendas: Number(r.vendas),
     termos: { versao: r.termos_versao, em: r.termos_aceite_em, ip: r.termos_aceite_ip },
     revisadoPor: r.revisado_por || "",
@@ -263,14 +268,17 @@ async function setStatus(id, status, autor, motivo) {
   if (!r.rowCount) throw err(404, "Parceiro não encontrado.");
 }
 
-async function setOverrides(id, { loja, credito }) {
+async function setOverrides(id, { loja, credito, consorcio }) {
   const norm = (v) => (v === "" || v === null || v === undefined ? null : Number(v));
   const l = norm(loja);
   const c = norm(credito);
-  if ((l !== null && !validPct(l)) || (c !== null && !validPct(c))) throw err(400, `Percentuais devem estar entre 0 e ${MAX_PCT} (ou vazio para usar a regra geral).`);
+  const cs = norm(consorcio);
+  if ((l !== null && !validPct(l)) || (c !== null && !validPct(c)) || (cs !== null && !validPct(cs))) {
+    throw err(400, `Percentuais devem estar entre 0 e ${MAX_PCT} (ou vazio para usar a regra geral).`);
+  }
   const r = await pool.query(
-    "UPDATE partners SET comissao_loja_pct=$1, comissao_credito_pct=$2, updated_at=$3 WHERE id=$4",
-    [l, c, new Date().toISOString(), id]
+    "UPDATE partners SET comissao_loja_pct=$1, comissao_credito_pct=$2, comissao_consorcio_pct=$3, updated_at=$4 WHERE id=$5",
+    [l, c, cs, new Date().toISOString(), id]
   );
   if (!r.rowCount) throw err(404, "Parceiro não encontrado.");
 }

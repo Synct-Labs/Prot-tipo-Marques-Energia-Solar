@@ -310,6 +310,61 @@ async function initMarquesPayRealData() {
     renderParticipacaoLucros(psRes.contracts, psRes.payments);
     updatePsStat(psRes.payments);
   }
+  loadConsorcioPendentes();
 }
+
+/* ======================================================================
+   COMPRA PROGRAMADA: ADESÕES PENDENTES DE CONFIRMAÇÃO
+   ---------------------------------------------------------------------
+   Só aparece quando um parceiro lançou uma venda em nome do cliente
+   (status 'aguardando_cliente') — a comissão do parceiro só nasce depois
+   que o próprio cliente confirma aqui.
+   ====================================================================== */
+function escConsorcioPendente(v) {
+  return String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function consorcioPendenteRowHTML(a) {
+  return `
+    <div class="pay-card" style="padding:14px 16px; margin-bottom:10px; background:var(--surface-2);" data-pendente-adesao="${a.id}">
+      <strong>${escConsorcioPendente(a.grupoNome)}</strong>
+      <p style="color:var(--muted); font-size:0.85rem; margin:4px 0 10px;">
+        ${formatBRL(a.valorCota)}/cota · ${a.prazoMeses}x${a.parceiroNome ? ` · indicado por ${escConsorcioPendente(a.parceiroNome)}` : ""}
+      </p>
+      <button type="button" class="btn btn-primary" data-confirmar-adesao="${a.id}">Confirmar contratação</button>
+    </div>`;
+}
+
+async function loadConsorcioPendentes() {
+  const res = await fetchJSON("/api/customers/me/consorcio-adesoes");
+  const card = document.getElementById("consorcioPendenteCard");
+  const box = document.getElementById("consorcioPendenteList");
+  if (!card || !box || !res.ok) return;
+  const pendentes = res.adesoes.filter((a) => a.status === "aguardando_cliente");
+  card.hidden = pendentes.length === 0;
+  box.innerHTML = pendentes.map(consorcioPendenteRowHTML).join("");
+}
+
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-confirmar-adesao]");
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = "Confirmando...";
+  try {
+    const res = await fetch(`${API_BASE}/api/customers/me/consorcio-adesoes/${btn.dataset.confirmarAdesao}/confirmar`, {
+      method: "POST", credentials: "include",
+    }).then((r) => r.json());
+    if (!res.ok) {
+      btn.disabled = false;
+      btn.textContent = "Confirmar contratação";
+      alert(res.error || "Não foi possível confirmar agora.");
+      return;
+    }
+    loadConsorcioPendentes();
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = "Confirmar contratação";
+  }
+});
 
 initMarquesPayRealData();

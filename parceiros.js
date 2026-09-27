@@ -27,7 +27,7 @@ function show(id) {
   ["secIntro", "secApply", "secStatus", "secDashboard"].forEach((s) => ($(s).hidden = s !== id && !(id === "secApply" && s === "secIntro")));
 }
 
-const TIPO_LABEL = { loja: "Loja", credito: "Crédito" };
+const TIPO_LABEL = { loja: "Loja", credito: "Crédito", consorcio: "Compra Programada" };
 const STATUS_LABEL = { prevista: "Prevista", liberada: "Liberada", paga: "Paga", cancelada: "Cancelada" };
 
 function siteBase() {
@@ -39,7 +39,7 @@ function renderDashboard(partner, rates, summary) {
   $("linkLoja").value = `${base}loja.html?ref=${partner.codigo}`;
   $("linkCredito").value = `${base}index.html?ref=${partner.codigo}#simulacao-credito`;
   $("partnerCatalogLink").href = `loja.html?ref=${partner.codigo}#catalogo`;
-  $("ratesNote").textContent = `Suas comissões: ${String(partner.comissaoLojaPct).replace(".", ",")}% sobre pedidos da loja e ${String(partner.comissaoCreditoPct).replace(".", ",")}% sobre o crédito. Na compra pelo catálogo, você escolhe repassar até 10% como desconto ao cliente — o que sobra vira sua comissão. A comissão é liberada quando o pedido é entregue ou o crédito é convertido, e paga por PIX pela equipe Marques.`;
+  $("ratesNote").textContent = `Suas comissões: ${String(partner.comissaoLojaPct).replace(".", ",")}% sobre pedidos da loja, ${String(partner.comissaoCreditoPct).replace(".", ",")}% sobre o crédito e ${String(partner.comissaoConsorcioPct).replace(".", ",")}% sobre a Compra Programada. Na compra pelo catálogo, você escolhe repassar até 10% como desconto ao cliente — o que sobra vira sua comissão. A comissão é liberada quando o pedido é entregue ou o crédito é convertido, e paga por PIX pela equipe Marques.`;
   $("stPrevista").textContent = brl(summary.totals.prevista);
   $("stLiberada").textContent = brl(summary.totals.liberada);
   $("stPaga").textContent = brl(summary.totals.paga);
@@ -59,6 +59,66 @@ function renderDashboard(partner, rates, summary) {
     : `<p class="pay-empty-note">Nenhuma venda ainda. Compartilhe seu link para começar.</p>`;
   show("secDashboard");
 }
+
+/* ---------------------- COMPRA PROGRAMADA (lançar venda pro cliente) ---------------------- */
+function consorcioGrupoRowHTML(g) {
+  const semVaga = g.vagasRestantes <= 0;
+  return `
+    <div class="partner-row" data-grupo-row="${g.id}" style="flex-direction:column; align-items:stretch; gap:10px;">
+      <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <div><strong>${esc(g.nome)}</strong>
+          <small>${brl(g.valorCota)}/cota · ${g.prazoMeses}x · ${semVaga ? "sem vagas" : g.vagasRestantes + " vaga(s)"}</small></div>
+        <button type="button" class="btn btn-outline" data-lancar-toggle="${g.id}" ${semVaga ? "disabled" : ""}>${semVaga ? "Sem vagas" : "Lançar venda"}</button>
+      </div>
+      <form data-lancar-form="${g.id}" hidden class="partner-lancar-form">
+        <label style="flex:1; min-width:160px;">Nome do cliente<input type="text" name="nome" required></label>
+        <label style="flex:1; min-width:140px;">Telefone<input type="tel" name="telefone"></label>
+        <label style="flex:1; min-width:180px;">E-mail<input type="email" name="email"></label>
+        <button type="submit" class="btn btn-primary" style="width:auto;">Confirmar lançamento</button>
+        <small data-lancar-feedback style="flex-basis:100%; display:none;"></small>
+      </form>
+    </div>`;
+}
+
+async function loadConsorcioPartnerGrupos() {
+  const box = $("consorcioPartnerGruposList");
+  if (!box) return;
+  const res = await api("GET", "/api/partners/me/consorcio-grupos");
+  if (!res.ok) { box.innerHTML = `<p class="pay-empty-note">${esc(res.error || "Erro ao carregar grupos.")}</p>`; return; }
+  box.innerHTML = res.grupos.length
+    ? `<div class="partner-table">${res.grupos.map(consorcioGrupoRowHTML).join("")}</div>`
+    : `<p class="pay-empty-note">Nenhum grupo liberado pra você no momento.</p>`;
+}
+
+document.addEventListener("click", (e) => {
+  const toggle = e.target.closest("[data-lancar-toggle]");
+  if (!toggle) return;
+  const form = document.querySelector(`[data-lancar-form="${toggle.dataset.lancarToggle}"]`);
+  if (form) form.hidden = !form.hidden;
+});
+
+document.addEventListener("submit", async (e) => {
+  const form = e.target.closest("[data-lancar-form]");
+  if (!form) return;
+  e.preventDefault();
+  const feedback = form.querySelector("[data-lancar-feedback]");
+  const grupoId = form.dataset.lancarForm;
+  const fd = new FormData(form);
+  const res = await api("POST", "/api/partners/me/consorcio-adesoes", {
+    grupoId: Number(grupoId), nome: fd.get("nome"), telefone: fd.get("telefone"), email: fd.get("email"),
+  });
+  if (!res.ok) {
+    feedback.textContent = res.error || "Não foi possível lançar a venda.";
+    feedback.style.color = "var(--danger, #e05a5a)";
+    feedback.style.display = "block";
+    return;
+  }
+  feedback.textContent = "Venda lançada! Assim que o cliente confirmar no site, sua comissão prevista aparece aqui.";
+  feedback.style.color = "var(--success)";
+  feedback.style.display = "block";
+  form.reset();
+  setTimeout(loadConsorcioPartnerGrupos, 1800);
+});
 
 document.addEventListener("click", (e) => {
   const b = e.target.closest("[data-copy]");
@@ -124,6 +184,7 @@ async function init() {
   const summary = await api("GET", "/api/partners/me/summary");
   if (!summary.ok) { $("statusTitle").textContent = "Não foi possível carregar"; $("statusText").textContent = summary.error || ""; show("secStatus"); return; }
   renderDashboard(partner, res.rates, summary);
+  loadConsorcioPartnerGrupos();
 }
 
 init();

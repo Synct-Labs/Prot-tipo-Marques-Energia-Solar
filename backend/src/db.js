@@ -324,6 +324,46 @@ async function initSchema() {
       updated_at      TEXT NOT NULL
     );
 
+    -- Compra Programada (ex-Consórcio): grupos criados pelo admin, com cotas
+    -- limitadas. "visivel_site" libera a contratação direta pelo cliente no
+    -- catálogo público; "visivel_parceiro" libera o parceiro ver o grupo e
+    -- lançar vendas pra ele. Vagas restantes = cotas_total menos adesões
+    -- não canceladas (calculado na consulta, não guardado aqui).
+    CREATE TABLE IF NOT EXISTS consorcio_grupos (
+      id                      SERIAL PRIMARY KEY,
+      nome                    TEXT NOT NULL,
+      cotas_total             INTEGER NOT NULL,
+      valor_cota              DOUBLE PRECISION NOT NULL,
+      prazo_meses             INTEGER NOT NULL,
+      taxa_administracao_pct  DOUBLE PRECISION NOT NULL DEFAULT 0,
+      regras                  TEXT,
+      visivel_site            BOOLEAN NOT NULL DEFAULT false,
+      visivel_parceiro        BOOLEAN NOT NULL DEFAULT false,
+      encerrado               BOOLEAN NOT NULL DEFAULT false,
+      created_at              TEXT NOT NULL,
+      updated_at              TEXT NOT NULL
+    );
+
+    -- Adesão a um grupo de Compra Programada. "origem" = 'cliente' (o
+    -- próprio cliente contratou pelo catálogo do site, já confirmada na
+    -- hora) ou 'parceiro' (o parceiro lançou a venda pro cliente, fica
+    -- 'aguardando_cliente' até o cliente entrar e confirmar — só aí a
+    -- comissão do parceiro é criada, ver confirmarAdesao em consorcio.js).
+    CREATE TABLE IF NOT EXISTS consorcio_adesoes (
+      id             SERIAL PRIMARY KEY,
+      grupo_id       INTEGER NOT NULL REFERENCES consorcio_grupos(id),
+      customer_id    INTEGER REFERENCES customers(id),
+      partner_id     INTEGER REFERENCES partners(id),
+      origem         TEXT NOT NULL,
+      nome           TEXT NOT NULL,
+      telefone       TEXT,
+      email          TEXT,
+      status         TEXT NOT NULL DEFAULT 'aguardando_cliente',
+      confirmada_em  TEXT,
+      created_at     TEXT NOT NULL,
+      updated_at     TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS profit_share_payments (
       id                SERIAL PRIMARY KEY,
       contract_id       INTEGER NOT NULL REFERENCES profit_share_contracts(id),
@@ -404,6 +444,8 @@ async function initSchema() {
       updated_at       TEXT NOT NULL
     );
 
+    ALTER TABLE partner_commissions ADD COLUMN IF NOT EXISTS adesao_id INTEGER UNIQUE REFERENCES consorcio_adesoes(id);
+    ALTER TABLE partners ADD COLUMN IF NOT EXISTS comissao_consorcio_pct DOUBLE PRECISION;
   `);
 
   // Garante que sempre exista pelo menos um "owner" (dono/admin geral que

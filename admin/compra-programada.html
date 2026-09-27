@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Compra Programada | Painel de Administrador | Marques</title>
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<header class="admin-topbar">
+  <div class="admin-brand">
+    <img src="../logo-mark-128.png" alt="Marques">
+    <span>Painel de Administrador</span>
+  </div>
+  <nav class="admin-nav">
+    <a href="dashboard.html" class="admin-nav-link">Pedidos</a>
+    <a href="credit-leads.html" class="admin-nav-link">Solicitações de Crédito</a>
+    <a href="marques-pay.html" class="admin-nav-link">Marques Pay</a>
+    <a href="catalogo.html" class="admin-nav-link">Catálogo</a>
+    <a href="parceiros.html" class="admin-nav-link">Parceiros</a>
+    <a href="compra-programada.html" class="admin-nav-link active">Compra Programada</a>
+    <a href="equipe.html" class="admin-nav-link">Equipe</a>
+  </nav>
+  <div class="admin-topbar-right">
+    <span class="admin-user" id="adminUserLabel"></span>
+    <button class="admin-btn admin-btn-ghost" id="logoutBtn">Sair</button>
+  </div>
+</header>
+
+<main class="admin-main">
+  <div class="admin-container">
+
+    <div class="admin-subtabs">
+      <button type="button" class="admin-subtab active" data-subtab="grupos">Grupos</button>
+      <button type="button" class="admin-subtab" data-subtab="adesoes">Adesões</button>
+    </div>
+
+    <!-- ========================= GRUPOS ========================= -->
+    <div class="admin-subpanel active" data-subpanel="grupos">
+      <div class="admin-toolbar">
+        <h2 style="font-size:1.15rem;">Grupos de Compra Programada</h2>
+        <button class="admin-btn admin-btn-ghost" id="newGrupoBtn" type="button">+ Novo grupo</button>
+      </div>
+
+      <div class="admin-table-wrap" id="newGrupoCard" style="display:none; padding:22px; margin-bottom:20px;">
+        <h3 style="margin-bottom:16px;">Novo grupo</h3>
+        <div class="admin-error" id="newGrupoError"></div>
+        <form id="newGrupoForm">
+          <div class="admin-field"><label>Nome do grupo</label><input type="text" name="nome" placeholder="Ex: Grupo Solar 60 meses — Turma 3" required></div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <div class="admin-field" style="flex:1; min-width:140px;"><label>Quantidade de cotas</label><input type="number" name="cotasTotal" min="1" step="1" required></div>
+            <div class="admin-field" style="flex:1; min-width:140px;"><label>Valor da cota (R$)</label><input type="number" name="valorCota" min="0.01" step="0.01" required></div>
+            <div class="admin-field" style="flex:1; min-width:140px;"><label>Prazo (meses)</label><input type="number" name="prazoMeses" min="1" step="1" required></div>
+            <div class="admin-field" style="flex:1; min-width:140px;"><label>Taxa de administração (%)</label><input type="number" name="taxaAdministracaoPct" min="0" max="100" step="0.1" value="0"></div>
+          </div>
+          <div class="admin-field"><label>Regras (assembleia, sorteio, lance etc. — texto livre)</label><textarea name="regras" rows="3"></textarea></div>
+          <div style="display:flex; gap:10px; margin-top:6px;">
+            <button type="submit" class="admin-btn" style="width:auto;">Criar grupo</button>
+            <button type="button" class="admin-btn admin-btn-ghost" id="cancelNewGrupoBtn">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="gruposList"></div>
+    </div>
+
+    <!-- ========================= ADESÕES ========================= -->
+    <div class="admin-subpanel" data-subpanel="adesoes">
+      <div class="admin-toolbar">
+        <h2 style="font-size:1.15rem;">Adesões</h2>
+        <div class="admin-toolbar-filters">
+          <select id="adesaoGrupoFilter"><option value="">Todos os grupos</option></select>
+          <button class="admin-btn admin-btn-ghost" id="adesaoRefresh" type="button">Atualizar</button>
+        </div>
+      </div>
+      <p class="admin-customer-picked show" style="margin-bottom:14px;">"Aguardando cliente" = o parceiro lançou a venda e o cliente ainda não confirmou (a comissão só nasce na confirmação). "Confirmada" = já vale, comissão prevista (se houver parceiro).</p>
+      <div id="adesoesList"></div>
+    </div>
+
+  </div>
+</main>
+
+<script src="../api-config.js"></script>
+<script src="admin.js"></script>
+<script>
+const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ADESAO_STATUS = { aguardando_cliente: "Aguardando cliente", confirmada: "Confirmada", cancelada: "Cancelada" };
+
+document.querySelectorAll(".admin-subtab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".admin-subtab").forEach(b => b.classList.toggle("active", b === btn));
+    document.querySelectorAll(".admin-subpanel").forEach(p => p.classList.toggle("active", p.dataset.subpanel === btn.dataset.subtab));
+  });
+});
+
+/* ---------------------- GRUPOS ---------------------- */
+let allGrupos = [];
+
+function grupoRowHTML(g){
+  return `
+    <div class="admin-table-wrap" style="padding:16px 20px; margin-bottom:12px;" data-grupo="${g.id}">
+      <div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; justify-content:space-between;">
+        <div>
+          <strong>${esc(g.nome)}</strong>
+          ${g.encerrado ? `<span class="status-badge status-encerrado">Encerrado</span>` : ""}<br>
+          <small>${g.cotasOcupadas}/${g.cotasTotal} cotas ocupadas (${g.vagasRestantes} vaga(s)) · ${MES.formatBRL(g.valorCota)}/cota · ${g.prazoMeses}x · taxa adm. ${String(g.taxaAdministracaoPct).replace(".", ",")}%</small>
+          ${g.regras ? `<br><small>${esc(g.regras)}</small>` : ""}
+        </div>
+        <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem;"><input type="checkbox" data-toggle="visivelSite" data-id="${g.id}" ${g.visivelSite ? "checked" : ""}> Visível no site</label>
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem;"><input type="checkbox" data-toggle="visivelParceiro" data-id="${g.id}" ${g.visivelParceiro ? "checked" : ""}> Visível pro parceiro</label>
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem;"><input type="checkbox" data-toggle="encerrado" data-id="${g.id}" ${g.encerrado ? "checked" : ""}> Encerrado</label>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function loadGrupos(){
+  const res = await MES.apiGet("/api/admin/consorcio/grupos");
+  const box = document.getElementById("gruposList");
+  if(!res.ok){ box.innerHTML = `<p class="admin-empty">${esc(res.error || "Erro ao carregar.")}</p>`; return; }
+  allGrupos = res.grupos;
+  box.innerHTML = allGrupos.length ? allGrupos.map(grupoRowHTML).join("") : `<p class="admin-empty">Nenhum grupo criado ainda.</p>`;
+
+  const filter = document.getElementById("adesaoGrupoFilter");
+  const current = filter.value;
+  filter.innerHTML = `<option value="">Todos os grupos</option>` + allGrupos.map(g => `<option value="${g.id}">${esc(g.nome)}</option>`).join("");
+  filter.value = current;
+}
+
+document.getElementById("newGrupoBtn").addEventListener("click", () => {
+  document.getElementById("newGrupoCard").style.display = "block";
+});
+document.getElementById("cancelNewGrupoBtn").addEventListener("click", () => {
+  document.getElementById("newGrupoCard").style.display = "none";
+  document.getElementById("newGrupoForm").reset();
+});
+document.getElementById("newGrupoForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const box = document.getElementById("newGrupoError");
+  box.classList.remove("show");
+  const fd = new FormData(e.target);
+  const res = await MES.apiPost("/api/admin/consorcio/grupos", {
+    nome: fd.get("nome"),
+    cotasTotal: Number(fd.get("cotasTotal")),
+    valorCota: Number(fd.get("valorCota")),
+    prazoMeses: Number(fd.get("prazoMeses")),
+    taxaAdministracaoPct: Number(fd.get("taxaAdministracaoPct") || 0),
+    regras: fd.get("regras"),
+  });
+  if(!res.ok){ box.textContent = res.error || "Erro ao criar grupo."; box.classList.add("show"); return; }
+  document.getElementById("newGrupoCard").style.display = "none";
+  e.target.reset();
+  MES.showToast("Grupo criado.");
+  loadGrupos();
+});
+
+document.getElementById("gruposList").addEventListener("change", async (e) => {
+  const box = e.target.closest("[data-toggle]");
+  if(!box) return;
+  const id = box.dataset.id;
+  const res = await MES.apiPatch(`/api/admin/consorcio/grupos/${id}`, { [box.dataset.toggle]: box.checked });
+  if(!res.ok){ MES.showToast(res.error || "Erro ao atualizar."); box.checked = !box.checked; return; }
+  MES.showToast("Grupo atualizado.");
+  loadGrupos();
+});
+
+/* ---------------------- ADESÕES ---------------------- */
+async function loadAdesoes(){
+  const grupoId = document.getElementById("adesaoGrupoFilter").value;
+  const res = await MES.apiGet(`/api/admin/consorcio/adesoes${grupoId ? "?grupoId=" + grupoId : ""}`);
+  const box = document.getElementById("adesoesList");
+  if(!res.ok){ box.innerHTML = `<p class="admin-empty">${esc(res.error || "Erro ao carregar.")}</p>`; return; }
+  if(!res.adesoes.length){ box.innerHTML = `<p class="admin-empty">Nenhuma adesão ainda.</p>`; return; }
+  box.innerHTML = res.adesoes.map(a => `
+    <div class="admin-table-wrap" style="padding:16px 20px; margin-bottom:12px;" data-adesao="${a.id}">
+      <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:space-between;">
+        <div>
+          <strong>${esc(a.nome)}</strong> <small>${esc(a.telefone)} ${a.email ? "· " + esc(a.email) : ""}</small><br>
+          <small>${esc(a.grupoNome)} · origem ${a.origem === "parceiro" ? "parceiro" : "cliente (catálogo)"}${a.parceiroNome ? ` · parceiro ${esc(a.parceiroNome)} (${esc(a.parceiroCodigo)})` : ""}</small><br>
+          <small>${MES.formatDate(a.createdAt)}${a.confirmadaEm ? " · confirmada em " + MES.formatDate(a.confirmadaEm) : ""}</small>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <span class="status-badge status-${a.status === "confirmada" ? "ativo" : a.status === "cancelada" ? "encerrado" : "pendente"}">${ADESAO_STATUS[a.status] || a.status}</span>
+          ${a.status === "aguardando_cliente" ? `<button type="button" class="admin-btn admin-btn-ghost" data-cancel="${a.id}">Cancelar</button>` : ""}
+        </div>
+      </div>
+    </div>`).join("");
+}
+
+document.getElementById("adesoesList").addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-cancel]");
+  if(!btn) return;
+  if(!confirm("Cancelar essa adesão? Ela deixa de reservar a cota no grupo.")) return;
+  const res = await MES.apiPost(`/api/admin/consorcio/adesoes/${btn.dataset.cancel}/cancelar`, {});
+  if(!res.ok){ MES.showToast(res.error || "Erro ao cancelar."); return; }
+  MES.showToast("Adesão cancelada.");
+  loadAdesoes();
+  loadGrupos();
+});
+document.getElementById("adesaoGrupoFilter").addEventListener("change", loadAdesoes);
+document.getElementById("adesaoRefresh").addEventListener("click", loadAdesoes);
+
+async function init(){
+  const admin = await MES.requireAuth("promotora");
+  if(!admin) return;
+  await loadGrupos();
+  await loadAdesoes();
+}
+document.getElementById("logoutBtn").addEventListener("click", () => MES.logout());
+init();
+</script>
+</body>
+</html>
