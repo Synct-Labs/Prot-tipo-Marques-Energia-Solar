@@ -975,11 +975,22 @@ async function handleApi(req, res, pathname) {
     const customerRecord = email ? await customers.findByEmail(email) : null;
     if (auth.verifyPasswordSafe(password, customerRecord && customerRecord.password_hash)) {
       auth.clearAttempts(ip);
-      // Verificação em duas etapas é obrigatória pra toda conta agora (não só
-      // admin): quem nunca configurou método cai no e-mail por padrão.
-      const method = customerRecord.two_factor_method || "email";
-      const pendingToken = await customers.createPending2FALogin(customerRecord.id, method, customerRecord.email);
-      return sendJSON(res, 200, { ok: true, kind: "customer", requires2FA: true, pendingToken, method });
+      // Verificação em duas etapas é obrigatória pra toda conta (não só
+      // admin) — a menos que CUSTOMER_2FA_MANDATORY=false esteja setado
+      // (interruptor temporário, ver config.js), aí só pede pra quem já
+      // tinha ativado por conta própria.
+      if (config.CUSTOMER_2FA_MANDATORY || customerRecord.two_factor_enabled) {
+        const method = customerRecord.two_factor_method || "email";
+        const pendingToken = await customers.createPending2FALogin(customerRecord.id, method, customerRecord.email);
+        return sendJSON(res, 200, { ok: true, kind: "customer", requires2FA: true, pendingToken, method });
+      }
+      const { token, expiresAt } = await customers.createSession(customerRecord.id);
+      return sendJSON(
+        res,
+        200,
+        { ok: true, kind: "customer", customer: customers.toPublic(customerRecord) },
+        { "Set-Cookie": auth.buildSessionCookie(token, expiresAt, customers.SESSION_COOKIE_NAME) }
+      );
     }
 
     auth.registerFailedAttempt(ip);
@@ -1003,12 +1014,23 @@ async function handleApi(req, res, pathname) {
     auth.clearAttempts(ip);
 
     // Verificação em duas etapas é obrigatória pra toda conta (não só
-    // admin): login ainda não fecha, falta o código. Método "email" já
-    // dispara o envio agora; "app" não precisa; sem método configurado
-    // ainda, cai no e-mail por padrão.
-    const method = record.two_factor_method || "email";
-    const pendingToken = await customers.createPending2FALogin(record.id, method, record.email);
-    return sendJSON(res, 200, { ok: true, requires2FA: true, pendingToken, method });
+    // admin), a menos que CUSTOMER_2FA_MANDATORY=false (interruptor
+    // temporário, ver config.js) — aí só pede pra quem já tinha ativado.
+    // Método "email" já dispara o envio agora; "app" não precisa; sem
+    // método configurado ainda, cai no e-mail por padrão.
+    if (config.CUSTOMER_2FA_MANDATORY || record.two_factor_enabled) {
+      const method = record.two_factor_method || "email";
+      const pendingToken = await customers.createPending2FALogin(record.id, method, record.email);
+      return sendJSON(res, 200, { ok: true, requires2FA: true, pendingToken, method });
+    }
+
+    const { token, expiresAt } = await customers.createSession(record.id);
+    return sendJSON(
+      res,
+      200,
+      { ok: true, customer: customers.toPublic(record) },
+      { "Set-Cookie": auth.buildSessionCookie(token, expiresAt, customers.SESSION_COOKIE_NAME) }
+    );
   }
 
   if (pathname === "/api/customers/login/2fa" && req.method === "POST") {

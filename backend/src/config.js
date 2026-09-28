@@ -52,6 +52,12 @@ module.exports = {
   ADMIN_IDLE_TIMEOUT_MINUTES: parseInt(process.env.ADMIN_IDLE_TIMEOUT_MINUTES || "20", 10),
   CUSTOMER_SESSION_TTL_HOURS: parseInt(process.env.CUSTOMER_SESSION_TTL_HOURS || "12", 10),
   CUSTOMER_IDLE_TIMEOUT_MINUTES: parseInt(process.env.CUSTOMER_IDLE_TIMEOUT_MINUTES || "20", 10),
+  // Interruptor pra desligar temporariamente a verificação em duas etapas
+  // obrigatória do cliente (ex: problema de entrega de e-mail em massa),
+  // sem precisar mexer em código — só setar CUSTOMER_2FA_MANDATORY=false
+  // no .env e reiniciar. Volta a ficar opcional (só quem já tinha ativado
+  // continua pedindo código). O 2FA do admin NÃO é afetado por isso.
+  CUSTOMER_2FA_MANDATORY: (process.env.CUSTOMER_2FA_MANDATORY || "true") !== "false",
   NODE_ENV: process.env.NODE_ENV || "development",
   DATABASE_URL: process.env.DATABASE_URL || "",
   CORS_ORIGINS,
