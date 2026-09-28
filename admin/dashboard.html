@@ -159,6 +159,13 @@ function orderDetailHTML(order){
       ${order.pendencia ? `
         <p class="admin-error show">${order.pendencia.texto}</p>
         <p class="admin-muted" style="margin-top:-4px;">Lançada em ${MES.formatDate(order.pendencia.criadaEm)} por ${order.pendencia.autor}</p>
+        ${order.pendencia.resposta ? `
+          <div style="margin-top:10px; padding:10px 12px; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm);">
+            <strong style="font-size:.85rem;">Resposta recebida</strong>
+            <p class="admin-muted" style="margin:4px 0 0;">Em ${MES.formatDate(order.pendencia.resposta.criadaEm)}${order.pendencia.resposta.texto ? " — " + order.pendencia.resposta.texto : ""}</p>
+            ${order.pendencia.resposta.temArquivo ? `<p style="margin-top:8px;"><a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/orders/${order.id}/pendencia-resposta" target="_blank" rel="noopener">Baixar anexo</a></p>` : ""}
+          </div>
+        ` : `<p class="admin-muted" style="margin-top:6px;">Ainda sem resposta.</p>`}
         <button type="button" class="admin-btn admin-btn-ghost admin-resolve-pendencia-btn" data-order-id="${order.id}" style="margin-top:8px;">Marcar como resolvida</button>
       ` : `
         <p class="admin-muted">Nenhuma pendência aberta.</p>

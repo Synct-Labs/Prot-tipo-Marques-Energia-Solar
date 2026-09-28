@@ -63,11 +63,30 @@ function stepperHTML(steps, labels, status) {
     </span>${i < steps.length - 1 ? `<span class="order-step-line ${i < idx ? "done" : ""}"></span>` : ""}`).join("")}</div>`;
 }
 
+function pendenciaBlockHTML(order) {
+  if (!order.pendencia) return "";
+  const p = order.pendencia;
+  const alertHTML = `<div class="order-card-alert">Pendência: ${esc(p.texto)}</div>`;
+  if (p.resposta) {
+    const quando = new Date(p.resposta.criadaEm).toLocaleDateString("pt-BR");
+    return alertHTML + `<div class="order-card-note">Você já respondeu em ${quando}${p.resposta.texto ? ": " + esc(p.resposta.texto) : ""}. Aguarde a análise.</div>`;
+  }
+  return alertHTML + `
+    <form class="pendencia-resposta-form" data-order-id="${order.id}" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+      <label style="font-size:.82rem;">Anexar documento corrigido
+        <input type="file" name="arquivo" accept="image/jpeg,image/png,application/pdf" required>
+      </label>
+      <label style="font-size:.82rem;">Observação (opcional)
+        <textarea name="texto" rows="2" placeholder="Se precisar explicar algo..."></textarea>
+      </label>
+      <button type="submit" class="btn btn-outline" style="width:auto; align-self:flex-start;">Responder pendência</button>
+      <small class="pendencia-resposta-error" style="color:var(--danger); display:none;"></small>
+    </form>`;
+}
+
 function partnerOrderItemHTML(order) {
   const label = ORDER_STATUS_LABELS[order.status] || order.status;
-  const pendenciaHTML = order.pendencia
-    ? `<div class="order-card-alert">Pendência: ${esc(order.pendencia.texto)}</div>`
-    : "";
+  const pendenciaHTML = pendenciaBlockHTML(order);
   const linkHTML = order.paymentLink
     ? `<div class="order-card-note">Link de pagamento enviado: <span style="word-break:break-all;">${esc(order.paymentLink)}</span></div>`
     : "";
@@ -120,6 +139,50 @@ async function loadPartnerOrders() {
     ? res.orders.map(partnerOrderItemHTML).join("")
     : `<p class="pay-empty-note">Nenhum pedido indicado ainda.</p>`;
 }
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById("partnerOrdersList")?.addEventListener("submit", async (e) => {
+  const form = e.target.closest(".pendencia-resposta-form");
+  if (!form) return;
+  e.preventDefault();
+  const errorBox = form.querySelector(".pendencia-resposta-error");
+  errorBox.style.display = "none";
+
+  const file = form.querySelector('[name="arquivo"]').files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    errorBox.textContent = "Arquivo maior que 5MB.";
+    errorBox.style.display = "block";
+    return;
+  }
+
+  const btn = form.querySelector("button[type=submit]");
+  btn.disabled = true; btn.textContent = "Enviando...";
+  try {
+    const res = await api("POST", `/api/partners/me/orders/${form.dataset.orderId}/pendencia-resposta`, {
+      arquivoBase64: await fileToBase64(file),
+      arquivoTipo: file.type,
+      arquivoNome: file.name,
+      texto: form.querySelector('[name="texto"]').value.trim(),
+    });
+    if (!res.ok) {
+      errorBox.textContent = res.error || "Não foi possível enviar a resposta.";
+      errorBox.style.display = "block";
+      return;
+    }
+    loadPartnerOrders();
+  } finally {
+    btn.disabled = false; btn.textContent = "Responder pendência";
+  }
+});
 
 async function loadPartnerLeads() {
   const box = $("partnerLeadsList");

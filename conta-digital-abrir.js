@@ -17,7 +17,15 @@ async function api(method, path, body) {
     headers: body ? { "Content-Type": "application/json" } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   });
-  return res.json();
+  // Se a resposta não vier em JSON de verdade (conexão cortada no meio de
+  // um upload grande, erro de proxy...), o parse quebra com uma mensagem
+  // de erro do próprio navegador (feia e sem contexto) — troca por uma
+  // mensagem que a pessoa entende.
+  try {
+    return await res.json();
+  } catch (e) {
+    return { ok: false, error: "Não foi possível enviar. Verifique sua conexão e tente de novo." };
+  }
 }
 
 function showError(msg) {
@@ -155,14 +163,52 @@ function readAsBase64(file) {
   });
 }
 
+// Foto tirada direto da câmera do celular costuma vir enorme (vários MB) —
+// isso deixava o upload lento e, em conexão mais fraca, a resposta do
+// servidor chegava cortada, e o Safari tentava interpretar aquilo como
+// JSON e estourava "The string did not match the expected pattern.". Redu-
+// zindo a imagem antes de mandar, resolve os dois problemas de uma vez.
+// PDF passa direto, sem mexer.
+function resizeImageFile(file, maxDim = 1600, quality = 0.85) {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith("image/")) { resolve(file); return; }
+    // "data:" (não "blob:") porque o Content-Security-Policy do site só
+    // libera img-src 'self' e data: — blob: seria bloqueado e cairia
+    // sempre no onerror, resolvendo com o arquivo original sem redimensionar.
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const { width, height } = img;
+        if (width <= maxDim && height <= maxDim) { resolve(file); return; }
+        const scale = maxDim / Math.max(width, height);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(width * scale);
+        canvas.height = Math.round(height * scale);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          resolve(blob ? new File([blob], file.name, { type: "image/jpeg" }) : file);
+        }, "image/jpeg", quality);
+      };
+      // Não conseguiu decodificar (formato estranho, arquivo corrompido...):
+      // manda o arquivo original mesmo, não trava o envio por causa disso.
+      img.onerror = () => resolve(file);
+      img.src = reader.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
 document.querySelectorAll(".kyc-doc input[type=file]").forEach((input) => {
   input.addEventListener("change", async () => {
     const tipo = input.closest(".kyc-doc").dataset.tipo;
-    const file = input.files[0];
+    let file = input.files[0];
     if (!file) return;
     if (file.size > MAX_BYTES) { markDoc(tipo, "Arquivo maior que 15 MB.", true); return; }
     markDoc(tipo, "Enviando...");
     try {
+      file = await resizeImageFile(file);
       await saveDraft(); // o documento precisa de um cadastro já salvo
       const res = await api("PUT", `/api/customers/me/pay-kyc/documents/${tipo}`, {
         base64: await readAsBase64(file), mime: file.type, nome: file.name,
@@ -170,7 +216,7 @@ document.querySelectorAll(".kyc-doc input[type=file]").forEach((input) => {
       if (!res.ok) throw new Error(res.error || "Falha no envio.");
       markDoc(tipo, `${DOC_LABEL_OK}: ${file.name}`);
     } catch (err) {
-      markDoc(tipo, err.message, true);
+      markDoc(tipo, err.message || "Não foi possível enviar o arquivo. Tente novamente.", true);
     }
   });
 });

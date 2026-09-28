@@ -128,6 +128,13 @@ function adminNovoPedidoHTML(order) {
   ], { ctaHref: "https://marquespromotora.com/admin/dashboard.html", ctaLabel: "Ver pedido" });
 }
 
+function adminPendenciaRespostaHTML({ orderNumber, autor, texto }) {
+  return simpleEmailHTML(`Pedido ${escHtml(orderNumber)}: resposta à pendência`, [
+    `<strong>${escHtml(autor)}</strong> respondeu a pendência do pedido <strong>${escHtml(orderNumber)}</strong> com um novo anexo.`,
+    texto ? `Observação: ${escHtml(texto)}` : `Sem observação, só o anexo.`,
+  ], { ctaHref: "https://marquespromotora.com/admin/dashboard.html", ctaLabel: "Ver pedido" });
+}
+
 function adminNovaSolicitacaoCreditoHTML(lead) {
   return simpleEmailHTML("Nova solicitação de crédito", [
     `Solicitação <strong>${lead.leadNumber}</strong> de <strong>${lead.dadosBasicos.nome}</strong>.`,
@@ -256,4 +263,5 @@ module.exports = {
   adminLoginNotificationHTML,
   pagamentoLinkParaParceiroHTML, pagamentoLinkParaClienteHTML,
   pendenciaParaParceiroHTML, pendenciaParaClienteHTML,
+  adminPendenciaRespostaHTML,
 };

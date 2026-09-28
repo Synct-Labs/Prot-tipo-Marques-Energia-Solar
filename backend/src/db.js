@@ -522,6 +522,14 @@ async function initSchema() {
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS pendencia_texto TEXT;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS pendencia_criada_em TEXT;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS pendencia_autor TEXT;
+    -- Resposta do parceiro (ou do cliente, se comprou direto) à pendência:
+    -- anexo obrigatório com o documento corrigido + observação opcional.
+    -- Limpa junto quando a pendência é resolvida (ver clearPendencia).
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS pendencia_resposta_dados BYTEA;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS pendencia_resposta_tipo TEXT;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS pendencia_resposta_nome TEXT;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS pendencia_resposta_texto TEXT;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS pendencia_resposta_em TEXT;
 
     -- E-mails do dono/equipe que recebem aviso de evento novo (pedido,
     -- solicitação de crédito, solicitação de análise de conta Marques Pay).

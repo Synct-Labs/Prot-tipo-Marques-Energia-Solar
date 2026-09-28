@@ -648,6 +648,15 @@ async function handleApi(req, res, pathname) {
     return sendJSON(res, 200, { ok: true, order: await orders.getOrderById(id) });
   }
 
+  const orderPendenciaRespostaDocMatch = pathname.match(/^\/api\/admin\/orders\/(\d+)\/pendencia-resposta$/);
+  if (orderPendenciaRespostaDocMatch && req.method === "GET") {
+    const admin = await requireCompanyAccess(req, res, "energia_solar");
+    if (!admin) return;
+    const c = await orders.getPendenciaResposta(parseInt(orderPendenciaRespostaDocMatch[1], 10));
+    if (!c) return sendJSON(res, 404, { ok: false, error: "Anexo não encontrado." });
+    return sendBinary(res, 200, c.data, c.tipo, c.nome);
+  }
+
   // ---- ADMIN: BUSCA DE CLIENTE (pra vincular contrato de empréstimo/participação) ----
   if (pathname === "/api/admin/customers/search" && req.method === "GET") {
     const admin = await requireCompanyAccess(req, res, "promotora");
@@ -1450,6 +1459,39 @@ async function handleApi(req, res, pathname) {
     const row = await partners.getRowByCustomer(customer.id);
     if (!row || row.status !== "ativo") return sendJSON(res, 403, { ok: false, error: "Seu cadastro de parceiro ainda não está ativo." });
     return sendJSON(res, 200, { ok: true, orders: await orders.listOrdersByPartner(row.id) });
+  }
+
+  // Resposta do parceiro a uma pendência: anexo obrigatório (documento
+  // corrigido) + observação opcional — avisa os admins por e-mail.
+  const partnerOrderPendenciaRespostaMatch = pathname.match(/^\/api\/partners\/me\/orders\/(\d+)\/pendencia-resposta$/);
+  if (partnerOrderPendenciaRespostaMatch && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const row = await partners.getRowByCustomer(customer.id);
+    if (!row || row.status !== "ativo") return sendJSON(res, 403, { ok: false, error: "Seu cadastro de parceiro ainda não está ativo." });
+    const id = parseInt(partnerOrderPendenciaRespostaMatch[1], 10);
+    const order = await orders.getOrderById(id);
+    if (!order || order.partnerId !== row.id) return sendJSON(res, 404, { ok: false, error: "Pedido não encontrado." });
+    if (!order.pendencia) return sendJSON(res, 400, { ok: false, error: "Esse pedido não tem pendência aberta." });
+
+    const body = await parseJSONBody(req, Math.ceil(orders.MAX_DOC_BYTES * 1.4));
+    let buffer;
+    try { buffer = Buffer.from(String(body.arquivoBase64 || ""), "base64"); } catch { return sendJSON(res, 400, { ok: false, error: "Anexo inválido." }); }
+    if (!buffer.length) return sendJSON(res, 400, { ok: false, error: "Anexe o documento corrigido." });
+    if (buffer.length > orders.MAX_DOC_BYTES) return sendJSON(res, 413, { ok: false, error: "Anexo maior que 5MB." });
+    if (!isAllowedFileMime(body.arquivoTipo)) return sendJSON(res, 400, { ok: false, error: `Arquivo deve ser um de: ${ALLOWED_FILE_MIMES.join(", ")}.` });
+    const texto = String(body.texto || "").trim().slice(0, 1000);
+
+    await orders.setPendenciaResposta(id, { buffer, tipo: body.arquivoTipo, nome: body.arquivoNome, texto });
+    try {
+      await notifications.notifyAdmins({
+        subject: `Pedido ${order.orderNumber}: resposta à pendência`,
+        text: `${customer.nome} respondeu a pendência do pedido ${order.orderNumber}${texto ? ": " + texto : "."}`,
+        html: mailer.adminPendenciaRespostaHTML({ orderNumber: order.orderNumber, autor: `parceiro:${customer.email}`, texto }),
+      });
+    } catch (e) { console.error("[notifications] falha ao avisar admins da resposta de pendência:", e.message); }
+
+    return sendJSON(res, 200, { ok: true, order: await orders.getOrderById(id) });
   }
 
   if (pathname === "/api/partners/me/leads" && req.method === "GET") {

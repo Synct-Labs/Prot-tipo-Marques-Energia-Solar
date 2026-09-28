@@ -49,7 +49,14 @@ function rowToOrder(row) {
     partnerId: row.partner_id || null,
     paymentLink: row.payment_link || null,
     pendencia: row.pendencia_texto
-      ? { texto: row.pendencia_texto, criadaEm: row.pendencia_criada_em, autor: row.pendencia_autor }
+      ? {
+          texto: row.pendencia_texto,
+          criadaEm: row.pendencia_criada_em,
+          autor: row.pendencia_autor,
+          resposta: row.pendencia_resposta_em
+            ? { texto: row.pendencia_resposta_texto || "", temArquivo: !!row.pendencia_resposta_dados, criadaEm: row.pendencia_resposta_em }
+            : null,
+        }
       : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -211,10 +218,36 @@ async function setPendencia(id, { texto, autor }) {
 
 async function clearPendencia(id) {
   const result = await pool.query(
-    "UPDATE orders SET pendencia_texto = NULL, pendencia_criada_em = NULL, pendencia_autor = NULL, updated_at = $1 WHERE id = $2",
+    `UPDATE orders SET pendencia_texto = NULL, pendencia_criada_em = NULL, pendencia_autor = NULL,
+       pendencia_resposta_dados = NULL, pendencia_resposta_tipo = NULL, pendencia_resposta_nome = NULL,
+       pendencia_resposta_texto = NULL, pendencia_resposta_em = NULL, updated_at = $1
+     WHERE id = $2`,
     [new Date().toISOString(), id]
   );
   return result.rowCount > 0;
+}
+
+// Resposta à pendência (parceiro ou cliente): anexo obrigatório + observação
+// opcional. Só faz sentido enquanto a pendência segue aberta — quem chama
+// confere isso antes (ver rota em server.js).
+async function setPendenciaResposta(id, { buffer, tipo, nome, texto }) {
+  const result = await pool.query(
+    `UPDATE orders SET pendencia_resposta_dados = $1, pendencia_resposta_tipo = $2, pendencia_resposta_nome = $3,
+       pendencia_resposta_texto = $4, pendencia_resposta_em = $5, updated_at = $5
+     WHERE id = $6`,
+    [buffer, tipo, String(nome || "").slice(0, 120), texto || "", new Date().toISOString(), id]
+  );
+  return result.rowCount > 0;
+}
+
+async function getPendenciaResposta(id) {
+  const { rows } = await pool.query(
+    "SELECT pendencia_resposta_dados, pendencia_resposta_tipo, pendencia_resposta_nome FROM orders WHERE id = $1",
+    [id]
+  );
+  const row = rows[0];
+  if (!row || !row.pendencia_resposta_dados) return null;
+  return { data: row.pendencia_resposta_dados, tipo: row.pendencia_resposta_tipo, nome: row.pendencia_resposta_nome };
 }
 
 async function getDocFoto(id) {
@@ -265,4 +298,6 @@ module.exports = {
   setPaymentLink,
   setPendencia,
   clearPendencia,
+  setPendenciaResposta,
+  getPendenciaResposta,
 };
