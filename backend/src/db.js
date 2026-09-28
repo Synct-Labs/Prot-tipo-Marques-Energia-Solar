@@ -512,6 +512,17 @@ async function initSchema() {
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS doc_foto_tipo TEXT;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS doc_foto_nome TEXT;
 
+    -- Link de pagamento (ou boleto): o admin lança e o sistema avisa por
+    -- e-mail quem repassa pro cliente — o parceiro, na compra assistida ou
+    -- venda indicada, ou o próprio cliente quando comprou direto.
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_link TEXT;
+    -- Pendência: o admin sinaliza um problema (ex: comprovante de endereço
+    -- ilegível) com uma observação livre; um pedido tem no máximo uma
+    -- pendência aberta por vez (vira NULL de novo quando resolvida).
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS pendencia_texto TEXT;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS pendencia_criada_em TEXT;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS pendencia_autor TEXT;
+
     -- E-mails do dono/equipe que recebem aviso de evento novo (pedido,
     -- solicitação de crédito, solicitação de análise de conta Marques Pay).
     -- Configurável pelo próprio admin (aba "Notificações", só dono).

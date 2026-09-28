@@ -93,6 +93,16 @@ async function getByCustomer(customerId) {
   return toPublic(await getRowByCustomer(customerId), await getRates());
 }
 
+// Nome/e-mail do parceiro (via customer_id) — usado pra mandar pro parceiro
+// o link de pagamento ou o aviso de pendência de um pedido/lead dele.
+async function getContactById(partnerId) {
+  const { rows } = await pool.query(
+    "SELECT customers.nome, customers.email FROM partners JOIN customers ON customers.id = partners.customer_id WHERE partners.id = $1",
+    [partnerId]
+  );
+  return rows[0] || null;
+}
+
 async function apply(customerId, { pixTipo, pixChave, aceiteTermos, ip }) {
   if (aceiteTermos !== true) throw err(400, "Você precisa aceitar os termos do Programa de Parceiros.");
   if (!PIX_TIPOS.includes(pixTipo)) throw err(400, "Selecione o tipo da chave PIX.");
@@ -338,7 +348,7 @@ async function getComprovanteAdmin(id) {
 
 module.exports = {
   TERMOS_VERSAO, MAX_COMPROVANTE_BYTES, PARTNER_STATUS, COMMISSION_STATUS, ASSISTED_TIERS,
-  getRates, setRates, getByCustomer, getRowByCustomer, apply,
+  getRates, setRates, getByCustomer, getRowByCustomer, getContactById, apply,
   resolveAttribution, resolveSelfAssisted, registerSale, syncStatus,
   summaryForPartner, getComprovanteForPartner,
   listPartners, setStatus, setOverrides, listCommissions, adjust, markPaid, getComprovanteAdmin,

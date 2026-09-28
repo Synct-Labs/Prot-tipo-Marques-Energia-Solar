@@ -65,6 +65,12 @@ function stepperHTML(steps, labels, status) {
 
 function partnerOrderItemHTML(order) {
   const label = ORDER_STATUS_LABELS[order.status] || order.status;
+  const pendenciaHTML = order.pendencia
+    ? `<div class="order-card-alert">Pendência: ${esc(order.pendencia.texto)}</div>`
+    : "";
+  const linkHTML = order.paymentLink
+    ? `<div class="order-card-note">Link de pagamento enviado: <span style="word-break:break-all;">${esc(order.paymentLink)}</span></div>`
+    : "";
   return `
     <div class="order-card">
       <div class="order-card-head">
@@ -76,6 +82,8 @@ function partnerOrderItemHTML(order) {
         <span class="account-status-badge status-${statusTone(order.status)}">${label}</span>
       </div>
       ${stepperHTML(ORDER_STEPS, ORDER_STATUS_LABELS, order.status)}
+      ${pendenciaHTML}
+      ${linkHTML}
       <div class="order-card-foot">
         <span class="item-detail">${order.itens.length} ite${order.itens.length === 1 ? "m" : "ns"}</span>
         <strong class="order-card-total">${brl(order.total)}</strong>

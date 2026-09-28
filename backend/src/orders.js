@@ -46,6 +46,11 @@ function rowToOrder(row) {
     temContrato: !!row.contrato_dados,
     temDocEndereco: !!row.doc_endereco_dados,
     temDocFoto: !!row.doc_foto_dados,
+    partnerId: row.partner_id || null,
+    paymentLink: row.payment_link || null,
+    pendencia: row.pendencia_texto
+      ? { texto: row.pendencia_texto, criadaEm: row.pendencia_criada_em, autor: row.pendencia_autor }
+      : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -185,6 +190,33 @@ async function getDocEndereco(id) {
   return { data: row.doc_endereco_dados, tipo: row.doc_endereco_tipo, nome: row.doc_endereco_nome };
 }
 
+// Link de pagamento (ou boleto): o admin lança aqui; quem avisa o parceiro
+// ou o cliente é o server.js, depois de chamar essa função com sucesso.
+async function setPaymentLink(id, link) {
+  const result = await pool.query(
+    "UPDATE orders SET payment_link = $1, updated_at = $2 WHERE id = $3",
+    [link, new Date().toISOString(), id]
+  );
+  return result.rowCount > 0;
+}
+
+async function setPendencia(id, { texto, autor }) {
+  const now = new Date().toISOString();
+  const result = await pool.query(
+    "UPDATE orders SET pendencia_texto = $1, pendencia_criada_em = $2, pendencia_autor = $3, updated_at = $2 WHERE id = $4",
+    [texto, now, autor, id]
+  );
+  return result.rowCount > 0;
+}
+
+async function clearPendencia(id) {
+  const result = await pool.query(
+    "UPDATE orders SET pendencia_texto = NULL, pendencia_criada_em = NULL, pendencia_autor = NULL, updated_at = $1 WHERE id = $2",
+    [new Date().toISOString(), id]
+  );
+  return result.rowCount > 0;
+}
+
 async function getDocFoto(id) {
   const { rows } = await pool.query(
     "SELECT doc_foto_dados, doc_foto_tipo, doc_foto_nome FROM orders WHERE id = $1",
@@ -230,4 +262,7 @@ module.exports = {
   getContrato,
   getDocEndereco,
   getDocFoto,
+  setPaymentLink,
+  setPendencia,
+  clearPendencia,
 };

@@ -567,6 +567,87 @@ async function handleApi(req, res, pathname) {
     return sendBinary(res, 200, c.data, c.tipo, c.nome);
   }
 
+  // Link de pagamento (ou boleto): salva no pedido e avisa por e-mail quem
+  // repassa pro cliente — o parceiro, se o pedido foi indicado/assistido,
+  // ou o próprio cliente, se comprou direto.
+  const orderPaymentLinkMatch = pathname.match(/^\/api\/admin\/orders\/(\d+)\/payment-link$/);
+  if (orderPaymentLinkMatch && req.method === "POST") {
+    const admin = await requireCompanyAccess(req, res, "energia_solar");
+    if (!admin) return;
+    const id = parseInt(orderPaymentLinkMatch[1], 10);
+    const order = await orders.getOrderById(id);
+    if (!order) return sendJSON(res, 404, { ok: false, error: "Pedido não encontrado." });
+    const body = await parseJSONBody(req);
+    const link = String(body.link || "").trim();
+    if (!link) return sendJSON(res, 400, { ok: false, error: "Informe o link de pagamento (ou o boleto)." });
+    if (link.length > 1000) return sendJSON(res, 400, { ok: false, error: "Link/boleto muito longo (máximo 1000 caracteres)." });
+    await orders.setPaymentLink(id, link);
+
+    const label = order.pagamento === "boleto" ? "boleto" : "link de pagamento";
+    if (order.partnerId) {
+      const contact = await partners.getContactById(order.partnerId);
+      await mailer.sendEmail({
+        to: contact.email,
+        subject: `Pedido ${order.orderNumber}: ${label} pronto`,
+        text: `O pedido ${order.orderNumber} (cliente: ${order.customer.nome}) já tem o ${label}: ${link}`,
+        html: mailer.pagamentoLinkParaParceiroHTML({ orderNumber: order.orderNumber, clienteNome: order.customer.nome, link, pagamento: order.pagamento }),
+      });
+    } else {
+      await mailer.sendEmail({
+        to: order.customer.email,
+        subject: `Seu pedido ${order.orderNumber}: ${label} pronto`,
+        text: `Seu pedido ${order.orderNumber} já tem o ${label}: ${link}`,
+        html: mailer.pagamentoLinkParaClienteHTML({ orderNumber: order.orderNumber, link, pagamento: order.pagamento }),
+      });
+    }
+    return sendJSON(res, 200, { ok: true, order: await orders.getOrderById(id) });
+  }
+
+  // Pendência: admin sinaliza um problema (ex: comprovante de endereço
+  // ilegível) com uma observação livre — avisa parceiro ou cliente, mesma
+  // regra de destinatário do link de pagamento.
+  const orderPendenciaMatch = pathname.match(/^\/api\/admin\/orders\/(\d+)\/pendencia$/);
+  if (orderPendenciaMatch && req.method === "POST") {
+    const admin = await requireCompanyAccess(req, res, "energia_solar");
+    if (!admin) return;
+    const id = parseInt(orderPendenciaMatch[1], 10);
+    const order = await orders.getOrderById(id);
+    if (!order) return sendJSON(res, 404, { ok: false, error: "Pedido não encontrado." });
+    const body = await parseJSONBody(req);
+    const texto = String(body.texto || "").trim();
+    if (!texto) return sendJSON(res, 400, { ok: false, error: "Descreva a pendência." });
+    if (texto.length > 1000) return sendJSON(res, 400, { ok: false, error: "Descrição muito longa (máximo 1000 caracteres)." });
+    await orders.setPendencia(id, { texto, autor: `admin:${admin.email}` });
+
+    if (order.partnerId) {
+      const contact = await partners.getContactById(order.partnerId);
+      await mailer.sendEmail({
+        to: contact.email,
+        subject: `Pedido ${order.orderNumber}: pendência`,
+        text: `O pedido ${order.orderNumber} (cliente: ${order.customer.nome}) está com uma pendência: ${texto}`,
+        html: mailer.pendenciaParaParceiroHTML({ orderNumber: order.orderNumber, clienteNome: order.customer.nome, texto }),
+      });
+    } else {
+      await mailer.sendEmail({
+        to: order.customer.email,
+        subject: `Seu pedido ${order.orderNumber}: pendência`,
+        text: `Seu pedido ${order.orderNumber} está com uma pendência: ${texto}`,
+        html: mailer.pendenciaParaClienteHTML({ orderNumber: order.orderNumber, texto }),
+      });
+    }
+    return sendJSON(res, 200, { ok: true, order: await orders.getOrderById(id) });
+  }
+
+  const orderPendenciaResolverMatch = pathname.match(/^\/api\/admin\/orders\/(\d+)\/pendencia\/resolver$/);
+  if (orderPendenciaResolverMatch && req.method === "POST") {
+    const admin = await requireCompanyAccess(req, res, "energia_solar");
+    if (!admin) return;
+    const id = parseInt(orderPendenciaResolverMatch[1], 10);
+    const changed = await orders.clearPendencia(id);
+    if (!changed) return sendJSON(res, 404, { ok: false, error: "Pedido não encontrado." });
+    return sendJSON(res, 200, { ok: true, order: await orders.getOrderById(id) });
+  }
+
   // ---- ADMIN: BUSCA DE CLIENTE (pra vincular contrato de empréstimo/participação) ----
   if (pathname === "/api/admin/customers/search" && req.method === "GET") {
     const admin = await requireCompanyAccess(req, res, "promotora");

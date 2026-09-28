@@ -145,6 +145,29 @@ function orderDetailHTML(order){
         <button type="submit" class="admin-btn admin-btn-ghost" style="width:auto;">${order.temContrato ? "Substituir" : "Anexar"} contrato</button>
       </form>
     </div>
+    <div class="admin-detail-block">
+      <h4>Link de pagamento ${order.pagamento === "boleto" ? "(boleto)" : ""}</h4>
+      <p class="admin-note" style="margin:0 0 8px; text-align:left;">${order.partnerId ? "Enviado por e-mail pro parceiro que indicou/assistiu o pedido." : "Enviado por e-mail direto pro cliente."}</p>
+      ${order.paymentLink ? `<p class="admin-muted" style="word-break:break-all;">Último enviado: ${order.paymentLink}</p>` : `<p class="admin-muted">Nenhum link enviado ainda.</p>`}
+      <form class="admin-payment-link-form" data-order-id="${order.id}" style="display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap;">
+        <input type="text" name="link" placeholder="${order.pagamento === "boleto" ? "Link ou linha digitável do boleto" : "Link de pagamento"}" style="flex:1; min-width:220px;" required>
+        <button type="submit" class="admin-btn admin-btn-ghost" style="width:auto;">Enviar</button>
+      </form>
+    </div>
+    <div class="admin-detail-block">
+      <h4>Pendência</h4>
+      ${order.pendencia ? `
+        <p class="admin-error show">${order.pendencia.texto}</p>
+        <p class="admin-muted" style="margin-top:-4px;">Lançada em ${MES.formatDate(order.pendencia.criadaEm)} por ${order.pendencia.autor}</p>
+        <button type="button" class="admin-btn admin-btn-ghost admin-resolve-pendencia-btn" data-order-id="${order.id}" style="margin-top:8px;">Marcar como resolvida</button>
+      ` : `
+        <p class="admin-muted">Nenhuma pendência aberta.</p>
+        <form class="admin-pendencia-form" data-order-id="${order.id}" style="display:flex; gap:8px; align-items:flex-start; margin-top:8px; flex-wrap:wrap;">
+          <textarea name="texto" placeholder="Ex: comprovante de endereço ilegível, pedir outro." style="flex:1; min-width:220px; min-height:56px; background:var(--surface-2); color:var(--white); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px;" required></textarea>
+          <button type="submit" class="admin-btn admin-btn-ghost" style="width:auto;">Lançar pendência</button>
+        </form>
+      `}
+    </div>
   `;
 }
 
@@ -249,6 +272,63 @@ document.getElementById("ordersTableBody").addEventListener("click", (e) => {
   const id = row.dataset.id;
   const detail = document.querySelector(`.admin-order-detail[data-detail-for="${id}"] .admin-order-detail-inner`);
   if(detail) detail.classList.toggle("open");
+});
+
+function updateOrderDetail(order){
+  const idx = allOrders.findIndex(o => String(o.id) === String(order.id));
+  if(idx > -1) allOrders[idx] = order;
+  const detail = document.querySelector(`[data-detail-for="${order.id}"] .admin-order-detail-inner`);
+  if(detail){ detail.innerHTML = orderDetailHTML(order); detail.classList.add("open"); }
+}
+
+document.getElementById("ordersTableBody").addEventListener("submit", async (e) => {
+  const linkForm = e.target.closest(".admin-payment-link-form");
+  const pendenciaForm = e.target.closest(".admin-pendencia-form");
+  if(!linkForm && !pendenciaForm) return;
+  e.preventDefault();
+
+  if(linkForm){
+    const link = linkForm.querySelector('[name="link"]').value.trim();
+    if(!link) return;
+    const btn = linkForm.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Enviando...";
+    try{
+      const res = await MES.apiPost(`/api/admin/orders/${linkForm.dataset.orderId}/payment-link`, { link });
+      if(!res.ok){ MES.showToast(res.error || "Erro ao enviar link."); return; }
+      MES.showToast("Link enviado por e-mail.");
+      updateOrderDetail(res.order);
+    } finally {
+      btn.disabled = false; btn.textContent = "Enviar";
+    }
+    return;
+  }
+
+  const texto = pendenciaForm.querySelector('[name="texto"]').value.trim();
+  if(!texto) return;
+  const btn = pendenciaForm.querySelector("button[type=submit]");
+  btn.disabled = true; btn.textContent = "Lançando...";
+  try{
+    const res = await MES.apiPost(`/api/admin/orders/${pendenciaForm.dataset.orderId}/pendencia`, { texto });
+    if(!res.ok){ MES.showToast(res.error || "Erro ao lançar pendência."); return; }
+    MES.showToast("Pendência lançada e e-mail enviado.");
+    updateOrderDetail(res.order);
+  } finally {
+    btn.disabled = false; btn.textContent = "Lançar pendência";
+  }
+});
+
+document.getElementById("ordersTableBody").addEventListener("click", async (e) => {
+  const btn = e.target.closest(".admin-resolve-pendencia-btn");
+  if(!btn) return;
+  btn.disabled = true; btn.textContent = "Marcando...";
+  try{
+    const res = await MES.apiPost(`/api/admin/orders/${btn.dataset.orderId}/pendencia/resolver`, {});
+    if(!res.ok){ MES.showToast(res.error || "Erro ao marcar pendência como resolvida."); return; }
+    MES.showToast("Pendência marcada como resolvida.");
+    updateOrderDetail(res.order);
+  } finally {
+    btn.disabled = false; btn.textContent = "Marcar como resolvida";
+  }
 });
 
 document.getElementById("ordersTableBody").addEventListener("change", async (e) => {
