@@ -105,9 +105,9 @@ async function updatePassword(id, newPassword) {
 async function createSession(customerId) {
   const token = crypto.randomBytes(32).toString("hex");
   const now = new Date();
-  const expires = new Date(now.getTime() + config.SESSION_TTL_HOURS * 3600 * 1000);
+  const expires = new Date(now.getTime() + config.CUSTOMER_SESSION_TTL_HOURS * 3600 * 1000);
   await pool.query(
-    "INSERT INTO customer_sessions (token, customer_id, created_at, expires_at) VALUES ($1, $2, $3, $4)",
+    "INSERT INTO customer_sessions (token, customer_id, created_at, expires_at, last_seen_at) VALUES ($1, $2, $3, $4, $3)",
     [token, customerId, now.toISOString(), expires.toISOString()]
   );
   return { token, expiresAt: expires };
@@ -118,20 +118,32 @@ async function destroySession(token) {
   await pool.query("DELETE FROM customer_sessions WHERE token = $1", [token]);
 }
 
+// Mesmo timeout por inatividade do admin (ver auth.js/getAdminBySession) —
+// além do expires_at absoluto, a sessão some se ficar parada por muito
+// tempo (CUSTOMER_IDLE_TIMEOUT_MINUTES em config.js).
 async function getCustomerBySession(token) {
   if (!token) return null;
   const { rows } = await pool.query(
-    `SELECT customers.*, customer_sessions.expires_at as session_expires_at
+    `SELECT customers.*, customer_sessions.expires_at as session_expires_at,
+            customer_sessions.last_seen_at as session_last_seen_at,
+            customer_sessions.created_at as session_created_at
      FROM customer_sessions JOIN customers ON customers.id = customer_sessions.customer_id
      WHERE customer_sessions.token = $1`,
     [token]
   );
   const row = rows[0];
   if (!row) return null;
-  if (new Date(row.session_expires_at).getTime() < Date.now()) {
+  const now = Date.now();
+  if (new Date(row.session_expires_at).getTime() < now) {
     await destroySession(token);
     return null;
   }
+  const lastSeen = new Date(row.session_last_seen_at || row.session_created_at).getTime();
+  if (now - lastSeen > config.CUSTOMER_IDLE_TIMEOUT_MINUTES * 60 * 1000) {
+    await destroySession(token);
+    return null;
+  }
+  pool.query("UPDATE customer_sessions SET last_seen_at = $1 WHERE token = $2", [new Date(now).toISOString(), token]).catch(() => {});
   return row;
 }
 
@@ -264,7 +276,11 @@ async function verify2FACode(pendingEntry, code) {
   if (row.two_factor_method === "app" && row.two_factor_secret && totp.verifyToken(row.two_factor_secret, code)) {
     return true;
   }
-  if (row.two_factor_method === "email" && pendingEntry.emailCode && pendingEntry.emailCode === String(code).trim()) {
+  // Sem método explícito (conta que nunca "ativou" o 2FA): a verificação em
+  // duas etapas agora é obrigatória pra toda conta, então cai no e-mail por
+  // padrão — mesmo código pendente do login, sem precisar de setup prévio.
+  const method = row.two_factor_method || "email";
+  if (method === "email" && pendingEntry.emailCode && pendingEntry.emailCode === String(code).trim()) {
     return true;
   }
 

@@ -30,6 +30,99 @@ function show(id) {
 const TIPO_LABEL = { loja: "Loja", credito: "Crédito", consorcio: "Compra Programada" };
 const STATUS_LABEL = { prevista: "Prevista", liberada: "Liberada", paga: "Paga", cancelada: "Cancelada" };
 
+/* ---------------------- ACOMPANHAR PEDIDOS/SOLICITAÇÕES (passo a passo) ----------------------
+   Mesmo padrão de "stepper" já usado no Minha Conta do cliente (ver
+   conta/minha-conta.html) — o parceiro acompanha o status de cada venda
+   indicada ou assistida, não só o status da comissão. */
+const ORDER_STATUS_LABELS = {
+  novo: "Novo", confirmado: "Confirmado", em_preparacao: "Em preparação",
+  enviado: "Enviado", entregue: "Entregue", cancelado: "Cancelado",
+};
+const LEAD_STATUS_LABELS = {
+  novo: "Novo", em_analise: "Em análise", contatado: "Contatado",
+  proposta_enviada: "Proposta enviada", convertido: "Convertido", recusado: "Recusado",
+};
+const ORDER_STEPS = ["novo", "confirmado", "em_preparacao", "enviado", "entregue"];
+const LEAD_STEPS = ["novo", "em_analise", "contatado", "proposta_enviada", "convertido"];
+
+function statusTone(status) {
+  if (status === "cancelado" || status === "recusado") return "danger";
+  if (status === "entregue" || status === "convertido") return "success";
+  if (status === "novo") return "neutral";
+  return "progress";
+}
+
+function stepperHTML(steps, labels, status) {
+  if (status === "cancelado" || status === "recusado") return "";
+  const idx = steps.indexOf(status);
+  if (idx === -1) return "";
+  return `<div class="order-stepper">${steps.map((s, i) => `
+    <span class="order-step ${i <= idx ? "done" : ""} ${i === idx ? "current" : ""}">
+      <span class="order-step-dot"></span>
+      <span class="order-step-label">${labels[s] || s}</span>
+    </span>${i < steps.length - 1 ? `<span class="order-step-line ${i < idx ? "done" : ""}"></span>` : ""}`).join("")}</div>`;
+}
+
+function partnerOrderItemHTML(order) {
+  const label = ORDER_STATUS_LABELS[order.status] || order.status;
+  return `
+    <div class="order-card">
+      <div class="order-card-head">
+        <div class="order-card-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M20.5 7.3 12 3 3.5 7.3v9.4L12 21l8.5-4.3z"/><path d="m3.5 7.3 8.5 4.3 8.5-4.3"/><line x1="12" y1="11.6" x2="12" y2="21"/></svg></div>
+        <div class="order-card-head-info">
+          <span class="item-number">${esc(order.orderNumber)} · ${esc(order.customer.nome)}</span>
+          <span class="item-date">${new Date(order.createdAt).toLocaleDateString("pt-BR")}</span>
+        </div>
+        <span class="account-status-badge status-${statusTone(order.status)}">${label}</span>
+      </div>
+      ${stepperHTML(ORDER_STEPS, ORDER_STATUS_LABELS, order.status)}
+      <div class="order-card-foot">
+        <span class="item-detail">${order.itens.length} ite${order.itens.length === 1 ? "m" : "ns"}</span>
+        <strong class="order-card-total">${brl(order.total)}</strong>
+      </div>
+    </div>`;
+}
+
+function partnerLeadItemHTML(lead) {
+  const label = LEAD_STATUS_LABELS[lead.status] || lead.status;
+  const modalidade = TIPO_LABEL[lead.modalidadeInteresse] || lead.modalidadeInteresse || "Não informada";
+  return `
+    <div class="order-card">
+      <div class="order-card-head">
+        <div class="order-card-icon"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+        <div class="order-card-head-info">
+          <span class="item-number">${esc(lead.leadNumber)} · ${esc(lead.dadosBasicos.nome)}</span>
+          <span class="item-date">${new Date(lead.createdAt).toLocaleDateString("pt-BR")}</span>
+        </div>
+        <span class="account-status-badge status-${statusTone(lead.status)}">${label}</span>
+      </div>
+      ${stepperHTML(LEAD_STEPS, LEAD_STATUS_LABELS, lead.status)}
+      <div class="order-card-foot">
+        <span class="item-detail">Modalidade: ${esc(modalidade)}</span>
+      </div>
+    </div>`;
+}
+
+async function loadPartnerOrders() {
+  const box = $("partnerOrdersList");
+  if (!box) return;
+  const res = await api("GET", "/api/partners/me/orders");
+  if (!res.ok) { box.innerHTML = `<p class="pay-empty-note">${esc(res.error || "Erro ao carregar pedidos.")}</p>`; return; }
+  box.innerHTML = res.orders.length
+    ? res.orders.map(partnerOrderItemHTML).join("")
+    : `<p class="pay-empty-note">Nenhum pedido indicado ainda.</p>`;
+}
+
+async function loadPartnerLeads() {
+  const box = $("partnerLeadsList");
+  if (!box) return;
+  const res = await api("GET", "/api/partners/me/leads");
+  if (!res.ok) { box.innerHTML = `<p class="pay-empty-note">${esc(res.error || "Erro ao carregar solicitações.")}</p>`; return; }
+  box.innerHTML = res.leads.length
+    ? res.leads.map(partnerLeadItemHTML).join("")
+    : `<p class="pay-empty-note">Nenhuma solicitação de crédito indicada ainda.</p>`;
+}
+
 function siteBase() {
   return location.origin + location.pathname.replace(/[^/]*$/, "");
 }
@@ -185,6 +278,8 @@ async function init() {
   if (!summary.ok) { $("statusTitle").textContent = "Não foi possível carregar"; $("statusText").textContent = summary.error || ""; show("secStatus"); return; }
   renderDashboard(partner, res.rates, summary);
   loadConsorcioPartnerGrupos();
+  loadPartnerOrders();
+  loadPartnerLeads();
 }
 
 init();

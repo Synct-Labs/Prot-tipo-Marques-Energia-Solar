@@ -644,6 +644,22 @@
 
         <fieldset class="form-section">
           <legend>
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Documentos
+          </legend>
+          <p class="field-hint">Precisamos confirmar quem vai receber o equipamento antes de despachar o pedido.</p>
+          <div class="form-grid">
+            <label class="col-span-2">Comprovante de endereço
+              <input type="file" name="docEndereco" id="checkoutDocEndereco" accept="image/*,application/pdf" required>
+            </label>
+            <label class="col-span-2">Documento com foto (RG, CNH...)
+              <input type="file" name="docFoto" id="checkoutDocFoto" accept="image/*,application/pdf" required>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+          <legend>
             <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
             Forma de Pagamento
           </legend>

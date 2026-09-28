@@ -12,6 +12,10 @@ const VALID_STATUSES = [
   "cancelado",
 ];
 const MAX_CONTRATO_BYTES = 8 * 1024 * 1024; // 8MB é de sobra pra um contrato escaneado
+// Comprovante de endereço + documento com foto: obrigatórios em todo pedido
+// (comprado pelo cliente ou por parceiro em nome dele), pra validar quem tá
+// recebendo o equipamento antes de despachar.
+const MAX_DOC_BYTES = 5 * 1024 * 1024; // 5MB por documento é de sobra pra uma foto de celular
 
 function rowToOrder(row) {
   return {
@@ -40,6 +44,8 @@ function rowToOrder(row) {
     subtotal: row.subtotal,
     total: row.total,
     temContrato: !!row.contrato_dados,
+    temDocEndereco: !!row.doc_endereco_dados,
+    temDocFoto: !!row.doc_foto_dados,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -79,8 +85,11 @@ async function createOrder(payload, customerId = null) {
       order_number, status, customer_id, customer_nome, customer_cpf, customer_email, customer_telefone,
       endereco_cep, endereco_cidade, endereco_estado, endereco_rua, endereco_numero,
       endereco_bairro, endereco_complemento, pagamento, parcelas, itens_json, subtotal, total,
+      doc_endereco_dados, doc_endereco_tipo, doc_endereco_nome,
+      doc_foto_dados, doc_foto_tipo, doc_foto_nome,
       created_at, updated_at
-    ) VALUES ($1, 'novo', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+    ) VALUES ($1, 'novo', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
+      $19, $20, $21, $22, $23, $24, $25, $25)
     RETURNING id`,
     [
       tempNumber,
@@ -102,7 +111,12 @@ async function createOrder(payload, customerId = null) {
       JSON.stringify(payload.itens || []),
       payload.subtotal,
       payload.total,
-      now,
+      payload.docEnderecoBuffer,
+      payload.docEnderecoTipo || null,
+      String(payload.docEnderecoNome || "").slice(0, 120) || null,
+      payload.docFotoBuffer,
+      payload.docFotoTipo || null,
+      String(payload.docFotoNome || "").slice(0, 120) || null,
       now,
     ]
   );
@@ -150,6 +164,37 @@ async function listOrdersByCustomer(customerId) {
   return rows.map(rowToOrder);
 }
 
+// Pedidos indicados/comprados por um parceiro (partner_id setado em
+// partners.registerSale) — usado no painel do parceiro pra acompanhar o
+// status de cada venda, não só a comissão.
+async function listOrdersByPartner(partnerId) {
+  const { rows } = await pool.query(
+    "SELECT * FROM orders WHERE partner_id = $1 ORDER BY id DESC",
+    [partnerId]
+  );
+  return rows.map(rowToOrder);
+}
+
+async function getDocEndereco(id) {
+  const { rows } = await pool.query(
+    "SELECT doc_endereco_dados, doc_endereco_tipo, doc_endereco_nome FROM orders WHERE id = $1",
+    [id]
+  );
+  const row = rows[0];
+  if (!row || !row.doc_endereco_dados) return null;
+  return { data: row.doc_endereco_dados, tipo: row.doc_endereco_tipo, nome: row.doc_endereco_nome };
+}
+
+async function getDocFoto(id) {
+  const { rows } = await pool.query(
+    "SELECT doc_foto_dados, doc_foto_tipo, doc_foto_nome FROM orders WHERE id = $1",
+    [id]
+  );
+  const row = rows[0];
+  if (!row || !row.doc_foto_dados) return null;
+  return { data: row.doc_foto_dados, tipo: row.doc_foto_tipo, nome: row.doc_foto_nome };
+}
+
 async function updateOrderStatus(id, status) {
   if (!VALID_STATUSES.includes(status)) {
     throw new Error("Status inválido: " + status);
@@ -173,12 +218,16 @@ async function getOrderStats() {
 module.exports = {
   VALID_STATUSES,
   MAX_CONTRATO_BYTES,
+  MAX_DOC_BYTES,
   createOrder,
   listOrders,
   getOrderById,
   listOrdersByCustomer,
+  listOrdersByPartner,
   updateOrderStatus,
   getOrderStats,
   setContrato,
   getContrato,
+  getDocEndereco,
+  getDocFoto,
 };

@@ -44,12 +44,14 @@ module.exports = {
   PORT: parseInt(process.env.PORT || "3000", 10),
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || "",
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || "",
-  SESSION_TTL_HOURS: parseInt(process.env.SESSION_TTL_HOURS || "168", 10), // 7 dias (clientes)
-  // Sessão de admin é mais curta e some sozinha se ficar parada — painel
-  // mexe com dado sensível (KYC, comissão, crédito), então mais rígido
-  // que a sessão do cliente comum.
+  // Mesma regra de sessão (TTL absoluto + timeout por inatividade) pra
+  // todo tipo de conta — admin e cliente (parceiro é cliente com cadastro
+  // extra, usa a mesma sessão). Cliente mexe com dado sensível também
+  // (Marques Pay, KYC, crédito), então não faz sentido ficar mais frouxo.
   ADMIN_SESSION_TTL_HOURS: parseInt(process.env.ADMIN_SESSION_TTL_HOURS || "12", 10),
   ADMIN_IDLE_TIMEOUT_MINUTES: parseInt(process.env.ADMIN_IDLE_TIMEOUT_MINUTES || "20", 10),
+  CUSTOMER_SESSION_TTL_HOURS: parseInt(process.env.CUSTOMER_SESSION_TTL_HOURS || "12", 10),
+  CUSTOMER_IDLE_TIMEOUT_MINUTES: parseInt(process.env.CUSTOMER_IDLE_TIMEOUT_MINUTES || "20", 10),
   NODE_ENV: process.env.NODE_ENV || "development",
   DATABASE_URL: process.env.DATABASE_URL || "",
   CORS_ORIGINS,

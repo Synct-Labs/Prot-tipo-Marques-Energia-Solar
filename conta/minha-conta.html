@@ -156,16 +156,16 @@
 
         <div class="account-card" id="twoFaCard">
           <h2>Verificação em duas etapas</h2>
-          <p class="account-sub">Peça um código enviado pro seu e-mail toda vez que você entrar na conta — protege mesmo se alguém descobrir sua senha.</p>
+          <p class="account-sub">Todo login pede um código de 6 dígitos, além da senha — protege sua conta mesmo se alguém descobrir sua senha. Por padrão o código chega por e-mail; você pode gerar códigos de backup ou trocar pra um app autenticador.</p>
 
-          <!-- ---- desativada ---- -->
+          <!-- ---- só o padrão (e-mail), sem backup codes/app configurados ---- -->
           <div id="twoFaOffState">
-            <p class="two-fa-status two-fa-status-off">
-              <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-              Desativada
+            <p class="two-fa-status two-fa-status-on">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              Ativada — código por e-mail
             </p>
             <div class="account-error" id="twoFaOffError"></div>
-            <button type="button" class="btn btn-outline" id="twoFaStartBtn">Ativar verificação em duas etapas</button>
+            <button type="button" class="btn btn-outline" id="twoFaStartBtn">Gerar códigos de backup / usar app autenticador</button>
           </div>
 
           <!-- ---- configurando ---- -->
@@ -203,21 +203,7 @@
             <div class="account-error" id="twoFaOnError"></div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
               <button type="button" class="btn btn-outline" id="twoFaSwitchStartBtn">Trocar método</button>
-              <button type="button" class="btn btn-outline" id="twoFaDisableStartBtn">Desativar</button>
             </div>
-
-            <form id="twoFaDisableForm" hidden style="margin-top: 16px;">
-              <div class="account-error" id="twoFaDisableError"></div>
-              <div class="form-grid">
-                <label>Confirme sua senha pra desativar
-                  <input type="password" id="twoFaDisablePassword" name="password" required autocomplete="current-password">
-                </label>
-              </div>
-              <div style="margin-top: 14px; display: flex; gap: 10px;">
-                <button type="submit" class="btn btn-primary" id="twoFaDisableConfirmBtn">Desativar verificação em duas etapas</button>
-                <button type="button" class="btn btn-ghost" id="twoFaDisableCancelBtn">Cancelar</button>
-              </div>
-            </form>
           </div>
 
           <!-- ---- trocando de método (só quando o 2FA já está ativo) ---- -->
@@ -569,43 +555,6 @@ document.getElementById("twoFaSwitchConfirmForm").addEventListener("submit", asy
   } finally {
     btn.disabled = false;
     btn.textContent = "Confirmar troca";
-  }
-});
-
-document.getElementById("twoFaDisableStartBtn").addEventListener("click", () => {
-  document.getElementById("twoFaDisableForm").hidden = false;
-});
-
-document.getElementById("twoFaDisableCancelBtn").addEventListener("click", () => {
-  const form = document.getElementById("twoFaDisableForm");
-  form.hidden = true;
-  form.reset();
-});
-
-document.getElementById("twoFaDisableForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const errorBox = document.getElementById("twoFaDisableError");
-  const btn = document.getElementById("twoFaDisableConfirmBtn");
-  errorBox.classList.remove("show");
-  btn.disabled = true;
-  btn.textContent = "Desativando...";
-
-  try {
-    const password = document.getElementById("twoFaDisablePassword").value;
-    const res = await CONTA.apiPost("/api/customers/2fa/disable", { password });
-    if (!res.ok) {
-      errorBox.textContent = res.error || "Não foi possível desativar.";
-      errorBox.classList.add("show");
-      return;
-    }
-    currentCustomer.twoFactorEnabled = false;
-    const form = document.getElementById("twoFaDisableForm");
-    form.hidden = true;
-    form.reset();
-    showTwoFaState("off");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Desativar verificação em duas etapas";
   }
 });
 

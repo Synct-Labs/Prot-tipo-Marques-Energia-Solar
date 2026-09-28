@@ -217,6 +217,17 @@ async function listLeadsByCustomer(customerId) {
   return rows.map(rowToLead);
 }
 
+// Solicitações indicadas por um parceiro (partner_id setado em
+// partners.registerSale) — usado no painel do parceiro pra acompanhar o
+// status de cada indicação, não só a comissão.
+async function listLeadsByPartner(partnerId) {
+  const { rows } = await pool.query(
+    "SELECT * FROM credit_leads WHERE partner_id = $1 ORDER BY id DESC",
+    [partnerId]
+  );
+  return rows.map(rowToLead);
+}
+
 async function updateLeadStatus(id, status) {
   if (!VALID_STATUSES.includes(status)) {
     throw new Error("Status inválido: " + status);
@@ -247,6 +258,7 @@ module.exports = {
   listLeads,
   getLeadById,
   listLeadsByCustomer,
+  listLeadsByPartner,
   updateLeadStatus,
   getLeadStats,
   setContrato,

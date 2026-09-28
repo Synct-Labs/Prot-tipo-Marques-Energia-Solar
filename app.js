@@ -1448,12 +1448,39 @@ if(checkoutCepInput){
   checkoutCepInput.addEventListener("blur", () => buscarEnderecoPorCep(checkoutCepInput.value));
 }
 
+// Comprovante de endereço + documento com foto: mesma conversão usada nos
+// anexos de contrato/comprovante do admin, só que aqui é o cliente (ou o
+// parceiro comprando por ele) que anexa, na hora do checkout.
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 $("#checkoutForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const submitBtn = $("#checkoutSubmitBtn");
   const errorBox = $("#checkoutError");
   errorBox.style.display = "none";
+
+  const docEnderecoFile = $("#checkoutDocEndereco").files[0];
+  const docFotoFile = $("#checkoutDocFoto").files[0];
+  if(!docEnderecoFile || !docFotoFile){
+    errorBox.textContent = "Anexe o comprovante de endereço e um documento com foto.";
+    errorBox.style.display = "block";
+    return;
+  }
+  const MAX_DOC_BYTES = 5 * 1024 * 1024;
+  if(docEnderecoFile.size > MAX_DOC_BYTES || docFotoFile.size > MAX_DOC_BYTES){
+    errorBox.textContent = "Cada documento deve ter no máximo 5MB.";
+    errorBox.style.display = "block";
+    return;
+  }
+
   submitBtn.disabled = true;
   submitBtn.textContent = "Enviando pedido...";
 
@@ -1486,6 +1513,21 @@ $("#checkoutForm").addEventListener("submit", async (e) => {
     subtotal: cartTotalValue(),
     total: cartFinalTotal(),
   };
+
+  try {
+    payload.docEnderecoBase64 = await fileToBase64(docEnderecoFile);
+    payload.docEnderecoTipo = docEnderecoFile.type;
+    payload.docEnderecoNome = docEnderecoFile.name;
+    payload.docFotoBase64 = await fileToBase64(docFotoFile);
+    payload.docFotoTipo = docFotoFile.type;
+    payload.docFotoNome = docFotoFile.name;
+  } catch (err) {
+    errorBox.textContent = "Não foi possível ler os documentos anexados. Tente escolher os arquivos de novo.";
+    errorBox.style.display = "block";
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Finalizar Pedido";
+    return;
+  }
 
   /* =====================================================================
      PONTO DE INTEGRAÇÃO DE PAGAMENTO (produção)

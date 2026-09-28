@@ -497,6 +497,21 @@ async function initSchema() {
     -- ficar inativa (ver ADMIN_IDLE_TIMEOUT_MINUTES em config.js).
     ALTER TABLE sessions ADD COLUMN IF NOT EXISTS last_seen_at TEXT;
 
+    -- Mesma regra de sessão do admin (timeout por inatividade), agora
+    -- também pra cliente — ver CUSTOMER_IDLE_TIMEOUT_MINUTES em config.js.
+    ALTER TABLE customer_sessions ADD COLUMN IF NOT EXISTS last_seen_at TEXT;
+
+    -- Comprovante de endereço e documento com foto: obrigatórios em todo
+    -- pedido da loja (comprado pelo próprio cliente ou por um parceiro em
+    -- nome dele, na "compra assistida") — mesmo padrão de anexo binário
+    -- direto no Postgres já usado pro contrato/comprovante.
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS doc_endereco_dados BYTEA;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS doc_endereco_tipo TEXT;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS doc_endereco_nome TEXT;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS doc_foto_dados BYTEA;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS doc_foto_tipo TEXT;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS doc_foto_nome TEXT;
+
     -- E-mails do dono/equipe que recebem aviso de evento novo (pedido,
     -- solicitação de crédito, solicitação de análise de conta Marques Pay).
     -- Configurável pelo próprio admin (aba "Notificações", só dono).

@@ -307,9 +307,30 @@ async function handleApi(req, res, pathname) {
     const customer = await requireCustomer(req, res);
     if (!customer) return;
 
-    const body = await parseJSONBody(req);
+    const body = await parseJSONBody(req, Math.ceil(orders.MAX_DOC_BYTES * 2 * 1.4));
     const error = validateOrderPayload(body);
     if (error) return sendJSON(res, 400, { ok: false, error });
+
+    // Comprovante de endereço + documento com foto: obrigatórios pra todo
+    // pedido, comprado pelo próprio cliente ou por um parceiro em nome dele
+    // ("compra assistida") — valida quem vai receber o equipamento.
+    let docEnderecoBuffer, docFotoBuffer;
+    try {
+      docEnderecoBuffer = Buffer.from(String(body.docEnderecoBase64 || ""), "base64");
+      docFotoBuffer = Buffer.from(String(body.docFotoBase64 || ""), "base64");
+    } catch (e) {
+      return sendJSON(res, 400, { ok: false, error: "Documentos inválidos." });
+    }
+    if (!docEnderecoBuffer.length) return sendJSON(res, 400, { ok: false, error: "Anexe o comprovante de endereço." });
+    if (!docFotoBuffer.length) return sendJSON(res, 400, { ok: false, error: "Anexe um documento com foto." });
+    if (docEnderecoBuffer.length > orders.MAX_DOC_BYTES || docFotoBuffer.length > orders.MAX_DOC_BYTES) {
+      return sendJSON(res, 413, { ok: false, error: "Cada documento deve ter no máximo 5MB." });
+    }
+    if (!isAllowedFileMime(body.docEnderecoTipo) || !isAllowedFileMime(body.docFotoTipo)) {
+      return sendJSON(res, 400, { ok: false, error: `Os documentos devem ser um de: ${ALLOWED_FILE_MIMES.join(", ")}.` });
+    }
+    body.docEnderecoBuffer = docEnderecoBuffer;
+    body.docFotoBuffer = docFotoBuffer;
 
     /* ===================================================================
        Pontos de integração futura (produção):
@@ -526,6 +547,24 @@ async function handleApi(req, res, pathname) {
       if (!changed) return sendJSON(res, 404, { ok: false, error: "Pedido não encontrado." });
       return sendJSON(res, 200, { ok: true, order: await orders.getOrderById(id) });
     }
+  }
+
+  const orderDocEnderecoMatch = pathname.match(/^\/api\/admin\/orders\/(\d+)\/doc-endereco$/);
+  if (orderDocEnderecoMatch && req.method === "GET") {
+    const admin = await requireCompanyAccess(req, res, "energia_solar");
+    if (!admin) return;
+    const c = await orders.getDocEndereco(parseInt(orderDocEnderecoMatch[1], 10));
+    if (!c) return sendJSON(res, 404, { ok: false, error: "Documento não encontrado." });
+    return sendBinary(res, 200, c.data, c.tipo, c.nome);
+  }
+
+  const orderDocFotoMatch = pathname.match(/^\/api\/admin\/orders\/(\d+)\/doc-foto$/);
+  if (orderDocFotoMatch && req.method === "GET") {
+    const admin = await requireCompanyAccess(req, res, "energia_solar");
+    if (!admin) return;
+    const c = await orders.getDocFoto(parseInt(orderDocFotoMatch[1], 10));
+    if (!c) return sendJSON(res, 404, { ok: false, error: "Documento não encontrado." });
+    return sendBinary(res, 200, c.data, c.tipo, c.nome);
   }
 
   // ---- ADMIN: BUSCA DE CLIENTE (pra vincular contrato de empréstimo/participação) ----
@@ -846,27 +885,11 @@ async function handleApi(req, res, pathname) {
     const customerRecord = email ? await customers.findByEmail(email) : null;
     if (auth.verifyPasswordSafe(password, customerRecord && customerRecord.password_hash)) {
       auth.clearAttempts(ip);
-      if (customerRecord.two_factor_enabled) {
-        const pendingToken = await customers.createPending2FALogin(
-          customerRecord.id,
-          customerRecord.two_factor_method,
-          customerRecord.email
-        );
-        return sendJSON(res, 200, {
-          ok: true,
-          kind: "customer",
-          requires2FA: true,
-          pendingToken,
-          method: customerRecord.two_factor_method,
-        });
-      }
-      const { token, expiresAt } = await customers.createSession(customerRecord.id);
-      return sendJSON(
-        res,
-        200,
-        { ok: true, kind: "customer", customer: customers.toPublic(customerRecord) },
-        { "Set-Cookie": auth.buildSessionCookie(token, expiresAt, customers.SESSION_COOKIE_NAME) }
-      );
+      // Verificação em duas etapas é obrigatória pra toda conta agora (não só
+      // admin): quem nunca configurou método cai no e-mail por padrão.
+      const method = customerRecord.two_factor_method || "email";
+      const pendingToken = await customers.createPending2FALogin(customerRecord.id, method, customerRecord.email);
+      return sendJSON(res, 200, { ok: true, kind: "customer", requires2FA: true, pendingToken, method });
     }
 
     auth.registerFailedAttempt(ip);
@@ -889,20 +912,13 @@ async function handleApi(req, res, pathname) {
 
     auth.clearAttempts(ip);
 
-    if (record.two_factor_enabled) {
-      // Login ainda não fecha: falta o código de verificação em duas etapas.
-      // Método "email" já dispara o envio do código agora; "app" não precisa.
-      const pendingToken = await customers.createPending2FALogin(record.id, record.two_factor_method, record.email);
-      return sendJSON(res, 200, { ok: true, requires2FA: true, pendingToken, method: record.two_factor_method });
-    }
-
-    const { token, expiresAt } = await customers.createSession(record.id);
-    return sendJSON(
-      res,
-      200,
-      { ok: true, customer: customers.toPublic(record) },
-      { "Set-Cookie": auth.buildSessionCookie(token, expiresAt, customers.SESSION_COOKIE_NAME) }
-    );
+    // Verificação em duas etapas é obrigatória pra toda conta (não só
+    // admin): login ainda não fecha, falta o código. Método "email" já
+    // dispara o envio agora; "app" não precisa; sem método configurado
+    // ainda, cai no e-mail por padrão.
+    const method = record.two_factor_method || "email";
+    const pendingToken = await customers.createPending2FALogin(record.id, method, record.email);
+    return sendJSON(res, 200, { ok: true, requires2FA: true, pendingToken, method });
   }
 
   if (pathname === "/api/customers/login/2fa" && req.method === "POST") {
@@ -1342,6 +1358,25 @@ async function handleApi(req, res, pathname) {
     const row = await partners.getRowByCustomer(customer.id);
     if (!row || row.status !== "ativo") return sendJSON(res, 403, { ok: false, error: "Seu cadastro de parceiro ainda não está ativo." });
     return sendJSON(res, 200, { ok: true, ...(await partners.summaryForPartner(row.id)) });
+  }
+
+  // Acompanhamento passo a passo (mesmo status usado no "Minha Conta" do
+  // cliente) dos pedidos e solicitações de crédito indicados/assistidos
+  // pelo parceiro — não só o status da comissão.
+  if (pathname === "/api/partners/me/orders" && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const row = await partners.getRowByCustomer(customer.id);
+    if (!row || row.status !== "ativo") return sendJSON(res, 403, { ok: false, error: "Seu cadastro de parceiro ainda não está ativo." });
+    return sendJSON(res, 200, { ok: true, orders: await orders.listOrdersByPartner(row.id) });
+  }
+
+  if (pathname === "/api/partners/me/leads" && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const row = await partners.getRowByCustomer(customer.id);
+    if (!row || row.status !== "ativo") return sendJSON(res, 403, { ok: false, error: "Seu cadastro de parceiro ainda não está ativo." });
+    return sendJSON(res, 200, { ok: true, leads: await creditLeads.listLeadsByPartner(row.id) });
   }
 
   const partnerMyComprovanteMatch = pathname.match(/^\/api\/partners\/me\/commissions\/(\d+)\/comprovante$/);
