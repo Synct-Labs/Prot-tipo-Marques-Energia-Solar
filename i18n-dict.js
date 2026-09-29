@@ -1314,4 +1314,10 @@ window.MES_I18N_DICT = {
   "sem motivo informado": "no reason given",
   ". Corrija e envie de novo.": ". Please correct it and submit again.",
 
+  /* ---------- admin/login.html ---------- */
+  "Login do Administrador | Marques Energia Solar": "Administrator Login | Marques Energia Solar",
+  "Painel de Administrador": "Administrator Panel",
+  "Acesso restrito à equipe da Marques Energia Solar.": "Access restricted to the Marques Energia Solar team.",
+  "Erro de conexão com o servidor. Verifique se o backend está rodando.": "Connection error with the server. Check that the backend is running.",
+
 };

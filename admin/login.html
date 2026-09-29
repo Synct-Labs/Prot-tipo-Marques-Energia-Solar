@@ -62,6 +62,8 @@
 <script src="../api-config.js"></script>
 <script src="admin.js"></script>
 <script>
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
+
 (async function(){
   // Se já existir sessão válida, pula direto para a área que o funcionário pode ver.
   const me = await MES.apiGet("/api/auth/me").catch(() => null);
@@ -76,7 +78,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   const btn = document.getElementById("loginBtn");
   errorBox.classList.remove("show");
   btn.disabled = true;
-  btn.textContent = "Entrando...";
+  btn.textContent = t("Entrando...");
 
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
@@ -84,7 +86,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   try {
     const res = await MES.apiPost("/api/auth/login", { email, password });
     if(!res.ok){
-      errorBox.textContent = res.error || "Não foi possível entrar.";
+      errorBox.textContent = res.error || t("Não foi possível entrar.");
       errorBox.classList.add("show");
       return;
     }
@@ -93,11 +95,11 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     document.getElementById("twoFaCard").hidden = false;
     document.getElementById("twoFaCode").focus();
   } catch(err){
-    errorBox.textContent = "Erro de conexão com o servidor. Verifique se o backend está rodando.";
+    errorBox.textContent = t("Erro de conexão com o servidor. Verifique se o backend está rodando.");
     errorBox.classList.add("show");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Entrar";
+    btn.textContent = t("Entrar");
   }
 });
 
@@ -107,7 +109,7 @@ document.getElementById("twoFaForm").addEventListener("submit", async (e) => {
   const btn = document.getElementById("twoFaBtn");
   errorBox.classList.remove("show");
   btn.disabled = true;
-  btn.textContent = "Confirmando...";
+  btn.textContent = t("Confirmando...");
 
   const code = document.getElementById("twoFaCode").value.trim();
 
@@ -115,7 +117,7 @@ document.getElementById("twoFaForm").addEventListener("submit", async (e) => {
     const res = await MES.apiPost("/api/auth/login/2fa", { pendingToken: pendingTwoFaToken, code });
     if(!res.ok){
       if(res.pendingToken) pendingTwoFaToken = res.pendingToken;
-      errorBox.textContent = res.error || "Não foi possível confirmar o código.";
+      errorBox.textContent = res.error || t("Não foi possível confirmar o código.");
       errorBox.classList.add("show");
       if(res.expired){
         document.getElementById("twoFaCard").hidden = true;
@@ -125,11 +127,11 @@ document.getElementById("twoFaForm").addEventListener("submit", async (e) => {
     }
     window.location.href = MES.landingPageFor(res.admin);
   } catch(err){
-    errorBox.textContent = "Erro de conexão com o servidor. Tente novamente em instantes.";
+    errorBox.textContent = t("Erro de conexão com o servidor. Tente novamente em instantes.");
     errorBox.classList.add("show");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Confirmar";
+    btn.textContent = t("Confirmar");
   }
 });
 
