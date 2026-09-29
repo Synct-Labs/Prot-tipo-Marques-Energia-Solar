@@ -82,7 +82,7 @@ A calculadora de dimensionamento e o configurador de kit vivem os dois em `loja.
 - CORS: liberado apenas para as origens listadas em `CORS_ORIGIN` (backend/.env). Hoje site e API ficam na mesma origem (VPS), então não é estritamente necessário para o próprio site — mas continua valendo pra liberar qualquer outro domínio que também precise chamar a API (ex: uma cópia do front noutro host).
 - Conta de cliente obrigatória: desde a v2, `POST /api/orders` (checkout) e `POST /api/credit-leads` (solicitação de crédito) exigem sessão de cliente logado — sem conta, o site manda pra `conta/entrar.html` antes de deixar comprar ou simular.
 - Verificação em duas etapas (2FA) opcional pra clientes:
-  - **Ativação sempre por e-mail** — código de 6 dígitos (`backend/src/mailer.js`, via API da [Resend](https://resend.com); ver "Configurar envio de e-mail" abaixo), pra provar que a pessoa tem acesso à caixa de entrada antes de ligar qualquer coisa.
+  - **Ativação sempre por e-mail** — código de 6 dígitos (`backend/src/mailer.js`, via SMTP do Gmail/Google Workspace; ver "Configurar envio de e-mail" abaixo), pra provar que a pessoa tem acesso à caixa de entrada antes de ligar qualquer coisa.
   - Depois de ativa, dá pra **trocar pro app autenticador** (TOTP compatível com Google Authenticator/Authy — `backend/src/totp.js`, implementação própria, sem dependência externa, validada contra o vetor de teste oficial do RFC 6238) em Minha Conta > Segurança, ou voltar pro e-mail quando quiser — cada troca pede confirmação pelo método de destino.
   - 5 códigos de backup de uso único são gerados na ativação, funcionam com qualquer método.
   - WhatsApp não é uma opção: um link `wa.me` só abre uma conversa pra a pessoa mandar mensagem, não permite o servidor mandar uma automática — isso exigiria a API oficial do WhatsApp Business (conta comercial paga, via Meta ou um parceiro tipo Twilio/Zenvia).
@@ -99,12 +99,13 @@ A calculadora de dimensionamento e o configurador de kit vivem os dois em `loja.
 
 Sem isso configurado, o 2FA por e-mail continua funcionando em **modo de teste**: o código de verificação aparece no log do servidor (terminal, ou no log do processo no VPS) em vez de chegar numa caixa de entrada de verdade. Bom pra testar o fluxo; não serve pra cliente real usar.
 
-1. Crie uma conta grátis em [resend.com](https://resend.com) (o plano grátis cobre 100 e-mails/dia, 3.000/mês).
-2. No painel da Resend, vá em **API Keys** → **Create API Key** e copie a chave gerada.
+1. Ative a verificação em duas etapas na conta Google que vai enviar os e-mails (obrigatório pra gerar senha de app — sem 2FA ativado na conta, a opção nem aparece).
+2. Em [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords), crie uma senha de app (qualquer nome, ex: "Marques backend") e copie a senha gerada (16 caracteres).
 3. Em `backend/.env` (local ou no VPS, produção), defina:
-   - `RESEND_API_KEY` — a chave copiada no passo 2.
-   - `MAIL_FROM` — quem aparece como remetente. Pra testar sem configurar mais nada, deixe o padrão `Marques <onboarding@resend.dev>` — mas repare que esse domínio de teste da Resend **só envia pro e-mail com que você criou a conta**. Pra mandar pra qualquer cliente de verdade, verifique um domínio próprio em **Domains** no painel da Resend e troque para algo como `Marques <verificacao@marquespromotora.com>`.
-4. Reinicie o backend pra carregar a variável nova (ver "Deploy em produção" abaixo).
+   - `SMTP_USER` — o e-mail Gmail/Google Workspace usado pra enviar (ex: `contato@marquespromotora.com`).
+   - `SMTP_PASS` — a senha de app copiada no passo 2 (não é a senha normal da conta).
+   - `MAIL_FROM` — quem aparece como remetente, normalmente o mesmo e-mail de `SMTP_USER` (ex: `Marques <contato@marquespromotora.com>`).
+4. Reinicie o backend pra carregar as variáveis novas (ver "Deploy em produção" abaixo).
 
 ## Deploy em produção (VPS próprio)
 

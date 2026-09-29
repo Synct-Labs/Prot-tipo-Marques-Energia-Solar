@@ -62,11 +62,9 @@ module.exports = {
   DATABASE_URL: process.env.DATABASE_URL || "",
   CORS_ORIGINS,
   // E-mail (verificação em duas etapas, redefinição de senha, notificações
-  // — ver backend/src/mailer.js). Dois jeitos de enviar de verdade, nessa
-  // ordem de prioridade: Resend (API HTTP, sem precisar de porta SMTP
-  // liberada) ou SMTP do Gmail/Google Workspace. Sem nenhum dos dois
-  // configurado, o e-mail só é impresso no log do servidor (modo de teste).
-  RESEND_API_KEY: process.env.RESEND_API_KEY || "",
+  // — ver backend/src/mailer.js). Envio via SMTP do Gmail/Google Workspace.
+  // Sem SMTP_USER/SMTP_PASS definidos, o e-mail só é impresso no log do
+  // servidor (modo de teste).
   SMTP_USER: process.env.SMTP_USER || "",
   SMTP_PASS: process.env.SMTP_PASS || "",
   MAIL_FROM: process.env.MAIL_FROM || "Marques Promotora <contato@marquespromotora.com>",
