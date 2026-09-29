@@ -1016,4 +1016,41 @@ window.MES_I18N_DICT = {
   "Esta página não usa cookies de rastreamento. Eventual armazenamento local do navegador (localStorage) é usado apenas para lembrar informações já calculadas na própria simulação, e nenhum dado é enviado a terceiros por meio desse armazenamento.":
     "This page doesn't use tracking cookies. Any local browser storage (localStorage) is used only to remember information already calculated in the simulation itself, and no data is sent to third parties through this storage.",
 
+  /* ---------- parceiros-termos.html (condições do programa de parceiros) ---------- */
+  "Condições do Programa de Parceiros | Marques": "Partner Program Terms | Marques",
+  "← Voltar ao Programa de Parceiros": "← Back to the Partner Program",
+  "Condições do Programa de Parceiros": "Partner Program Terms",
+  "Versão parceiro-2026-09-v1 · setembro de 2026": "Version parceiro-2026-09-v1 · September 2026",
+  "1. Natureza da parceria": "1. Nature of the partnership",
+  "O Parceiro Marques é um indicador autônomo de vendas. Não há vínculo empregatício, societário, de franquia ou de representação exclusiva com a Marques Energia Solar ou com a Marques Promotora. O Parceiro decide se, quando e como divulga, sem horário, meta ou subordinação, e pode divulgar outros produtos.":
+    "The Marques Partner is an independent sales referrer. There is no employment, corporate, franchise, or exclusive representation relationship with Marques Energia Solar or Marques Promotora. The Partner decides whether, when, and how to promote, with no set hours, targets, or subordination, and may promote other products.",
+  "2. Como funciona a indicação": "2. How the referral works",
+  "Cada Parceiro aprovado recebe um link exclusivo. Compras na loja e solicitações de análise de crédito feitas a partir desse link, em até 7 dias após o clique, ficam atribuídas ao Parceiro. Vale o último link clicado pelo comprador. Compras feitas pelo próprio Parceiro, ou em nome dele, não geram comissão.":
+    "Every approved Partner receives an exclusive link. Store purchases and credit analysis requests made through that link, within 7 days of the click, are credited to the Partner. The last link the buyer clicked applies. Purchases made by the Partner themselves, or on their behalf, don't generate a commission.",
+  "3. Comissões": "3. Commissions",
+  "O percentual vigente é mostrado no painel do Parceiro, separado para a loja (sobre o valor do pedido) e para o crédito (sobre o valor do sistema informado na simulação). A Marques pode alterar os percentuais para vendas futuras; vendas já registradas mantêm o percentual da data do registro. A comissão passa por três situações:":
+    "The current percentage is shown on the Partner dashboard, separate for the store (on the order value) and for credit (on the system value entered in the simulation). Marques may change the percentages for future sales; sales already registered keep the percentage from the date they were registered. The commission goes through three states:",
+  ": a venda foi registrada e ainda está em andamento.": ": the sale was registered and is still in progress.",
+  ": o pedido foi entregue ou o crédito foi convertido.": ": the order was delivered or the credit was converted.",
+  ": a Marques fez o PIX para a chave cadastrada e disponibilizou o comprovante no painel.": ": Marques sent the PIX payment to the registered key and made the receipt available on the dashboard.",
+  "Pedidos cancelados, recusas de crédito, devoluções e estornos cancelam a comissão correspondente. A comissão liberada é paga em até 15 dias corridos, por PIX, na chave informada no cadastro; o Parceiro é responsável por manter a chave correta.":
+    "Cancelled orders, credit refusals, returns, and chargebacks cancel the corresponding commission. The released commission is paid within 15 calendar days, by PIX, to the key provided at signup; the Partner is responsible for keeping the key correct.",
+  "4. Conduta do Parceiro": "4. Partner conduct",
+  "O Parceiro não pode: prometer aprovação de crédito, prazo, taxa ou desconto que a Marques não tenha confirmado; receber dinheiro do cliente ou pedir senhas, códigos ou documentos pelo próprio canal; usar a marca Marques em anúncio enganoso; enviar mensagens em massa não solicitadas; nem se apresentar como funcionário da Marques. O crédito é analisado pela Marques Promotora e pelas instituições envolvidas, sem garantia de aprovação, e o Parceiro apenas indica o interessado.":
+    "The Partner may not: promise credit approval, terms, rates, or discounts that Marques hasn't confirmed; receive money from the customer or ask for passwords, codes, or documents through their own channel; use the Marques brand in misleading advertising; send unsolicited mass messages; or present themselves as a Marques employee. Credit is analyzed by Marques Promotora and the institutions involved, with no guarantee of approval, and the Partner only refers the interested party.",
+  "5. Dados pessoais (LGPD)": "5. Personal data (LGPD)",
+  "O Parceiro só tem acesso ao resumo das suas vendas (referência, valor e situação), nunca aos dados pessoais dos compradores. Os dados do próprio Parceiro (nome, CPF, telefone, e-mail e chave PIX) são usados para o cadastro, o pagamento e a prevenção a fraudes, conforme a":
+    "The Partner only has access to a summary of their sales (reference, amount, and status), never to buyers' personal data. The Partner's own data (name, CPF, phone, email, and PIX key) is used for registration, payment, and fraud prevention, in accordance with the",
+  "6. Impostos": "6. Taxes",
+  "O Parceiro é responsável pelos tributos e obrigações fiscais decorrentes das comissões que recebe, incluindo a emissão de nota fiscal quando exigida pela sua situação (pessoa física ou MEI/empresa).":
+    "The Partner is responsible for the taxes and tax obligations arising from the commissions they receive, including issuing an invoice when required by their status (individual or MEI/company).",
+  "7. Suspensão e encerramento": "7. Suspension and termination",
+  "A Marques pode suspender ou encerrar o cadastro em caso de descumprimento destas condições, suspeita de fraude ou uso indevido da marca, e pode reter comissões ainda não pagas de vendas sob apuração. O Parceiro pode encerrar a participação a qualquer momento; comissões já liberadas continuam sendo pagas.":
+    "Marques may suspend or terminate the registration in case of non-compliance with these terms, suspected fraud, or misuse of the brand, and may withhold unpaid commissions from sales under review. The Partner may end their participation at any time; commissions already released continue to be paid.",
+  "8. Alterações": "8. Changes",
+  "Estas condições podem ser atualizadas. Mudanças relevantes serão avisadas no painel e o aceite da nova versão poderá ser solicitado.":
+    "These terms may be updated. Significant changes will be announced on the dashboard, and acceptance of the new version may be requested.",
+  "© 2026 Marques Energia Solar e Marques Promotora, sediadas em Mato Grosso, atendendo todo o Brasil.":
+    "© 2026 Marques Energia Solar and Marques Promotora, based in Mato Grosso, serving all of Brazil.",
+
 };
