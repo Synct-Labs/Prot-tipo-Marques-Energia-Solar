@@ -111,6 +111,28 @@ function verificationEmailHTML(code) {
   });
 }
 
+// kind: 'admin' -> admin/redefinir-senha.html | 'customer' -> conta/redefinir-senha.html
+// (mesma separação de páginas já usada pro login e pra abertura de conta).
+// Exportado à parte porque o texto simples do e-mail (usado no log quando
+// SMTP não está configurado, ver sendEmail acima) também precisa do link —
+// sem isso, não dava pra testar o fluxo sem SMTP de verdade configurado.
+function passwordResetLink(kind, token) {
+  const path = kind === "admin" ? "admin/redefinir-senha.html" : "conta/redefinir-senha.html";
+  return `${SITE_URL}/${path}?token=${encodeURIComponent(token)}`;
+}
+
+function passwordResetEmailHTML(kind, token) {
+  const link = passwordResetLink(kind, token);
+  return simpleEmailHTML(
+    "Redefinir sua senha",
+    [
+      "Recebemos um pedido para redefinir sua senha. Clique no botão abaixo para escolher uma nova.",
+      "O link expira em 1 hora. Se você não pediu essa redefinição, pode ignorar este e-mail — sua senha continua a mesma.",
+    ],
+    { ctaHref: link, ctaLabel: "Redefinir senha" }
+  );
+}
+
 function adminLoginNotificationHTML({ ip, quando }) {
   return simpleEmailHTML("Novo login no painel Marques", [
     `Sua conta de administrador acabou de entrar no painel.`,
@@ -275,7 +297,7 @@ function pendenciaParaClienteHTML({ orderNumber, texto }) {
 }
 
 module.exports = {
-  sendEmail, verificationEmailHTML,
+  sendEmail, verificationEmailHTML, passwordResetEmailHTML, passwordResetLink,
   adminNovoPedidoHTML, adminNovaSolicitacaoCreditoHTML, adminNovaSolicitacaoContaHTML,
   contaAprovadaHTML, contaRecusadaHTML, pedidoStatusHTML, leadStatusHTML,
   adminLoginNotificationHTML,

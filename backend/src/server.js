@@ -265,6 +265,52 @@ async function handleApi(req, res, pathname) {
     return sendJSON(res, 200, { ok: true });
   }
 
+  // ---- ADMIN: "ESQUECI MINHA SENHA" ----
+  // Sempre responde { ok: true } (exista ou não a conta) pra não dar pra
+  // descobrir e-mails cadastrados testando essa rota — só entra e-mail
+  // de verdade quando a conta existe.
+  if (pathname === "/api/auth/forgot-password" && req.method === "POST") {
+    if (auth.isRateLimited(ip)) {
+      return sendJSON(res, 429, { ok: false, error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." });
+    }
+    auth.registerFailedAttempt(ip);
+    const body = await parseJSONBody(req);
+    const email = String(body.email || "").trim();
+    const record = email ? await auth.findAdminByEmail(email) : null;
+    if (record) {
+      const token = await auth.createPasswordResetToken(record.id);
+      try {
+        await mailer.sendEmail({
+          to: record.email,
+          subject: "Redefinir sua senha — Painel Marques",
+          text: `Pediram a redefinição da sua senha. Acesse o link abaixo pra escolher uma nova (expira em 1 hora). Se não foi você, ignore este e-mail.\n${mailer.passwordResetLink("admin", token)}`,
+          html: mailer.passwordResetEmailHTML("admin", token),
+        });
+      } catch (e) { console.error("[auth] falha ao enviar e-mail de redefinição de senha:", e.message); }
+    }
+    return sendJSON(res, 200, { ok: true });
+  }
+
+  if (pathname === "/api/auth/reset-password" && req.method === "POST") {
+    if (auth.isRateLimited(ip)) {
+      return sendJSON(res, 429, { ok: false, error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." });
+    }
+    const body = await parseJSONBody(req);
+    const token = String(body.token || "");
+    if (!body.newPassword || String(body.newPassword).length < 8) {
+      return sendJSON(res, 400, { ok: false, error: "A nova senha precisa ter ao menos 8 caracteres." });
+    }
+    const consumed = await auth.consumePasswordResetToken(token);
+    if (!consumed) {
+      auth.registerFailedAttempt(ip);
+      return sendJSON(res, 400, { ok: false, error: "Este link expirou ou já foi usado. Peça um novo." });
+    }
+    auth.clearAttempts(ip);
+    await auth.updateAdminPassword(consumed.adminId, body.newPassword);
+    await auth.destroyAllAdminSessions(consumed.adminId);
+    return sendJSON(res, 200, { ok: true });
+  }
+
   // ---- CATÁLOGO (público — mesma info que já era publicada direto no app.js) ----
   if (pathname === "/api/products" && req.method === "GET") {
     return sendJSON(res, 200, { ok: true, products: await products.listAll() });
@@ -1170,6 +1216,49 @@ async function handleApi(req, res, pathname) {
       return sendJSON(res, 400, { ok: false, error: "A nova senha precisa ter ao menos 8 caracteres." });
     }
     await customers.updatePassword(customer.id, body.newPassword);
+    return sendJSON(res, 200, { ok: true });
+  }
+
+  // ---- CLIENTE: "ESQUECI MINHA SENHA" (mesma lógica do admin, ver acima) ----
+  if (pathname === "/api/customers/forgot-password" && req.method === "POST") {
+    if (auth.isRateLimited(ip)) {
+      return sendJSON(res, 429, { ok: false, error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." });
+    }
+    auth.registerFailedAttempt(ip);
+    const body = await parseJSONBody(req);
+    const email = String(body.email || "").trim();
+    const record = email ? await customers.findByEmail(email) : null;
+    if (record) {
+      const token = await customers.createPasswordResetToken(record.id);
+      try {
+        await mailer.sendEmail({
+          to: record.email,
+          subject: "Redefinir sua senha — Marques",
+          text: `Pediram a redefinição da sua senha. Acesse o link abaixo pra escolher uma nova (expira em 1 hora). Se não foi você, ignore este e-mail.\n${mailer.passwordResetLink("customer", token)}`,
+          html: mailer.passwordResetEmailHTML("customer", token),
+        });
+      } catch (e) { console.error("[customers] falha ao enviar e-mail de redefinição de senha:", e.message); }
+    }
+    return sendJSON(res, 200, { ok: true });
+  }
+
+  if (pathname === "/api/customers/reset-password" && req.method === "POST") {
+    if (auth.isRateLimited(ip)) {
+      return sendJSON(res, 429, { ok: false, error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." });
+    }
+    const body = await parseJSONBody(req);
+    const token = String(body.token || "");
+    if (!body.newPassword || String(body.newPassword).length < 8) {
+      return sendJSON(res, 400, { ok: false, error: "A nova senha precisa ter ao menos 8 caracteres." });
+    }
+    const consumed = await customers.consumePasswordResetToken(token);
+    if (!consumed) {
+      auth.registerFailedAttempt(ip);
+      return sendJSON(res, 400, { ok: false, error: "Este link expirou ou já foi usado. Peça um novo." });
+    }
+    auth.clearAttempts(ip);
+    await customers.updatePassword(consumed.customerId, body.newPassword);
+    await customers.destroyAllSessions(consumed.customerId);
     return sendJSON(res, 200, { ok: true });
   }
 

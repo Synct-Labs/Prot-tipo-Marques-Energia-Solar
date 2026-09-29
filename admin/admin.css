@@ -164,6 +164,7 @@ label.admin-field{ font-size:.82rem; color:var(--muted); }
 .admin-error.show{ display:block; }
 
 .admin-note{ margin-top:18px; font-size:.78rem; color:var(--muted-2); text-align:center; }
+.admin-note a{ color: var(--orange-light); font-weight:600; }
 
 /* ---------- stats ---------- */
 .admin-stats-grid{

@@ -552,6 +552,18 @@ async function initSchema() {
       email      TEXT UNIQUE NOT NULL,
       created_at TEXT NOT NULL
     );
+
+    -- "Esqueci minha senha": token de uso único enviado por e-mail, mesma
+    -- tabela pra admin e cliente (kind + account_id decide qual conta),
+    -- já que os dois fluxos são idênticos (ver auth.js/customers.js).
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      token      TEXT PRIMARY KEY,
+      kind       TEXT NOT NULL, -- 'admin' ou 'customer'
+      account_id INTEGER NOT NULL,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      used_at    TEXT
+    );
   `);
 
   // Garante que sempre exista pelo menos um "owner" (dono/admin geral que

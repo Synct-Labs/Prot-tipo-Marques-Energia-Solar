@@ -1764,4 +1764,35 @@ window.MES_I18N_DICT = {
   "Erro ao reprovar.": "Error declining.",
   "Cadastro reprovado.": "Application declined.",
 
+  /* ---------- "Esqueci minha senha" (cliente e admin) ---------- */
+  "Esqueci minha senha": "Forgot my password",
+  "← Voltar para o login": "← Back to login",
+  "Enviar link": "Send link",
+  "Verifique seu e-mail": "Check your email",
+  "Se {email} estiver cadastrado, você vai receber um link pra redefinir sua senha em alguns instantes. O link expira em 1 hora.":
+    "If {email} is registered, you'll receive a link to reset your password shortly. The link expires in 1 hour.",
+  "Não foi possível enviar. Tente novamente em instantes.": "Couldn't submit. Please try again in a moment.",
+
+  "Redefinir senha": "Reset password",
+  "Escolha sua nova senha": "Choose your new password",
+  "Link inválido ou expirado": "Invalid or expired link",
+  "Esse link de redefinição já foi usado ou não é mais válido. Peça um novo.": "This reset link has already been used or is no longer valid. Request a new one.",
+  "Pedir novo link": "Request new link",
+  "Senha redefinida!": "Password reset!",
+  "Ir para o login": "Go to login",
+  "Redefinindo...": "Resetting...",
+  "Não foi possível redefinir a senha.": "Couldn't reset the password.",
+  "Sua senha foi alterada. Já pode entrar com ela.": "Your password has been changed. You can log in with it now.",
+
+  "Esqueci minha senha | Marques": "Forgot my password | Marques",
+  "Informe o e-mail da sua conta. Se ele estiver cadastrado, mandamos um link pra você escolher uma senha nova.":
+    "Enter your account's email. If it's registered, we'll send you a link to choose a new password.",
+  "Redefinir senha | Marques": "Reset password | Marques",
+  "Defina uma senha nova para acessar sua conta.": "Set a new password to access your account.",
+
+  "Esqueci minha senha | Painel de Administrador | Marques": "Forgot my password | Administrator Panel | Marques",
+  "Informe o e-mail da sua conta de administrador.": "Enter your administrator account's email.",
+  "Redefinir senha | Painel de Administrador | Marques": "Reset password | Administrator Panel | Marques",
+  "Defina uma senha nova para acessar o painel.": "Set a new password to access the panel.",
+
 };

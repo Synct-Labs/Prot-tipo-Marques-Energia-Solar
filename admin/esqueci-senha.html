@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Esqueci minha senha | Painel de Administrador | Marques</title>
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="admin.css">
+<script src="../theme-toggle.js"></script>
+<script src="../i18n-dict.js"></script>
+<script src="../i18n.js"></script>
+</head>
+<body class="admin-body">
+
+<div class="admin-login-wrap">
+  <div class="admin-login-card" id="formCard">
+    <div class="admin-login-logo">
+      <img src="../logo-mark-128.png" alt="Marques">
+      <h1>Esqueci minha senha</h1>
+      <p>Informe o e-mail da sua conta de administrador.</p>
+    </div>
+
+    <div class="admin-error" id="formError"></div>
+
+    <form id="forgotForm">
+      <div class="admin-field">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" name="email" required autocomplete="username" placeholder="admin@marquesenergiasolar.com.br">
+      </div>
+      <button type="submit" class="admin-btn" id="submitBtn">Enviar link</button>
+    </form>
+
+    <p class="admin-note"><a href="login.html">← Voltar para o login</a></p>
+  </div>
+
+  <div class="admin-login-card" id="doneCard" hidden>
+    <div class="admin-login-logo">
+      <img src="../logo-mark-128.png" alt="Marques">
+      <h1>Verifique seu e-mail</h1>
+      <p id="doneMsg"></p>
+    </div>
+    <p class="admin-note"><a href="login.html">← Voltar para o login</a></p>
+  </div>
+</div>
+
+<script src="../api-config.js"></script>
+<script src="admin.js"></script>
+<script>
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
+
+document.getElementById("forgotForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("formError");
+  const btn = document.getElementById("submitBtn");
+  errorBox.classList.remove("show");
+  btn.disabled = true;
+  btn.textContent = t("Enviando...");
+
+  const email = document.getElementById("email").value.trim();
+
+  try {
+    const res = await MES.apiPost("/api/auth/forgot-password", { email });
+    if (!res.ok) {
+      errorBox.textContent = res.error || t("Não foi possível enviar. Tente novamente em instantes.");
+      errorBox.classList.add("show");
+      return;
+    }
+    document.getElementById("doneMsg").textContent =
+      t("Se {email} estiver cadastrado, você vai receber um link pra redefinir sua senha em alguns instantes. O link expira em 1 hora.").replace("{email}", email);
+    document.getElementById("formCard").hidden = true;
+    document.getElementById("doneCard").hidden = false;
+  } catch (err) {
+    errorBox.textContent = t("Erro de conexão com o servidor. Tente novamente em instantes.");
+    errorBox.classList.add("show");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t("Enviar link");
+  }
+});
+</script>
+</body>
+</html>

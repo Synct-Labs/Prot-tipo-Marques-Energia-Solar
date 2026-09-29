@@ -179,6 +179,53 @@ async function updateAdminPassword(adminId, newPassword) {
   ]);
 }
 
+/* ======================================================================
+   "ESQUECI MINHA SENHA" (admin)
+   ---------------------------------------------------------------------
+   Token de uso único, guardado no banco (sobrevive a reinício do
+   servidor — diferente do pendingAdminLogins do 2FA, que é curto e some
+   se o processo cair no meio, sem problema porque a pessoa só tenta de
+   novo). Expira em 1 hora.
+   ====================================================================== */
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
+
+async function createPasswordResetToken(adminId) {
+  const token = crypto.randomBytes(32).toString("hex");
+  const now = new Date();
+  const expires = new Date(now.getTime() + PASSWORD_RESET_TTL_MS);
+  await pool.query(
+    "INSERT INTO password_reset_tokens (token, kind, account_id, created_at, expires_at) VALUES ($1, 'admin', $2, $3, $4)",
+    [token, adminId, now.toISOString(), expires.toISOString()]
+  );
+  return token;
+}
+
+// Retorna { adminId } se o token for válido (existe, não expirou, não foi
+// usado ainda) e já marca como usado — nunca dá pra reaproveitar o mesmo
+// link duas vezes.
+async function consumePasswordResetToken(token) {
+  const { rows } = await pool.query(
+    "SELECT * FROM password_reset_tokens WHERE token = $1 AND kind = 'admin'",
+    [token]
+  );
+  const row = rows[0];
+  if (!row || row.used_at) return null;
+  if (new Date(row.expires_at).getTime() < Date.now()) return null;
+  await pool.query("UPDATE password_reset_tokens SET used_at = $1 WHERE token = $2", [
+    new Date().toISOString(),
+    token,
+  ]);
+  return { adminId: row.account_id };
+}
+
+// Derruba toda sessão ativa dessa conta — chamado depois de uma redefinição
+// de senha, pra caso o esquecimento tenha sido por causa de acesso indevido
+// (alguém trocou a senha antes da pessoa, ela reseta e isso já tranca esse
+// alguém pra fora de qualquer sessão que já tinha aberto).
+async function destroyAllAdminSessions(adminId) {
+  await pool.query("DELETE FROM sessions WHERE admin_id = $1", [adminId]);
+}
+
 /* ---------------------- GESTÃO DE EQUIPE (só "owner") ---------------------- */
 const VALID_COMPANIES = ["energia_solar", "promotora", "ambas"];
 const VALID_ROLES = ["owner", "funcionario"];
@@ -319,6 +366,9 @@ module.exports = {
   getAdminBySession,
   findAdminByEmail,
   updateAdminPassword,
+  createPasswordResetToken,
+  consumePasswordResetToken,
+  destroyAllAdminSessions,
   listAdmins,
   findAdminById,
   countOwners,

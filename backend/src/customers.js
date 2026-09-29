@@ -101,6 +101,45 @@ async function updatePassword(id, newPassword) {
   ]);
 }
 
+/* ======================================================================
+   "ESQUECI MINHA SENHA" (cliente)
+   ---------------------------------------------------------------------
+   Mesmo esquema do admin (ver auth.js): token de uso único no banco,
+   válido por 1 hora, mesma tabela password_reset_tokens (kind='customer'
+   separa o namespace do id em relação aos admins).
+   ====================================================================== */
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
+
+async function createPasswordResetToken(customerId) {
+  const token = crypto.randomBytes(32).toString("hex");
+  const now = new Date();
+  const expires = new Date(now.getTime() + PASSWORD_RESET_TTL_MS);
+  await pool.query(
+    "INSERT INTO password_reset_tokens (token, kind, account_id, created_at, expires_at) VALUES ($1, 'customer', $2, $3, $4)",
+    [token, customerId, now.toISOString(), expires.toISOString()]
+  );
+  return token;
+}
+
+async function consumePasswordResetToken(token) {
+  const { rows } = await pool.query(
+    "SELECT * FROM password_reset_tokens WHERE token = $1 AND kind = 'customer'",
+    [token]
+  );
+  const row = rows[0];
+  if (!row || row.used_at) return null;
+  if (new Date(row.expires_at).getTime() < Date.now()) return null;
+  await pool.query("UPDATE password_reset_tokens SET used_at = $1 WHERE token = $2", [
+    new Date().toISOString(),
+    token,
+  ]);
+  return { customerId: row.account_id };
+}
+
+async function destroyAllSessions(customerId) {
+  await pool.query("DELETE FROM customer_sessions WHERE customer_id = $1", [customerId]);
+}
+
 /* ---------------------- SESSÕES ---------------------- */
 async function createSession(customerId) {
   const token = crypto.randomBytes(32).toString("hex");
@@ -356,6 +395,9 @@ module.exports = {
   updateProfile,
   saveAddress,
   updatePassword,
+  createPasswordResetToken,
+  consumePasswordResetToken,
+  destroyAllSessions,
   createSession,
   destroySession,
   getCustomerBySession,

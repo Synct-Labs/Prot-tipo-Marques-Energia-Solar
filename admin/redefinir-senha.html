@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Redefinir senha | Painel de Administrador | Marques</title>
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="admin.css">
+<script src="../theme-toggle.js"></script>
+<script src="../i18n-dict.js"></script>
+<script src="../i18n.js"></script>
+</head>
+<body class="admin-body">
+
+<div class="admin-login-wrap">
+  <div class="admin-login-card" id="formCard" hidden>
+    <div class="admin-login-logo">
+      <img src="../logo-mark-128.png" alt="Marques">
+      <h1>Escolha sua nova senha</h1>
+      <p>Defina uma senha nova para acessar o painel.</p>
+    </div>
+
+    <div class="admin-error" id="formError"></div>
+
+    <form id="resetForm">
+      <div class="admin-field">
+        <label for="newPassword">Nova senha</label>
+        <input type="password" id="newPassword" name="newPassword" required autocomplete="new-password" placeholder="Mínimo de 8 caracteres">
+      </div>
+      <div class="admin-field">
+        <label for="newPasswordConfirm">Confirmar nova senha</label>
+        <input type="password" id="newPasswordConfirm" name="newPasswordConfirm" required autocomplete="new-password">
+      </div>
+      <button type="submit" class="admin-btn" id="submitBtn">Redefinir senha</button>
+    </form>
+  </div>
+
+  <div class="admin-login-card" id="invalidCard" hidden>
+    <div class="admin-login-logo">
+      <img src="../logo-mark-128.png" alt="Marques">
+      <h1>Link inválido ou expirado</h1>
+      <p>Esse link de redefinição já foi usado ou não é mais válido. Peça um novo.</p>
+    </div>
+    <a class="admin-btn" href="esqueci-senha.html" style="display:block; text-align:center; text-decoration:none;">Pedir novo link</a>
+  </div>
+
+  <div class="admin-login-card" id="doneCard" hidden>
+    <div class="admin-login-logo">
+      <img src="../logo-mark-128.png" alt="Marques">
+      <h1>Senha redefinida!</h1>
+      <p>Sua senha foi alterada. Já pode entrar com ela.</p>
+    </div>
+    <a class="admin-btn" href="login.html" style="display:block; text-align:center; text-decoration:none;">Ir para o login</a>
+  </div>
+</div>
+
+<script src="../api-config.js"></script>
+<script src="admin.js"></script>
+<script>
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
+
+const token = new URLSearchParams(location.search).get("token");
+if (!token) {
+  document.getElementById("invalidCard").hidden = false;
+} else {
+  document.getElementById("formCard").hidden = false;
+}
+
+document.getElementById("resetForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("formError");
+  const btn = document.getElementById("submitBtn");
+  errorBox.classList.remove("show");
+
+  const newPassword = document.getElementById("newPassword").value;
+  const newPasswordConfirm = document.getElementById("newPasswordConfirm").value;
+
+  if (newPassword !== newPasswordConfirm) {
+    errorBox.textContent = t("As senhas não coincidem.");
+    errorBox.classList.add("show");
+    return;
+  }
+  if (newPassword.length < 8) {
+    errorBox.textContent = t("A nova senha precisa ter ao menos 8 caracteres.");
+    errorBox.classList.add("show");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = t("Redefinindo...");
+
+  try {
+    const res = await MES.apiPost("/api/auth/reset-password", { token, newPassword });
+    if (!res.ok) {
+      errorBox.textContent = res.error || t("Não foi possível redefinir a senha.");
+      errorBox.classList.add("show");
+      return;
+    }
+    document.getElementById("formCard").hidden = true;
+    document.getElementById("doneCard").hidden = false;
+  } catch (err) {
+    errorBox.textContent = t("Erro de conexão com o servidor. Tente novamente em instantes.");
+    errorBox.classList.add("show");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t("Redefinir senha");
+  }
+});
+</script>
+</body>
+</html>
