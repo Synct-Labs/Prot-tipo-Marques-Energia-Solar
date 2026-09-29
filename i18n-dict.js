@@ -923,4 +923,29 @@ window.MES_I18N_DICT = {
   "Dúvidas sobre estes termos podem ser enviadas pelo WhatsApp": "Questions about these terms can be sent via WhatsApp",
   "Veja também nossa": "See also our",
 
+  /* ---------- termos-credito.html (Termos de Uso — Promotora) ---------- */
+  "Termos de Uso | Marques Promotora": "Terms of Use | Marques Promotora",
+  "Termos e condições de uso do simulador de crédito da Marques Promotora.":
+    "Terms and conditions for using the Marques Promotora credit simulator.",
+  "Última atualização: 24 de agosto de 2026": "Last updated: August 24, 2026",
+  "Ao usar o simulador de crédito da": "By using the",
+  ", você concorda com os termos abaixo. Leia com atenção antes de solicitar uma simulação.":
+    " credit simulator, you agree to the terms below. Read carefully before requesting a simulation.",
+  "1. Sobre o serviço": "1. About the service",
+  "A Marques Promotora oferece simulação de crédito para financiar sistemas de energia solar, nas modalidades CLT, saque-aniversário do FGTS, compra programada ou financiamento solar. As simulações exibidas são":
+    "Marques Promotora offers credit simulation to finance solar energy systems, in the CLT, FGTS birthday withdrawal, installment purchase plan, or solar financing options. The simulations shown are",
+  "Ao preencher o formulário de simulação de crédito, você declara que as informações fornecidas (nome, CPF, renda, dados profissionais etc.) são verdadeiras e atualizadas. Informações falsas podem impedir o andamento da sua solicitação.":
+    "By filling out the credit simulation form, you declare that the information provided (name, CPF, income, professional details, etc.) is true and up to date. False information may prevent your application from proceeding.",
+  "3. Natureza do serviço": "3. Nature of the service",
+  "A ferramenta de simulação de crédito é um serviço informativo, não constitui uma oferta vinculante de crédito e não substitui a análise formal feita pela instituição financeira escolhida por você. A Marques Promotora atua como intermediária entre você e as instituições financeiras parceiras.":
+    "The credit simulation tool is an informational service, does not constitute a binding credit offer, and does not replace the formal analysis performed by the financial institution you choose. Marques Promotora acts as an intermediary between you and the partner financial institutions.",
+  "4. Saque-aniversário do FGTS": "4. FGTS birthday withdrawal",
+  'Na modalidade "Saque FGTS", a análise depende da sua autorização para que as instituições parceiras consultem o saldo do seu saque-aniversário diretamente no aplicativo oficial do FGTS. Essa consulta não movimenta seu saldo nem gera qualquer cobrança.':
+    'In the "FGTS Withdrawal" option, the analysis depends on your authorization for the partner institutions to check your birthday-withdrawal balance directly in the official FGTS app. This lookup does not move your balance or generate any charge.',
+  "Marca, logotipo, textos e imagens deste site pertencem à Marques Promotora ou são usados sob licença. Não é permitida a reprodução sem autorização prévia.":
+    "The brand, logo, text, and images on this site belong to Marques Promotora or are used under license. Reproduction without prior authorization is not permitted.",
+  "5. Propriedade intelectual": "5. Intellectual property",
+  "6. Limitação de responsabilidade": "6. Limitation of liability",
+  "7. Contato": "7. Contact",
+
 };
