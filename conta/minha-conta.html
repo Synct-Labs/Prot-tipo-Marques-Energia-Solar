@@ -244,6 +244,8 @@
 <script src="../api-config.js"></script>
 <script src="conta.js"></script>
 <script>
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
+
 let currentCustomer = null;
 
 function fillPerfilForm(customer) {
@@ -293,7 +295,7 @@ function orderItemHTML(order) {
       </div>
       ${stepperHTML(ORDER_STEPS, CONTA.ORDER_STATUS_LABELS, order.status)}
       <div class="order-card-foot">
-        <span class="item-detail">${order.itens.length} ite${order.itens.length === 1 ? "m" : "ns"}</span>
+        <span class="item-detail">${order.itens.length} ${order.itens.length === 1 ? t("item") : t("itens")}</span>
         <strong class="order-card-total">${CONTA.formatBRL(order.total)}</strong>
       </div>
     </div>`;
@@ -301,7 +303,7 @@ function orderItemHTML(order) {
 
 function leadItemHTML(lead) {
   const label = CONTA.LEAD_STATUS_LABELS[lead.status] || lead.status;
-  const modalidade = lead.modalidadeInteresse ? lead.modalidadeInteresse : "Não informada";
+  const modalidade = lead.modalidadeInteresse ? lead.modalidadeInteresse : t("Não informada");
   return `
     <div class="order-card">
       <div class="order-card-head">
@@ -314,7 +316,7 @@ function leadItemHTML(lead) {
       </div>
       ${stepperHTML(LEAD_STEPS, CONTA.LEAD_STATUS_LABELS, lead.status)}
       <div class="order-card-foot">
-        <span class="item-detail">Modalidade: ${modalidade}</span>
+        <span class="item-detail">${t("Modalidade:")} ${modalidade}</span>
       </div>
     </div>`;
 }
@@ -322,16 +324,16 @@ function leadItemHTML(lead) {
 async function loadOrders() {
   const box = document.getElementById("ordersList");
   const res = await CONTA.apiGet("/api/customers/me/orders");
-  if (!res.ok) { box.innerHTML = `<div class="account-list-empty">Não foi possível carregar seus pedidos.</div>`; return; }
-  if (!res.orders.length) { box.innerHTML = `<div class="account-list-empty">Você ainda não fez nenhum pedido na loja.</div>`; return; }
+  if (!res.ok) { box.innerHTML = `<div class="account-list-empty">${t("Não foi possível carregar seus pedidos.")}</div>`; return; }
+  if (!res.orders.length) { box.innerHTML = `<div class="account-list-empty">${t("Você ainda não fez nenhum pedido na loja.")}</div>`; return; }
   box.innerHTML = res.orders.map(orderItemHTML).join("");
 }
 
 async function loadLeads() {
   const box = document.getElementById("leadsList");
   const res = await CONTA.apiGet("/api/customers/me/credit-leads");
-  if (!res.ok) { box.innerHTML = `<div class="account-list-empty">Não foi possível carregar suas solicitações.</div>`; return; }
-  if (!res.leads.length) { box.innerHTML = `<div class="account-list-empty">Você ainda não enviou nenhuma solicitação de crédito.</div>`; return; }
+  if (!res.ok) { box.innerHTML = `<div class="account-list-empty">${t("Não foi possível carregar suas solicitações.")}</div>`; return; }
+  if (!res.leads.length) { box.innerHTML = `<div class="account-list-empty">${t("Você ainda não enviou nenhuma solicitação de crédito.")}</div>`; return; }
   box.innerHTML = res.leads.map(leadItemHTML).join("");
 }
 
@@ -355,7 +357,7 @@ document.getElementById("perfilForm").addEventListener("submit", async (e) => {
   errorBox.classList.remove("show");
   successBox.classList.remove("show");
   btn.disabled = true;
-  btn.textContent = "Salvando...";
+  btn.textContent = t("Salvando...");
 
   try {
     const res = await CONTA.apiPatch("/api/customers/me", {
@@ -364,17 +366,17 @@ document.getElementById("perfilForm").addEventListener("submit", async (e) => {
       telefone: document.getElementById("pTelefone").value.trim(),
     });
     if (!res.ok) {
-      errorBox.textContent = res.error || "Não foi possível salvar suas informações.";
+      errorBox.textContent = res.error || t("Não foi possível salvar suas informações.");
       errorBox.classList.add("show");
       return;
     }
     currentCustomer = res.customer;
     fillPerfilForm(res.customer);
-    successBox.textContent = "Dados atualizados.";
+    successBox.textContent = t("Dados atualizados.");
     successBox.classList.add("show");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Salvar alterações";
+    btn.textContent = t("Salvar alterações");
   }
 });
 
@@ -392,26 +394,26 @@ document.getElementById("senhaForm").addEventListener("submit", async (e) => {
   const newPasswordConfirm = document.getElementById("newPasswordConfirm").value;
 
   if (newPassword !== newPasswordConfirm) {
-    errorBox.textContent = "As novas senhas não coincidem.";
+    errorBox.textContent = t("As novas senhas não coincidem.");
     errorBox.classList.add("show");
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = "Atualizando...";
+  btn.textContent = t("Atualizando...");
   try {
     const res = await CONTA.apiPost("/api/customers/change-password", { currentPassword, newPassword });
     if (!res.ok) {
-      errorBox.textContent = res.error || "Não foi possível atualizar a senha.";
+      errorBox.textContent = res.error || t("Não foi possível atualizar a senha.");
       errorBox.classList.add("show");
       return;
     }
     document.getElementById("senhaForm").reset();
-    successBox.textContent = "Senha atualizada.";
+    successBox.textContent = t("Senha atualizada.");
     successBox.classList.add("show");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Atualizar senha";
+    btn.textContent = t("Atualizar senha");
   }
 });
 
@@ -430,8 +432,8 @@ function renderTwoFaStatus() {
   showTwoFaState(currentCustomer.twoFactorEnabled ? "on" : "off");
   if (currentCustomer.twoFactorEnabled) {
     const isApp = currentCustomer.twoFactorMethod === "app";
-    document.getElementById("twoFaOnLabel").textContent = isApp ? "Ativada — código pelo app autenticador" : "Ativada — código por e-mail";
-    document.getElementById("twoFaSwitchStartBtn").textContent = isApp ? "Usar e-mail em vez do app" : "Usar app autenticador";
+    document.getElementById("twoFaOnLabel").textContent = isApp ? t("Ativada — código pelo app autenticador") : t("Ativada — código por e-mail");
+    document.getElementById("twoFaSwitchStartBtn").textContent = isApp ? t("Usar e-mail em vez do app") : t("Usar app autenticador");
   }
 }
 
@@ -440,12 +442,12 @@ document.getElementById("twoFaStartBtn").addEventListener("click", async () => {
   const btn = document.getElementById("twoFaStartBtn");
   errorBox.classList.remove("show");
   btn.disabled = true;
-  btn.textContent = "Enviando código...";
+  btn.textContent = t("Enviando código...");
 
   try {
     const res = await CONTA.apiPost("/api/customers/2fa/setup");
     if (!res.ok) {
-      errorBox.textContent = res.error || "Não foi possível enviar o código agora. Tente novamente em instantes.";
+      errorBox.textContent = res.error || t("Não foi possível enviar o código agora. Tente novamente em instantes.");
       errorBox.classList.add("show");
       return;
     }
@@ -453,7 +455,7 @@ document.getElementById("twoFaStartBtn").addEventListener("click", async () => {
     showTwoFaState("setup");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Ativar verificação em duas etapas";
+    btn.textContent = t("Ativar verificação em duas etapas");
   }
 });
 
@@ -463,13 +465,13 @@ document.getElementById("twoFaConfirmForm").addEventListener("submit", async (e)
   const btn = document.getElementById("twoFaConfirmBtn");
   errorBox.classList.remove("show");
   btn.disabled = true;
-  btn.textContent = "Confirmando...";
+  btn.textContent = t("Confirmando...");
 
   try {
     const code = document.getElementById("twoFaConfirmCode").value.trim();
     const res = await CONTA.apiPost("/api/customers/2fa/confirm", { code });
     if (!res.ok) {
-      errorBox.textContent = res.error || "Código inválido.";
+      errorBox.textContent = res.error || t("Código inválido.");
       errorBox.classList.add("show");
       return;
     }
@@ -482,7 +484,7 @@ document.getElementById("twoFaConfirmForm").addEventListener("submit", async (e)
     showTwoFaState("backup");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Confirmar e ativar";
+    btn.textContent = t("Confirmar e ativar");
   }
 });
 
@@ -501,12 +503,12 @@ document.getElementById("twoFaSwitchStartBtn").addEventListener("click", async (
   errorBox.classList.remove("show");
   const targetMethod = currentCustomer.twoFactorMethod === "app" ? "email" : "app";
   btn.disabled = true;
-  btn.textContent = "Enviando...";
+  btn.textContent = t("Enviando...");
 
   try {
     const res = await CONTA.apiPost("/api/customers/2fa/switch/start", { targetMethod });
     if (!res.ok) {
-      errorBox.textContent = res.error || "Não foi possível iniciar a troca agora. Tente novamente em instantes.";
+      errorBox.textContent = res.error || t("Não foi possível iniciar a troca agora. Tente novamente em instantes.");
       errorBox.classList.add("show");
       return;
     }
@@ -515,8 +517,8 @@ document.getElementById("twoFaSwitchStartBtn").addEventListener("click", async (
     document.getElementById("twoFaSwitchEmailInfo").hidden = targetMethod !== "email";
     document.getElementById("twoFaSwitchCodeLabel").textContent =
       targetMethod === "app"
-        ? "Digite o código de 6 dígitos que apareceu no app"
-        : "Digite o código de 6 dígitos que chegou no seu e-mail";
+        ? t("Digite o código de 6 dígitos que apareceu no app")
+        : t("Digite o código de 6 dígitos que chegou no seu e-mail");
 
     if (targetMethod === "app") {
       document.getElementById("twoFaSwitchSecretText").textContent = (res.secret.match(/.{1,4}/g) || [res.secret]).join(" ");
@@ -542,13 +544,13 @@ document.getElementById("twoFaSwitchConfirmForm").addEventListener("submit", asy
   const btn = document.getElementById("twoFaSwitchConfirmBtn");
   errorBox.classList.remove("show");
   btn.disabled = true;
-  btn.textContent = "Confirmando...";
+  btn.textContent = t("Confirmando...");
 
   try {
     const code = document.getElementById("twoFaSwitchCode").value.trim();
     const res = await CONTA.apiPost("/api/customers/2fa/switch/confirm", { code });
     if (!res.ok) {
-      errorBox.textContent = res.error || "Código inválido.";
+      errorBox.textContent = res.error || t("Código inválido.");
       errorBox.classList.add("show");
       return;
     }
@@ -557,7 +559,7 @@ document.getElementById("twoFaSwitchConfirmForm").addEventListener("submit", asy
     renderTwoFaStatus();
   } finally {
     btn.disabled = false;
-    btn.textContent = "Confirmar troca";
+    btn.textContent = t("Confirmar troca");
   }
 });
 
