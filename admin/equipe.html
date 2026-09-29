@@ -104,31 +104,32 @@
 <script>
 let allStaff = [];
 let meAdmin = null;
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
 
 function staffDetailHTML(person){
   return `
     <div class="admin-detail-block" style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end;">
       <div class="admin-field" style="margin-bottom:0; min-width:200px;">
-        <label>Nome</label>
+        <label>${t("Nome")}</label>
         <input type="text" class="edit-name" value="${person.name || ""}">
       </div>
       <div class="admin-field" style="margin-bottom:0; min-width:200px;">
-        <label>Empresa</label>
+        <label>${t("Empresa")}</label>
         <select class="edit-company">
           <option value="energia_solar" ${person.company === "energia_solar" ? "selected" : ""}>Marques Energia Solar</option>
           <option value="promotora" ${person.company === "promotora" ? "selected" : ""}>Marques Promotora</option>
-          <option value="ambas" ${person.company === "ambas" ? "selected" : ""}>Ambas</option>
+          <option value="ambas" ${person.company === "ambas" ? "selected" : ""}>${t("Ambas")}</option>
         </select>
       </div>
       <div class="admin-field" style="margin-bottom:0; min-width:180px;">
-        <label>Cargo</label>
+        <label>${t("Cargo")}</label>
         <select class="edit-role">
-          <option value="funcionario" ${person.role === "funcionario" ? "selected" : ""}>Funcionário</option>
-          <option value="owner" ${person.role === "owner" ? "selected" : ""}>Dono</option>
+          <option value="funcionario" ${person.role === "funcionario" ? "selected" : ""}>${t("Funcionário")}</option>
+          <option value="owner" ${person.role === "owner" ? "selected" : ""}>${t("Dono")}</option>
         </select>
       </div>
-      <button type="button" class="admin-btn save-staff-btn" style="width:auto;" data-id="${person.id}">Salvar</button>
-      <button type="button" class="admin-btn admin-btn-ghost delete-staff-btn" data-id="${person.id}" ${person.id === meAdmin.id ? "disabled title=\"Você não pode remover a própria conta\"" : ""}>Remover</button>
+      <button type="button" class="admin-btn save-staff-btn" style="width:auto;" data-id="${person.id}">${t("Salvar")}</button>
+      <button type="button" class="admin-btn admin-btn-ghost delete-staff-btn" data-id="${person.id}" ${person.id === meAdmin.id ? `disabled title="${t("Você não pode remover a própria conta")}"` : ""}>${t("Remover")}</button>
     </div>
   `;
 }
@@ -136,7 +137,7 @@ function staffDetailHTML(person){
 function renderStaff(list){
   const tbody = document.getElementById("staffTableBody");
   if(list.length === 0){
-    tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">Nenhum funcionário cadastrado.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">${t("Nenhum funcionário cadastrado.")}</td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(person => `
@@ -155,10 +156,10 @@ function renderStaff(list){
 
 async function loadStaff(){
   document.getElementById("staffTableBody").innerHTML =
-    `<tr><td colspan="5" class="admin-loading">Carregando equipe...</td></tr>`;
+    `<tr><td colspan="5" class="admin-loading">${t("Carregando equipe...")}</td></tr>`;
   const res = await MES.apiGet("/api/admin/staff");
   if(!res.ok){
-    MES.showToast(res.error || "Erro ao carregar a equipe.");
+    MES.showToast(res.error || t("Erro ao carregar a equipe."));
     return;
   }
   allStaff = res.staff;
@@ -179,7 +180,7 @@ document.getElementById("newStaffForm").addEventListener("submit", async (e) => 
   const btn = document.getElementById("newStaffSubmitBtn");
   errorBox.classList.remove("show");
   btn.disabled = true;
-  btn.textContent = "Criando...";
+  btn.textContent = t("Criando...");
 
   try {
     const res = await MES.apiPost("/api/admin/staff", {
@@ -190,17 +191,17 @@ document.getElementById("newStaffForm").addEventListener("submit", async (e) => 
       role: document.getElementById("nsRole").value,
     });
     if(!res.ok){
-      errorBox.textContent = res.error || "Não foi possível criar o funcionário.";
+      errorBox.textContent = res.error || t("Não foi possível criar o funcionário.");
       errorBox.classList.add("show");
       return;
     }
     document.getElementById("newStaffForm").reset();
     document.getElementById("newStaffCard").style.display = "none";
-    MES.showToast("Funcionário criado.");
+    MES.showToast(t("Funcionário criado."));
     loadStaff();
   } finally {
     btn.disabled = false;
-    btn.textContent = "Criar funcionário";
+    btn.textContent = t("Criar funcionário");
   }
 });
 
@@ -217,10 +218,10 @@ document.getElementById("staffTableBody").addEventListener("click", async (e) =>
       role: block.querySelector(".edit-role").value,
     });
     if(!res.ok){
-      MES.showToast(res.error || "Erro ao salvar.");
+      MES.showToast(res.error || t("Erro ao salvar."));
       return;
     }
-    MES.showToast("Funcionário atualizado.");
+    MES.showToast(t("Funcionário atualizado."));
     loadStaff();
     return;
   }
@@ -228,13 +229,13 @@ document.getElementById("staffTableBody").addEventListener("click", async (e) =>
   if(deleteBtn){
     if(deleteBtn.disabled) return;
     const id = deleteBtn.dataset.id;
-    if(!confirm("Remover este funcionário? Ele perderá o acesso ao painel imediatamente.")) return;
+    if(!confirm(t("Remover este funcionário? Ele perderá o acesso ao painel imediatamente."))) return;
     const res = await MES.apiDelete(`/api/admin/staff/${id}`);
     if(!res.ok){
-      MES.showToast(res.error || "Erro ao remover.");
+      MES.showToast(res.error || t("Erro ao remover."));
       return;
     }
-    MES.showToast("Funcionário removido.");
+    MES.showToast(t("Funcionário removido."));
     loadStaff();
     return;
   }
