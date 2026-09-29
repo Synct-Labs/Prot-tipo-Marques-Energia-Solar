@@ -884,4 +884,43 @@ window.MES_I18N_DICT = {
   ". Fale com a equipe Marques para saber mais.": ". Contact the Marques team to learn more.",
   "Não foi possível carregar": "Couldn't load",
 
+  /* ---------- termos.html (Termos de Uso — Energia Solar) ---------- */
+  "Termos de Uso | Marques Energia Solar": "Terms of Use | Marques Energia Solar",
+  "Termos e condições de uso do site e da loja online da Marques Energia Solar.":
+    "Terms and conditions for using the Marques Energia Solar website and online store.",
+  "← Voltar ao início": "← Back to home",
+  "Termos de Uso": "Terms of Use",
+  "Última atualização: 17 de agosto de 2026": "Last updated: August 17, 2026",
+  "Ao usar o site da": "By using the",
+  "Marques Energia Solar": "Marques Energia Solar",
+  ", você concorda com os termos abaixo. Leia com atenção antes de solicitar uma simulação de crédito ou realizar uma compra.":
+    " website, you agree to the terms below. Read carefully before requesting a credit simulation or making a purchase.",
+  "1. Sobre o site": "1. About the site",
+  "Este site apresenta produtos para geração de energia solar fotovoltaica e permite simular condições de crédito para financiar a compra do seu sistema. As simulações de crédito exibidas são":
+    "This site presents solar photovoltaic energy generation products and lets you simulate credit terms to finance the purchase of your system. The credit simulations shown are",
+  "ilustrativas": "illustrative",
+  ": os valores finais dependem de análise das instituições financeiras envolvidas e podem mudar.":
+    ": the final amounts depend on analysis by the financial institutions involved and may change.",
+  "2. Cadastro e veracidade das informações": "2. Registration and accuracy of information",
+  "Ao preencher um formulário de simulação de crédito ou finalizar uma compra, você declara que as informações fornecidas (nome, CPF, renda, endereço etc.) são verdadeiras e atualizadas. Informações falsas podem impedir o andamento do seu pedido ou solicitação.":
+    "By filling out a credit simulation form or completing a purchase, you declare that the information provided (name, CPF, income, address, etc.) is true and up to date. False information may prevent your order or application from proceeding.",
+  "3. Pedidos e pagamento": "3. Orders and payment",
+  "Ao concluir um pedido pela loja, você recebe um número de pedido e nossa equipe entra em contato para confirmar os detalhes, formas de pagamento disponíveis e prazo de entrega. A confirmação do pedido no site não representa cobrança automática.":
+    "When you complete an order through the store, you receive an order number and our team gets in touch to confirm the details, available payment methods, and delivery time. Confirming the order on the site does not represent an automatic charge.",
+  "4. Preços e disponibilidade": "4. Prices and availability",
+  "Preços, especificações e disponibilidade dos produtos podem ser alterados sem aviso prévio. Reservamo-nos o direito de recusar ou cancelar pedidos em caso de erro evidente de preço ou indisponibilidade do produto.":
+    "Prices, specifications, and product availability may change without notice. We reserve the right to refuse or cancel orders in case of an evident pricing error or product unavailability.",
+  "5. Simulação de crédito": "5. Credit simulation",
+  "A ferramenta de simulação de crédito (CLT, saque-aniversário do FGTS, compra programada ou financiamento solar) é um serviço informativo, não constitui uma oferta vinculante de crédito e não substitui a análise formal feita pela instituição financeira escolhida por você.":
+    "The credit simulation tool (CLT, FGTS birthday withdrawal, installment purchase plan, or solar financing) is an informational service, does not constitute a binding credit offer, and does not replace the formal analysis performed by the financial institution you choose.",
+  "6. Propriedade intelectual": "6. Intellectual property",
+  "Marca, logotipo, textos e imagens deste site pertencem à Marques Energia Solar ou são usados sob licença. Não é permitida a reprodução sem autorização prévia.":
+    "The brand, logo, text, and images on this site belong to Marques Energia Solar or are used under license. Reproduction without prior authorization is not permitted.",
+  "7. Limitação de responsabilidade": "7. Limitation of liability",
+  "Fazemos o possível para manter as informações do site precisas e atualizadas, mas não garantimos ausência total de erros. Não nos responsabilizamos por decisões financeiras tomadas exclusivamente com base nas simulações ilustrativas do site.":
+    "We do our best to keep the site's information accurate and up to date, but we don't guarantee it is completely free of errors. We are not responsible for financial decisions made solely based on the site's illustrative simulations.",
+  "8. Contato": "8. Contact",
+  "Dúvidas sobre estes termos podem ser enviadas pelo WhatsApp": "Questions about these terms can be sent via WhatsApp",
+  "Veja também nossa": "See also our",
+
 };
