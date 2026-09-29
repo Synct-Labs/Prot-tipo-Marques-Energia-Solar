@@ -103,10 +103,11 @@
 const API_BASE = window.MES_API_BASE || "";
 const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const brl = (v) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const TIPO = { loja: "Loja", credito: "Crédito", consorcio: "Compra Programada" };
-const COMM_STATUS = { prevista: "Prevista", liberada: "Liberada", paga: "Paga", cancelada: "Cancelada" };
-const PARTNER_STATUS = { pendente: "Pendente", ativo: "Ativo", suspenso: "Suspenso", recusado: "Recusado" };
-const PIX_TIPO = { cpf: "CPF", email: "E-mail", telefone: "Telefone", aleatoria: "Aleatória" };
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
+const TIPO = { loja: t("Loja"), credito: t("Crédito"), consorcio: t("Compra Programada") };
+const COMM_STATUS = { prevista: t("Prevista"), liberada: t("Liberada"), paga: t("Paga"), cancelada: t("Cancelada") };
+const PARTNER_STATUS = { pendente: t("Pendente"), ativo: t("Ativo"), suspenso: t("Suspenso"), recusado: t("Recusado") };
+const PIX_TIPO = { cpf: "CPF", email: t("E-mail"), telefone: t("Telefone"), aleatoria: t("Aleatória") };
 
 document.querySelectorAll(".admin-subtab").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -120,8 +121,8 @@ async function loadComm(){
   const status = document.getElementById("commStatusFilter").value;
   const res = await MES.apiGet(`/api/admin/partner-commissions${status ? "?status=" + status : ""}`);
   const box = document.getElementById("commList");
-  if(!res.ok){ box.innerHTML = `<p class="admin-empty">${esc(res.error || "Erro ao carregar.")}</p>`; return; }
-  if(!res.items.length){ box.innerHTML = `<p class="admin-empty">Nenhuma comissão nesta lista.</p>`; return; }
+  if(!res.ok){ box.innerHTML = `<p class="admin-empty">${esc(res.error || t("Erro ao carregar."))}</p>`; return; }
+  if(!res.items.length){ box.innerHTML = `<p class="admin-empty">${t("Nenhuma comissão nesta lista.")}</p>`; return; }
   const today = new Date().toISOString().slice(0, 10);
   box.innerHTML = res.items.map(c => `
     <div class="admin-table-wrap" style="padding:16px 20px; margin-bottom:12px;" data-comm="${c.id}">
@@ -132,20 +133,20 @@ async function loadComm(){
         <div style="display:flex; gap:10px; align-items:center;">
           <strong>${brl(c.valor)}</strong>
           <span class="status-badge status-${c.status === "paga" ? "ativo" : c.status === "cancelada" ? "encerrado" : "pendente"}">${COMM_STATUS[c.status]}</span>
-          ${c.temComprovante ? `<a class="admin-btn admin-btn-ghost" target="_blank" rel="noopener" href="${API_BASE}/api/admin/partner-commissions/${c.id}/comprovante">Comprovante</a>` : ""}
+          ${c.temComprovante ? `<a class="admin-btn admin-btn-ghost" target="_blank" rel="noopener" href="${API_BASE}/api/admin/partner-commissions/${c.id}/comprovante">${t("Comprovante")}</a>` : ""}
         </div>
       </div>
       ${c.status === "prevista" || c.status === "liberada" ? `
       <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-        <input type="number" step="0.01" min="0" placeholder="Novo valor" data-adj-valor="${c.id}" style="width:120px;">
-        <input type="text" placeholder="Motivo do ajuste" data-adj-obs="${c.id}" style="min-width:200px; flex:1;">
-        <button type="button" class="admin-btn admin-btn-ghost" data-adjust="${c.id}">Ajustar valor</button>
+        <input type="number" step="0.01" min="0" placeholder="${t("Novo valor")}" data-adj-valor="${c.id}" style="width:120px;">
+        <input type="text" placeholder="${t("Motivo do ajuste")}" data-adj-obs="${c.id}" style="min-width:200px; flex:1;">
+        <button type="button" class="admin-btn admin-btn-ghost" data-adjust="${c.id}">${t("Ajustar valor")}</button>
       </div>` : ""}
       ${c.status === "liberada" ? `
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
         <input type="date" value="${today}" data-pay-date="${c.id}">
         <input type="file" accept="image/jpeg,image/png,application/pdf" data-pay-file="${c.id}">
-        <button type="button" class="admin-btn" data-pay="${c.id}">Marcar como paga</button>
+        <button type="button" class="admin-btn" data-pay="${c.id}">${t("Marcar como paga")}</button>
       </div>` : ""}
     </div>`).join("");
 }
@@ -167,20 +168,20 @@ document.getElementById("commList").addEventListener("click", async (e) => {
     const valor = document.querySelector(`[data-adj-valor="${id}"]`).value;
     const observacao = document.querySelector(`[data-adj-obs="${id}"]`).value;
     const res = await MES.apiPatch(`/api/admin/partner-commissions/${id}`, { valor: Number(valor), observacao });
-    if(!res.ok){ MES.showToast(res.error || "Erro ao ajustar."); return; }
-    MES.showToast("Valor ajustado."); loadComm();
+    if(!res.ok){ MES.showToast(res.error || t("Erro ao ajustar.")); return; }
+    MES.showToast(t("Valor ajustado.")); loadComm();
   }
   if(pay){
     const id = pay.dataset.pay;
     const file = document.querySelector(`[data-pay-file="${id}"]`).files[0];
     const pagoEm = document.querySelector(`[data-pay-date="${id}"]`).value;
-    if(!file){ MES.showToast("Anexe o comprovante do PIX."); return; }
-    if(!confirm("Confirmar que o PIX desta comissão foi feito?")) return;
+    if(!file){ MES.showToast(t("Anexe o comprovante do PIX.")); return; }
+    if(!confirm(t("Confirmar que o PIX desta comissão foi feito?"))) return;
     const res = await MES.apiPost(`/api/admin/partner-commissions/${id}/pay`, {
       pagoEm, comprovanteBase64: await readB64(file), comprovanteTipo: file.type, comprovanteNome: file.name,
     });
-    if(!res.ok){ MES.showToast(res.error || "Erro ao registrar pagamento."); return; }
-    MES.showToast("Pagamento registrado."); loadComm();
+    if(!res.ok){ MES.showToast(res.error || t("Erro ao registrar pagamento.")); return; }
+    MES.showToast(t("Pagamento registrado.")); loadComm();
   }
 });
 document.getElementById("commStatusFilter").addEventListener("change", loadComm);
@@ -191,29 +192,29 @@ async function loadPartners(){
   const status = document.getElementById("partnerStatusFilter").value;
   const res = await MES.apiGet(`/api/admin/partners${status ? "?status=" + status : ""}`);
   const box = document.getElementById("partnerList");
-  if(!res.ok){ box.innerHTML = `<p class="admin-empty">${esc(res.error || "Erro ao carregar.")}</p>`; return; }
-  if(!res.items.length){ box.innerHTML = `<p class="admin-empty">Nenhum parceiro nesta lista.</p>`; return; }
+  if(!res.ok){ box.innerHTML = `<p class="admin-empty">${esc(res.error || t("Erro ao carregar."))}</p>`; return; }
+  if(!res.items.length){ box.innerHTML = `<p class="admin-empty">${t("Nenhum parceiro nesta lista.")}</p>`; return; }
   box.innerHTML = res.items.map(p => `
     <div class="admin-table-wrap" style="padding:16px 20px; margin-bottom:12px;" data-partner="${p.id}">
       <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:space-between;">
         <div><strong>${esc(p.nome)}</strong> <small>(${esc(p.codigo)})</small><br>
           <small>${esc(p.email)} · ${esc(p.telefone)} · CPF ${esc(p.cpf)}</small><br>
-          <small>PIX ${esc(PIX_TIPO[p.pixTipo] || p.pixTipo)}: ${esc(p.pixChave)} · aceite ${esc(p.termos.versao)} em ${p.termos.em ? MES.formatDate(p.termos.em) : "-"} (IP ${esc(p.termos.ip)})</small><br>
-          <small>${p.vendas} venda(s) · a pagar ${brl(p.aPagar)} · já pago ${brl(p.pago)}</small>${p.motivo ? `<br><small>Motivo: ${esc(p.motivo)}</small>` : ""}</div>
+          <small>PIX ${esc(PIX_TIPO[p.pixTipo] || p.pixTipo)}: ${esc(p.pixChave)} · ${t("aceite")} ${esc(p.termos.versao)} ${t("em")} ${p.termos.em ? MES.formatDate(p.termos.em) : "-"} (IP ${esc(p.termos.ip)})</small><br>
+          <small>${p.vendas} ${t("venda(s) ·")} ${t("a pagar")} ${brl(p.aPagar)} · ${t("já pago")} ${brl(p.pago)}</small>${p.motivo ? `<br><small>${t("Motivo:")} ${esc(p.motivo)}</small>` : ""}</div>
         <span class="status-badge status-${p.status === "ativo" ? "ativo" : p.status === "pendente" ? "pendente" : "encerrado"}">${PARTNER_STATUS[p.status]}</span>
       </div>
       <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-        ${p.status !== "ativo" ? `<button type="button" class="admin-btn" data-set="ativo" data-id="${p.id}">Aprovar</button>` : ""}
-        <input type="text" placeholder="Motivo (para recusar/suspender)" data-motivo="${p.id}" style="min-width:200px; flex:1;">
-        ${p.status === "pendente" || p.status === "recusado" ? `<button type="button" class="admin-btn admin-btn-ghost" data-set="recusado" data-id="${p.id}">Recusar</button>` : ""}
-        ${p.status === "ativo" ? `<button type="button" class="admin-btn admin-btn-ghost" data-set="suspenso" data-id="${p.id}">Suspender</button>` : ""}
+        ${p.status !== "ativo" ? `<button type="button" class="admin-btn" data-set="ativo" data-id="${p.id}">${t("Aprovar")}</button>` : ""}
+        <input type="text" placeholder="${t("Motivo (para recusar/suspender)")}" data-motivo="${p.id}" style="min-width:200px; flex:1;">
+        ${p.status === "pendente" || p.status === "recusado" ? `<button type="button" class="admin-btn admin-btn-ghost" data-set="recusado" data-id="${p.id}">${t("Recusar")}</button>` : ""}
+        ${p.status === "ativo" ? `<button type="button" class="admin-btn admin-btn-ghost" data-set="suspenso" data-id="${p.id}">${t("Suspender")}</button>` : ""}
       </div>
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-        <small>Regra própria (vazio = padrão):</small>
-        <input type="number" step="0.1" min="0" max="50" placeholder="Loja %" value="${p.overrideLoja == null ? "" : p.overrideLoja}" data-ov-loja="${p.id}" style="width:100px;">
-        <input type="number" step="0.1" min="0" max="50" placeholder="Crédito %" value="${p.overrideCredito == null ? "" : p.overrideCredito}" data-ov-credito="${p.id}" style="width:110px;">
-        <input type="number" step="0.1" min="0" max="50" placeholder="Compra Prog. %" value="${p.overrideConsorcio == null ? "" : p.overrideConsorcio}" data-ov-consorcio="${p.id}" style="width:130px;">
-        <button type="button" class="admin-btn admin-btn-ghost" data-override="${p.id}">Salvar regra</button>
+        <small>${t("Regra própria (vazio = padrão):")}</small>
+        <input type="number" step="0.1" min="0" max="50" placeholder="${t("Loja %")}" value="${p.overrideLoja == null ? "" : p.overrideLoja}" data-ov-loja="${p.id}" style="width:100px;">
+        <input type="number" step="0.1" min="0" max="50" placeholder="${t("Crédito %")}" value="${p.overrideCredito == null ? "" : p.overrideCredito}" data-ov-credito="${p.id}" style="width:110px;">
+        <input type="number" step="0.1" min="0" max="50" placeholder="${t("Compra Prog. %")}" value="${p.overrideConsorcio == null ? "" : p.overrideConsorcio}" data-ov-consorcio="${p.id}" style="width:130px;">
+        <button type="button" class="admin-btn admin-btn-ghost" data-override="${p.id}">${t("Salvar regra")}</button>
       </div>
     </div>`).join("");
 }
@@ -225,8 +226,8 @@ document.getElementById("partnerList").addEventListener("click", async (e) => {
     const id = set.dataset.id;
     const motivo = document.querySelector(`[data-motivo="${id}"]`).value;
     const res = await MES.apiPatch(`/api/admin/partners/${id}`, { status: set.dataset.set, motivo });
-    if(!res.ok){ MES.showToast(res.error || "Erro ao atualizar."); return; }
-    MES.showToast("Parceiro atualizado."); loadPartners();
+    if(!res.ok){ MES.showToast(res.error || t("Erro ao atualizar.")); return; }
+    MES.showToast(t("Parceiro atualizado.")); loadPartners();
   }
   if(ov){
     const id = ov.dataset.override;
@@ -235,8 +236,8 @@ document.getElementById("partnerList").addEventListener("click", async (e) => {
       overrideCredito: document.querySelector(`[data-ov-credito="${id}"]`).value,
       overrideConsorcio: document.querySelector(`[data-ov-consorcio="${id}"]`).value,
     });
-    if(!res.ok){ MES.showToast(res.error || "Erro ao salvar."); return; }
-    MES.showToast("Regra do parceiro salva."); loadPartners();
+    if(!res.ok){ MES.showToast(res.error || t("Erro ao salvar.")); return; }
+    MES.showToast(t("Regra do parceiro salva.")); loadPartners();
   }
 });
 document.getElementById("partnerStatusFilter").addEventListener("change", loadPartners);
@@ -258,14 +259,14 @@ document.getElementById("ratesForm").addEventListener("submit", async (e) => {
     credito: Number(document.getElementById("rateCredito").value),
     consorcio: Number(document.getElementById("rateConsorcio").value),
   });
-  if(!res.ok){ box.textContent = res.error || "Erro ao salvar."; box.classList.add("show"); return; }
-  MES.showToast("Regras salvas.");
+  if(!res.ok){ box.textContent = res.error || t("Erro ao salvar."); box.classList.add("show"); return; }
+  MES.showToast(t("Regras salvas."));
 });
 
 async function init(){
   const admin = await MES.requireAuth();
   if(!admin) return;
-  if(admin.role !== "owner"){ document.querySelector(".admin-container").innerHTML = `<p class="admin-empty">Apenas o dono pode gerenciar o programa de parceiros.</p>`; return; }
+  if(admin.role !== "owner"){ document.querySelector(".admin-container").innerHTML = `<p class="admin-empty">${t("Apenas o dono pode gerenciar o programa de parceiros.")}</p>`; return; }
   await Promise.all([loadComm(), loadPartners(), loadRates()]);
 }
 document.getElementById("logoutBtn").addEventListener("click", () => MES.logout());
