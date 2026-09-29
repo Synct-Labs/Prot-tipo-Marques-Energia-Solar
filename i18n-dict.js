@@ -992,4 +992,28 @@ window.MES_I18N_DICT = {
   "Podemos atualizar esta política periodicamente. A data da última atualização estará sempre indicada no topo desta página.":
     "We may update this policy periodically. The last-updated date will always be shown at the top of this page.",
 
+  /* ---------- privacidade-credito.html (Política de Privacidade — Promotora) ---------- */
+  "Política de Privacidade | Marques Promotora": "Privacy Policy | Marques Promotora",
+  "Como a Marques Promotora coleta, usa e protege seus dados pessoais, em conformidade com a LGPD.":
+    "How Marques Promotora collects, uses, and protects your personal data, in accordance with Brazil's LGPD.",
+  "A Marques Promotora": "Marques Promotora",
+  "Ao solicitar uma simulação de crédito, coletamos:": "When you request a credit simulation, we collect:",
+  "Dados básicos:": "Basic data:",
+  "nome, CPF, data de nascimento, estado civil, e-mail, telefone e cidade/UF.":
+    "name, CPF, date of birth, marital status, email, phone, and city/state.",
+  "Dados profissionais:": "Employment data:",
+  "profissão, tipo de vínculo, empresa, tempo de trabalho, renda bruta e renda líquida.":
+    "occupation, employment type, employer, time employed, gross income, and net income.",
+  "Dados da simulação:": "Simulation data:",
+  "valor do sistema, número de parcelas ou valor disponível no FGTS, conforme a modalidade escolhida.":
+    "system value, number of installments, or amount available in FGTS, depending on the option chosen.",
+  "Processar e acompanhar sua solicitação de simulação de crédito.": "Process and track your credit simulation request.",
+  "Cumprir obrigações legais e regulatórias relacionadas à análise de crédito.": "Comply with legal and regulatory obligations related to credit analysis.",
+  "Não vendemos seus dados. Compartilhamos apenas o necessário com prestadores que operam a infraestrutura do site (hospedagem e banco de dados) e com as instituições financeiras que você mesmo escolhe consultar durante o processo de análise de crédito.":
+    "We don't sell your data. We only share what's necessary with providers that run the site's infrastructure (hosting and database) and with the financial institutions you yourself choose to consult during the credit analysis process.",
+  "Seus dados ficam armazenados em banco de dados protegido por senha, com acesso restrito à equipe administrativa da Marques Promotora. Senhas de acesso ao painel são armazenadas com hash criptográfico (nunca em texto puro).":
+    "Your data is stored in a password-protected database, with access restricted to the Marques Promotora administrative team. Panel access passwords are stored with cryptographic hashing (never in plain text).",
+  "Esta página não usa cookies de rastreamento. Eventual armazenamento local do navegador (localStorage) é usado apenas para lembrar informações já calculadas na própria simulação, e nenhum dado é enviado a terceiros por meio desse armazenamento.":
+    "This page doesn't use tracking cookies. Any local browser storage (localStorage) is used only to remember information already calculated in the simulation itself, and no data is sent to third parties through this storage.",
+
 };
