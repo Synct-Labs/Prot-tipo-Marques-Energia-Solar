@@ -46,35 +46,35 @@ const ICON_X = `<svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6
 const DEPARTMENT = "Equipamentos Fotovoltaicos";
 
 const CATEGORIES = {
-  kits:       { label: "Kits Prontos",                       crumbCategory: "Kit Solar Completo",     facetLabel: "Consumo estimado", primarySpec: "potencia", specFields: [
-      ["potencia","Potência do sistema"], ["modulos","Módulos"], ["inversor","Inversor"],
-      ["entradaMax","Potência máx. de entrada"], ["saidaMax","Potência máx. de saída"], ["consumoAlvo","Consumo médio estimado"]
+  kits:       { label: t("Kits Prontos"),                       crumbCategory: t("Kit Solar Completo"),     facetLabel: t("Consumo estimado"), primarySpec: "potencia", specFields: [
+      ["potencia",t("Potência do sistema")], ["modulos",t("Módulos")], ["inversor",t("Inversor")],
+      ["entradaMax",t("Potência máx. de entrada")], ["saidaMax",t("Potência máx. de saída")], ["consumoAlvo",t("Consumo médio estimado")]
     ] },
-  paineis:    { label: "Painéis Solares",               crumbCategory: "Painel Solar",           facetLabel: "Potência (Wp)", primarySpec: "potencia", specFields: [
-      ["potencia","Potência"], ["tipo","Tipo de célula"], ["eficiencia","Eficiência"],
-      ["tensaoMax","Tensão máxima"], ["correnteMax","Corrente máxima"],
-      ["dimensoes","Dimensões"], ["peso","Peso"], ["garantia","Garantia"]
+  paineis:    { label: t("Painéis Solares"),               crumbCategory: t("Painel Solar"),           facetLabel: t("Potência (Wp)"), primarySpec: "potencia", specFields: [
+      ["potencia",t("Potência")], ["tipo",t("Tipo de célula")], ["eficiencia",t("Eficiência")],
+      ["tensaoMax",t("Tensão máxima")], ["correnteMax",t("Corrente máxima")],
+      ["dimensoes",t("Dimensões")], ["peso",t("Peso")], ["garantia",t("Garantia")]
     ] },
-  inversores: { label: "Inversores",                       crumbCategory: "Inversor Fotovoltaico",  facetLabel: "Potência Nominal", primarySpec: "potencia", specFields: [
-      ["potencia","Potência"], ["mppt","Entradas MPPT"], ["tensaoSaida","Tensão de saída"],
-      ["eficiencia","Eficiência máxima"], ["comunicacao","Comunicação"],
-      ["protecao","Grau de proteção"], ["garantia","Garantia"]
+  inversores: { label: t("Inversores"),                       crumbCategory: t("Inversor Fotovoltaico"),  facetLabel: t("Potência Nominal"), primarySpec: "potencia", specFields: [
+      ["potencia",t("Potência")], ["mppt",t("Entradas MPPT")], ["tensaoSaida",t("Tensão de saída")],
+      ["eficiencia",t("Eficiência máxima")], ["comunicacao",t("Comunicação")],
+      ["protecao",t("Grau de proteção")], ["garantia",t("Garantia")]
     ] },
-  cabos:      { label: "Cabos e Conectores",               crumbCategory: "Cabos e Conectores",     facetLabel: "Tipo", primarySpec: "bitola", specFields: [
-      ["bitola","Bitola"], ["comprimento","Comprimento"], ["isolacao","Isolação"],
-      ["tensaoMax","Tensão máxima"], ["resistencia","Resistência"]
+  cabos:      { label: t("Cabos e Conectores"),               crumbCategory: t("Cabos e Conectores"),     facetLabel: t("Tipo"), primarySpec: "bitola", specFields: [
+      ["bitola",t("Bitola")], ["comprimento",t("Comprimento")], ["isolacao",t("Isolação")],
+      ["tensaoMax",t("Tensão máxima")], ["resistencia",t("Resistência")]
     ] },
-  estrutura:  { label: "Parafusos e Estrutura",            crumbCategory: "Estrutura de Fixação",   facetLabel: "Tipo de peça", primarySpec: "capacidade", specFields: [
-      ["material","Material"], ["capacidade","Capacidade/Uso"], ["fixacao","Tipo de fixação"],
-      ["resistencia","Resistência"], ["garantia","Garantia"]
+  estrutura:  { label: t("Parafusos e Estrutura"),            crumbCategory: t("Estrutura de Fixação"),   facetLabel: t("Tipo de peça"), primarySpec: "capacidade", specFields: [
+      ["material",t("Material")], ["capacidade",t("Capacidade/Uso")], ["fixacao",t("Tipo de fixação")],
+      ["resistencia",t("Resistência")], ["garantia",t("Garantia")]
     ] },
-  baterias:   { label: "Baterias",                          crumbCategory: "Bateria Estacionária/Lítio", facetLabel: "Tecnologia", primarySpec: "capacidade", specFields: [
-      ["tensao","Tensão"], ["capacidade","Capacidade"], ["tecnologia","Tecnologia"],
-      ["ciclos","Vida útil"], ["dimensoes","Dimensões"], ["peso","Peso"], ["garantia","Garantia"]
+  baterias:   { label: t("Baterias"),                          crumbCategory: t("Bateria Estacionária/Lítio"), facetLabel: t("Tecnologia"), primarySpec: "capacidade", specFields: [
+      ["tensao",t("Tensão")], ["capacidade",t("Capacidade")], ["tecnologia",t("Tecnologia")],
+      ["ciclos",t("Vida útil")], ["dimensoes",t("Dimensões")], ["peso",t("Peso")], ["garantia",t("Garantia")]
     ] },
-  controlador:{ label: "Controlador de Carga",               crumbCategory: "Controlador de Carga",   facetLabel: "Tipo", primarySpec: "corrente", specFields: [
-      ["tipo","Tipo de carregamento"], ["corrente","Corrente nominal"], ["tensaoSistema","Tensão do sistema"],
-      ["eficiencia","Eficiência"], ["protecoes","Proteções"], ["dimensoes","Dimensões"], ["garantia","Garantia"]
+  controlador:{ label: t("Controlador de Carga"),               crumbCategory: t("Controlador de Carga"),   facetLabel: t("Tipo"), primarySpec: "corrente", specFields: [
+      ["tipo",t("Tipo de carregamento")], ["corrente",t("Corrente nominal")], ["tensaoSistema",t("Tensão do sistema")],
+      ["eficiencia",t("Eficiência")], ["protecoes",t("Proteções")], ["dimensoes",t("Dimensões")], ["garantia",t("Garantia")]
     ] },
 };
 
@@ -134,11 +134,11 @@ const FEATURED_IDS = ["kit1", "kit2", "pn3", "iv2", "bt2", "cc2"];
 
 /* ---------------------- CONFIGURADOR (MONTE SEU PROJETO) ---------------------- */
 const WIZARD_STEPS = [
-  { key:"paineis",   cat:"paineis",    label:"Painéis",    title:"Escolha o Painel Solar",       sub:"Selecione o modelo e a quantidade de painéis do seu projeto." },
-  { key:"inversor",  cat:"inversores", label:"Inversor",   title:"Escolha o Inversor",            sub:"Selecione o inversor compatível com a potência do projeto." },
-  { key:"cabos",     label:"Cabos",      title:"Cabos e Conectores",              sub:"Já incluímos o padrão recomendado para a maioria das instalações. Ajuste as quantidades se precisar de mais." },
-  { key:"estrutura", cat:"estrutura",  label:"Estrutura",  title:"Escolha a Peça de Fixação", sub:"Estrutura é vendida por peça (trilho, terminal, parafuso). Selecionamos um item de referência — ajuste as quantidades no carrinho conforme o seu telhado." },
-  { key:"resumo",    label:"Resumo",   title:"Resumo do Projeto",              sub:"Confira os itens selecionados antes de adicionar ao carrinho." },
+  { key:"paineis",   cat:"paineis",    label:t("Painéis"),    title:t("Escolha o Painel Solar"),       sub:t("Selecione o modelo e a quantidade de painéis do seu projeto.") },
+  { key:"inversor",  cat:"inversores", label:t("Inversor"),   title:t("Escolha o Inversor"),            sub:t("Selecione o inversor compatível com a potência do projeto.") },
+  { key:"cabos",     label:t("Cabos"),      title:t("Cabos e Conectores"),              sub:t("Já incluímos o padrão recomendado para a maioria das instalações. Ajuste as quantidades se precisar de mais.") },
+  { key:"estrutura", cat:"estrutura",  label:t("Estrutura"),  title:t("Escolha a Peça de Fixação"), sub:t("Estrutura é vendida por peça (trilho, terminal, parafuso). Selecionamos um item de referência — ajuste as quantidades no carrinho conforme o seu telhado.") },
+  { key:"resumo",    label:t("Resumo"),   title:t("Resumo do Projeto"),              sub:t("Confira os itens selecionados antes de adicionar ao carrinho.") },
 ];
 
 /* ---------------------- HELPERS ---------------------- */
@@ -160,7 +160,7 @@ function partnerCommissionHTML(p){
   if(!state.partnerAssisted.active) return "";
   const pct = ASSISTED_TIERS[0];
   const valor = effectivePrice(p) * (pct / 100);
-  return `<div class="partner-commission-tag">Sua comissão: <strong>${formatBRL(valor)}</strong> (${pct}%)</div>`;
+  return `<div class="partner-commission-tag">${t("Sua comissão:")} <strong>${formatBRL(valor)}</strong> (${pct}%)</div>`;
 }
 
 // HTML do preço (usado no card do catálogo e na página do produto): preço
@@ -170,9 +170,9 @@ function priceHTML(p){
   const eff = effectivePrice(p);
   const commission = partnerCommissionHTML(p);
   if(hasPromo){
-    return `<span class="price-original">${formatBRL(p.price)}</span> ${formatBRL(eff)}<small>ou ${formatParcelamento(eff)}</small>${commission}`;
+    return `<span class="price-original">${formatBRL(p.price)}</span> ${formatBRL(eff)}<small>${t("ou")} ${formatParcelamento(eff)}</small>${commission}`;
   }
-  return `${formatBRL(p.price)}<small>ou ${formatParcelamento(p.price)}</small>${commission}`;
+  return `${formatBRL(p.price)}<small>${t("ou")} ${formatParcelamento(p.price)}</small>${commission}`;
 }
 function unidadePreco(p){
   const emb = String(p.embVenda || "").toLowerCase();
@@ -182,6 +182,7 @@ function unidadePreco(p){
 }
 function $(sel, root=document){ return root.querySelector(sel); }
 function $all(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
 
 /* ---------------------- PARCELAMENTO (cartão de crédito) ----------------------
    Regra de negócio: até 10x sem juros no cartão — mesmo padrão praticado
@@ -197,7 +198,7 @@ function valorParcela(total, parcelas){
   return total / parcelas;
 }
 function formatParcelamento(total, parcelas = MAX_PARCELAS_SEM_JUROS){
-  return `${parcelas}x de ${formatBRL(valorParcela(total, parcelas))} sem juros`;
+  return `${parcelas}x ${t("de")} ${formatBRL(valorParcela(total, parcelas))} ${t("sem juros")}`;
 }
 
 function showToast(msg){
@@ -229,7 +230,7 @@ function calcSizing(){
   else if(!isNaN(billVal) && billVal > 0) kwh = billVal / TARIFA_MEDIA_KWH;
 
   if(!kwh){
-    showToast("Informe o valor da conta de luz ou o consumo em kWh.");
+    showToast(t("Informe o valor da conta de luz ou o consumo em kWh."));
     return;
   }
 
@@ -237,7 +238,7 @@ function calcSizing(){
   const qtdPaineis = Math.max(1, Math.ceil((kwp * 1000) / POTENCIA_PAINEL_REFERENCIA_WP));
 
   $("#sizingResultKwp").textContent = kwp.toFixed(2).replace(".", ",") + " kWp";
-  $("#sizingResultPaineis").textContent = `${qtdPaineis} painéis`;
+  $("#sizingResultPaineis").textContent = `${qtdPaineis} ${t("painéis")}`;
   const resultBox = $("#sizingCalcResult");
   resultBox.hidden = false;
   resultBox.dataset.qtd = qtdPaineis;
@@ -284,53 +285,53 @@ function productImageHTML(p, extraClass=""){
     : ICONS[p.cat];
   return `<div class="product-image ${extraClass}">
     ${spec ? `<span class="spec-badge">${spec}</span>` : ""}
-    ${p.isLaunch ? `<span class="launch-badge">Lançamento</span>` : ""}
-    ${p.promoPrice ? `<span class="promo-badge">${p.promoLabel || "Promoção"}</span>` : ""}
+    ${p.isLaunch ? `<span class="launch-badge">${t("Lançamento")}</span>` : ""}
+    ${p.promoPrice ? `<span class="promo-badge">${p.promoLabel || t("Promoção")}</span>` : ""}
     ${media}
-    <span class="image-caption">Imagem ilustrativa</span>
+    <span class="image-caption">${t("Imagem ilustrativa")}</span>
   </div>`;
 }
 
 /* ---------------------- GERADORES DE CONTEÚDO (a partir dos specs reais do produto) ---------------------- */
 function getFeatures(p){
   if(p.cat === "kits") return [
-    `Sistema completo dimensionado para consumo de ${p.specs.consumoAlvo}`,
+    `${t("Sistema completo dimensionado para consumo de")} ${p.specs.consumoAlvo}`,
     `${p.specs.modulos}`,
     `${p.specs.inversor}`,
-    `Potência máxima de entrada ${p.specs.entradaMax} e saída ${p.specs.saidaMax}`,
+    `${t("Potência máxima de entrada")} ${p.specs.entradaMax} ${t("e saída")} ${p.specs.saidaMax}`,
   ];
   if(p.cat === "paineis") return [
-    `Eficiência de ${p.specs.eficiencia}, mesmo em dias nublados`,
-    `Célula ${p.specs.tipo}, alta durabilidade`,
-    `Garantia de ${p.specs.garantia}`,
-    `Indicado para instalação residencial e comercial`,
+    `${t("Eficiência de")} ${p.specs.eficiencia}, ${t("mesmo em dias nublados")}`,
+    `${t("Célula")} ${p.specs.tipo}, ${t("alta durabilidade")}`,
+    `${t("Garantia de")} ${p.specs.garantia}`,
+    t("Indicado para instalação residencial e comercial"),
   ];
   if(p.cat === "inversores") return [
-    `Eficiência máxima de ${p.specs.eficiencia}`,
-    `${p.specs.mppt}, ideal para diferentes orientações de painel`,
-    `Monitoramento via ${p.specs.comunicacao}`,
-    `Proteção ${p.specs.protecao}, indicado para uso externo`,
+    `${t("Eficiência máxima de")} ${p.specs.eficiencia}`,
+    `${p.specs.mppt}, ${t("ideal para diferentes orientações de painel")}`,
+    `${t("Monitoramento via")} ${p.specs.comunicacao}`,
+    `${t("Proteção")} ${p.specs.protecao}, ${t("indicado para uso externo")}`,
   ];
   if(p.cat === "cabos") return [
-    `Isolação em ${p.specs.isolacao}, resistente a UV e intempéries`,
-    `Bitola ${p.specs.bitola}, dimensionada para instalações fotovoltaicas`,
-    p.specs.tensaoMax !== "-" ? `Suporta tensão de até ${p.specs.tensaoMax}` : `Uso recomendado por norma técnica`,
-    `Fácil instalação e conexão segura`,
+    `${t("Isolação em")} ${p.specs.isolacao}, ${t("resistente a UV e intempéries")}`,
+    `${t("Bitola")} ${p.specs.bitola}, ${t("dimensionada para instalações fotovoltaicas")}`,
+    p.specs.tensaoMax !== "-" ? `${t("Suporta tensão de até")} ${p.specs.tensaoMax}` : t("Uso recomendado por norma técnica"),
+    t("Fácil instalação e conexão segura"),
   ];
   return [
-    `Material: ${p.specs.material}`,
+    `${t("Material:")} ${p.specs.material}`,
     `${p.specs.fixacao}`,
-    `Resistência: ${p.specs.resistencia}`,
-    p.specs.garantia !== "-" ? `Garantia de ${p.specs.garantia}` : `Compatível com os principais perfis do mercado`,
+    `${t("Resistência:")} ${p.specs.resistencia}`,
+    p.specs.garantia !== "-" ? `${t("Garantia de")} ${p.specs.garantia}` : t("Compatível com os principais perfis do mercado"),
   ];
 }
 
 function getWarrantyText(p){
   if(p.cat === "kits"){
-    return `Kit composto por equipamentos de fabricantes homologados — a garantia de cada item (módulos e inversor) segue os termos do respectivo fabricante, detalhados na ficha técnica. Em caso de sinistro, entre em contato com nosso suporte pelo WhatsApp para orientações sobre o acionamento da garantia.`;
+    return t("Kit composto por equipamentos de fabricantes homologados — a garantia de cada item (módulos e inversor) segue os termos do respectivo fabricante, detalhados na ficha técnica. Em caso de sinistro, entre em contato com nosso suporte pelo WhatsApp para orientações sobre o acionamento da garantia.");
   }
-  const garantia = p.specs.garantia && p.specs.garantia !== "-" ? p.specs.garantia : "conforme especificação do fabricante";
-  return `Este produto possui garantia de ${garantia} contra defeitos de fabricação, conforme os termos do fabricante ${p.brand}. Em caso de sinistro, entre em contato com nosso suporte pelo WhatsApp para orientações sobre o acionamento da garantia.`;
+  const garantia = p.specs.garantia && p.specs.garantia !== "-" ? p.specs.garantia : t("conforme especificação do fabricante");
+  return `${t("Este produto possui garantia de")} ${garantia} ${t("contra defeitos de fabricação, conforme os termos do fabricante")} ${p.brand}. ${t("Em caso de sinistro, entre em contato com nosso suporte pelo WhatsApp para orientações sobre o acionamento da garantia.")}`;
 }
 
 /* ======================================================================
@@ -441,9 +442,9 @@ function renderCatalogBreadcrumb(){
   const parts = [DEPARTMENT, cat.crumbCategory];
 
   if(state.filters.marca.size === 1) parts.push([...state.filters.marca][0]);
-  else if(state.filters.marca.size > 1) parts.push(`${state.filters.marca.size} marcas selecionadas`);
+  else if(state.filters.marca.size > 1) parts.push(`${state.filters.marca.size} ${t("marcas selecionadas")}`);
 
-  if(state.filters.faixa) parts.push(state.filters.faixa);
+  if(state.filters.faixa) parts.push(t(state.filters.faixa));
 
   el.innerHTML = crumbHTML(parts);
 }
@@ -483,7 +484,7 @@ function renderSidebar(){
     <li>
       <label class="filter-option">
         <input type="radio" name="faixaFilter" class="filter-faixa" value="${f.name}" ${state.filters.faixa === f.name ? "checked" : ""}>
-        <span>${f.name}</span>
+        <span>${t(f.name)}</span>
         <span class="filter-count">(${f.count})</span>
       </label>
     </li>`).join("");
@@ -536,7 +537,7 @@ function renderCatalog(){
 
   grid.innerHTML = items.length
     ? items.map(p => renderProductCard(p)).join("")
-    : `<div class="empty-compare" style="grid-column:1/-1;">Nenhum produto encontrado com esses filtros.</div>`;
+    : `<div class="empty-compare" style="grid-column:1/-1;">${t("Nenhum produto encontrado com esses filtros.")}</div>`;
 
   renderCompareBar();
   renderCatalogBreadcrumb();
@@ -562,22 +563,22 @@ function renderProductCard(p){
       <div class="product-body">
         <span class="product-brand">${p.brand}</span>
         <h3 class="product-name">${p.name}</h3>
-        <div class="product-meta-row"><span>SKU: ${p.sku}</span><span>Emb. venda: ${p.embVenda}</span></div>
+        <div class="product-meta-row"><span>${t("SKU:")} ${p.sku}</span><span>${t("Emb. venda:")} ${p.embVenda}</span></div>
         <ul class="product-specs">${specsHTML}</ul>
       </div>
     </a>
     <div class="product-body product-body-price">
       <div class="product-price">${priceHTML(p)}</div>
-      ${p.cat === "kits" ? `<span class="install-included-note">${ICON_CHECK} Instalação inclusa</span>` : ""}
+      ${p.cat === "kits" ? `<span class="install-included-note">${ICON_CHECK} ${t("Instalação inclusa")}</span>` : ""}
     </div>
     <div class="product-actions">
-      <a href="#produto/${p.id}" class="btn btn-ghost">+ detalhes</a>
+      <a href="#produto/${p.id}" class="btn btn-ghost">${t("+ detalhes")}</a>
       <div class="product-actions-row">
         <label class="compare-check">
           <input type="checkbox" class="compare-checkbox" data-id="${p.id}" data-cat="${p.cat}" ${selected ? "checked" : ""}>
-          Comparar
+          ${t("Comparar")}
         </label>
-        <button class="btn btn-primary btn-add-cart" data-id="${p.id}">${ICON_PLUS}Adicionar</button>
+        <button class="btn btn-primary btn-add-cart" data-id="${p.id}">${ICON_PLUS}${t("Adicionar")}</button>
       </div>
     </div>
   </article>`;
@@ -623,7 +624,7 @@ function toggleCompare(id, cat, checkboxEl){
     list.splice(idx,1);
   } else {
     if(list.length >= 3){
-      showToast("Você pode comparar no máximo 3 produtos por vez.");
+      showToast(t("Você pode comparar no máximo 3 produtos por vez."));
       checkboxEl.checked = false;
       return;
     }
@@ -649,7 +650,7 @@ function renderCompareBar(){
     return `<span class="compare-chip">${p.name} <button data-id="${id}" data-cat="${cat}" class="chip-remove">${ICON_X}</button></span>`;
   }).join("");
   goBtn.disabled = list.length < 2;
-  goBtn.textContent = list.length < 2 ? "Selecione ao menos 2" : `Comparar (${list.length})`;
+  goBtn.textContent = list.length < 2 ? t("Selecione ao menos 2") : `${t("Comparar")} (${list.length})`;
 }
 
 $("#compareChips").addEventListener("click", (e) => {
@@ -680,14 +681,14 @@ function renderComparison(){
   const wrap = $("#compareTableWrap");
 
   if(ids.length < 2){
-    wrap.innerHTML = `<div class="empty-compare">Selecione ao menos 2 produtos da mesma categoria no catálogo para compará-los.<br><a href="#catalogo" class="btn btn-primary">Ir ao catálogo</a></div>`;
+    wrap.innerHTML = `<div class="empty-compare">${t("Selecione ao menos 2 produtos da mesma categoria no catálogo para compará-los.")}<br><a href="#catalogo" class="btn btn-primary">${t("Ir ao catálogo")}</a></div>`;
     return;
   }
 
   const products = ids.map(getProduct);
   const fields = CATEGORIES[cat].specFields;
 
-  let html = `<table class="compare-table"><thead><tr><th>Especificação</th>`;
+  let html = `<table class="compare-table"><thead><tr><th>${t("Especificação")}</th>`;
   products.forEach(p => {
     html += `<th class="compare-product-header">
       <div class="mini-thumb">${ICONS[p.cat]}</div>
@@ -706,9 +707,9 @@ function renderComparison(){
     html += `</tr>`;
   });
 
-  html += `<tr><td class="spec-label">Ação</td>`;
+  html += `<tr><td class="spec-label">${t("Ação")}</td>`;
   products.forEach(p => {
-    html += `<td><button class="btn btn-primary btn-add-cart-compare" data-id="${p.id}">${ICON_PLUS}Adicionar</button></td>`;
+    html += `<td><button class="btn btn-primary btn-add-cart-compare" data-id="${p.id}">${ICON_PLUS}${t("Adicionar")}</button></td>`;
   });
   html += `</tr>`;
 
@@ -748,12 +749,12 @@ function renderProductPage(){
   $("#productBrandChip").textContent = p.brand;
   $("#productLaunchTag").style.display = p.isLaunch ? "inline-flex" : "none";
   $("#productTitle").textContent = p.name;
-  $("#productMeta").innerHTML = `<span>SKU: ${p.sku}</span><span>Emb. venda: ${p.embVenda}</span>`;
+  $("#productMeta").innerHTML = `<span>${t("SKU:")} ${p.sku}</span><span>${t("Emb. venda:")} ${p.embVenda}</span>`;
   $("#productPagePrice").innerHTML = priceHTML(p);
   const installNote = $("#productInstallNote");
   if(installNote){
     installNote.hidden = p.cat !== "kits";
-    if(p.cat === "kits") installNote.innerHTML = `${ICON_CHECK} Preço já inclui instalação e mão de obra`;
+    if(p.cat === "kits") installNote.innerHTML = `${ICON_CHECK} ${t("Preço já inclui instalação e mão de obra")}`;
   }
   $("#productAddCartBtn").dataset.id = p.id;
 
@@ -772,7 +773,7 @@ function renderProductPage(){
       $("#bundleItemsList").innerHTML = p.bundleItems.map(item => `
         <li class="bundle-item">
           ${item.image ? `<img src="${item.image}" alt="${item.name}" class="bundle-item-thumb" loading="lazy">` : ""}
-          <span><strong>${item.qty}x</strong> ${item.brand} — ${item.name} <em>(SKU: ${item.sku})</em></span>
+          <span><strong>${item.qty}x</strong> ${item.brand} — ${item.name} <em>(${t("SKU:")} ${item.sku})</em></span>
         </li>`
       ).join("");
       bundleBlock.hidden = false;
@@ -800,7 +801,7 @@ $("#productAddCartBtn").addEventListener("click", (e) => {
 });
 
 $("#datasheetBtn").addEventListener("click", () => {
-  showToast("Datasheet será disponibilizado quando o catálogo real for integrado");
+  showToast(t("Datasheet será disponibilizado quando o catálogo real for integrado"));
 });
 
 /* ======================================================================
@@ -880,7 +881,7 @@ function renderWizardOptionsHTML(stepDef){
         <span class="product-brand">${p.brand}</span>
         <h4>${p.name}</h4>
         <span class="wizard-option-price">${formatBRL(effectivePrice(p))}</span>
-        ${p.id === recommendedId ? `<span class="recommended-tag">${ICON_CHECK}Recomendado</span>` : ""}
+        ${p.id === recommendedId ? `<span class="recommended-tag">${ICON_CHECK}${t("Recomendado")}</span>` : ""}
       </div>
     </label>`;
   }).join("");
@@ -889,7 +890,7 @@ function renderWizardOptionsHTML(stepDef){
   if(stepDef.key === "paineis"){
     extra = `
     <div class="wizard-qty-row">
-      <span>Quantidade de painéis</span>
+      <span>${t("Quantidade de painéis")}</span>
       <div class="qty-control">
         <button type="button" id="wizardQtyMinus">${ICON_MINUS}</button>
         <span id="wizardQtyValue">${state.configurator.paineis.qty}</span>
@@ -912,16 +913,16 @@ function renderWizardCabosHTML(){
   const conector = getProduct(cfg.conector.id);
 
   return `
-    <h2 class="wizard-step-title">Cabos e Conectores</h2>
-    <p class="wizard-step-sub">Já incluímos o padrão recomendado para a maioria das instalações residenciais. Ajuste as quantidades se o seu projeto precisar de mais.</p>
+    <h2 class="wizard-step-title">${t("Cabos e Conectores")}</h2>
+    <p class="wizard-step-sub">${t("Já incluímos o padrão recomendado para a maioria das instalações residenciais. Ajuste as quantidades se o seu projeto precisar de mais.")}</p>
 
     <div class="wizard-fixed-item">
       ${productImageHTML(cabo, "wizard-option-image")}
       <div class="wizard-fixed-item-body">
         <span class="product-brand">${cabo.brand}</span>
         <h4>${cabo.name}</h4>
-        <p class="wizard-fixed-item-note">Padrão: 30 metros de cabo solar 6mm² — ajuste a quantidade conforme a distância do seu projeto (lembre de somar o cabo vermelho e o preto à parte, no catálogo).</p>
-        <span class="wizard-option-price">${formatBRL(effectivePrice(cabo))} / metro</span>
+        <p class="wizard-fixed-item-note">${t("Padrão: 30 metros de cabo solar 6mm² — ajuste a quantidade conforme a distância do seu projeto (lembre de somar o cabo vermelho e o preto à parte, no catálogo).")}</p>
+        <span class="wizard-option-price">${formatBRL(effectivePrice(cabo))} / ${t("metro")}</span>
       </div>
       <div class="qty-control">
         <button type="button" id="caboQtyMinus">${ICON_MINUS}</button>
@@ -935,8 +936,8 @@ function renderWizardCabosHTML(){
       <div class="wizard-fixed-item-body">
         <span class="product-brand">${conector.brand}</span>
         <h4>${conector.name}</h4>
-        <p class="wizard-fixed-item-note">Padrão: 2 pares de conector fotovoltaico MC4. Adicione mais pares se o seu projeto tiver mais conexões.</p>
-        <span class="wizard-option-price">${formatBRL(effectivePrice(conector))} / par</span>
+        <p class="wizard-fixed-item-note">${t("Padrão: 2 pares de conector fotovoltaico MC4. Adicione mais pares se o seu projeto tiver mais conexões.")}</p>
+        <span class="wizard-option-price">${formatBRL(effectivePrice(conector))} / ${t("par")}</span>
       </div>
       <div class="qty-control">
         <button type="button" id="conectorQtyMinus">${ICON_MINUS}</button>
@@ -945,7 +946,7 @@ function renderWizardCabosHTML(){
       </div>
     </div>
 
-    <p class="wizard-fixed-item-hint">Precisa de outra bitola de cabo ou mais conectores do que o padrão? Você também encontra essas opções avulsas no <a href="#catalogo">catálogo</a>.</p>
+    <p class="wizard-fixed-item-hint">${t("Precisa de outra bitola de cabo ou mais conectores do que o padrão? Você também encontra essas opções avulsas no")} <a href="#catalogo">${t("catálogo")}</a>.</p>
   `;
 }
 
@@ -974,21 +975,21 @@ function renderWizardSummaryHTML(){
     </div>`).join("");
 
   return `
-    <h2 class="wizard-step-title">Resumo do Projeto</h2>
-    <p class="wizard-step-sub">Confira os itens selecionados antes de adicionar ao carrinho.</p>
+    <h2 class="wizard-step-title">${t("Resumo do Projeto")}</h2>
+    <p class="wizard-step-sub">${t("Confira os itens selecionados antes de adicionar ao carrinho.")}</p>
     <div class="wizard-summary-kwp">
-      <span>Potência do sistema (kWp)</span>
+      <span>${t("Potência do sistema (kWp)")}</span>
       <strong>${totalKwp.toFixed(2).replace(".", ",")} kWp</strong>
     </div>
     <div class="wizard-summary-list">${rowsHTML}</div>
-    <div class="wizard-summary-total"><span>Total do projeto</span><span>${formatBRL(total)}</span></div>
+    <div class="wizard-summary-total"><span>${t("Total do projeto")}</span><span>${formatBRL(total)}</span></div>
   `;
 }
 
 function renderWizardStep(){
   const stepDef = WIZARD_STEPS[state.configurator.step];
   renderWizardStepper();
-  $("#wizardProgressText").textContent = `Passo ${state.configurator.step + 1} de ${WIZARD_STEPS.length}: ${stepDef.title}`;
+  $("#wizardProgressText").textContent = `${t("Passo")} ${state.configurator.step + 1} ${t("de")} ${WIZARD_STEPS.length}: ${stepDef.title}`;
 
   $("#wizardContent").innerHTML = stepDef.key === "resumo"
     ? renderWizardSummaryHTML()
@@ -996,8 +997,8 @@ function renderWizardStep(){
       ? renderWizardCabosHTML()
       : renderWizardOptionsHTML(stepDef);
 
-  $("#wizardBackBtn").textContent = state.configurator.step === 0 ? "Cancelar" : "Voltar";
-  $("#wizardNextBtn").textContent = stepDef.key === "resumo" ? "Adicionar tudo ao carrinho" : "Avançar";
+  $("#wizardBackBtn").textContent = state.configurator.step === 0 ? t("Cancelar") : t("Voltar");
+  $("#wizardNextBtn").textContent = stepDef.key === "resumo" ? t("Adicionar tudo ao carrinho") : t("Avançar");
 }
 
 function addWizardToCart(){
@@ -1015,7 +1016,7 @@ function addWizardToCart(){
     else state.cart.push({ id, qty });
   });
   updateCartCount(true);
-  showToast("Kit completo adicionado ao carrinho!");
+  showToast(t("Kit completo adicionado ao carrinho!"));
 
   cfg.active = false;
   cfg.step = 0;
@@ -1089,7 +1090,7 @@ function addToCart(id){
   if(item) item.qty += 1;
   else state.cart.push({ id, qty: 1 });
   updateCartCount(true);
-  showToast("Produto adicionado ao carrinho");
+  showToast(t("Produto adicionado ao carrinho"));
 }
 
 function updateCartCount(bump){
@@ -1139,7 +1140,7 @@ function updateMobileCartBar(){
   if(count > 0 && showOn.includes(hash)){
     bar.classList.add("visible");
     document.body.classList.add("mobile-cart-visible");
-    $("#mobileCartCount").textContent = count === 1 ? "1 item" : `${count} itens`;
+    $("#mobileCartCount").textContent = count === 1 ? t("1 item") : `${count} ${t("itens")}`;
     $("#mobileCartTotal").textContent = formatBRL(cartTotalValue());
   } else {
     bar.classList.remove("visible");
@@ -1217,7 +1218,7 @@ $all('input[name="partnerDesconto"]').forEach(radio => {
 
 function renderCart(){
   const list = $("#cartItemsList");
-  const emptyMsg = `<p class="empty-msg" id="emptyCartMsg">Seu carrinho está vazio. <a href="#catalogo">Ver catálogo</a></p>`;
+  const emptyMsg = `<p class="empty-msg" id="emptyCartMsg">${t("Seu carrinho está vazio.")} <a href="#catalogo">${t("Ver catálogo")}</a></p>`;
 
   if(state.cart.length === 0){
     list.innerHTML = emptyMsg;
@@ -1230,7 +1231,7 @@ function renderCart(){
         <div class="cart-item-info">
           <span class="cart-item-cat">${CATEGORIES[p.cat].label}</span>
           <span class="cart-item-name">${p.name}</span>
-          <span class="cart-item-price">${formatBRL(effectivePrice(p))} / ${unidadePreco(p)}</span>
+          <span class="cart-item-price">${formatBRL(effectivePrice(p))} / ${t(unidadePreco(p))}</span>
         </div>
         <div class="cart-item-controls">
           <div class="qty-control">
@@ -1239,7 +1240,7 @@ function renderCart(){
             <button class="qty-plus" data-id="${p.id}">${ICON_PLUS}</button>
           </div>
           <span class="item-line-total">${formatBRL(effectivePrice(p) * item.qty)}</span>
-          <button class="remove-btn" data-id="${p.id}">${ICON_TRASH}Remover</button>
+          <button class="remove-btn" data-id="${p.id}">${ICON_TRASH}${t("Remover")}</button>
         </div>
       </div>`;
     }).join("");
@@ -1359,7 +1360,7 @@ function atualizarTotaisCheckout(){
   const total = cartFinalTotal();
   $("#checkoutSubtotal").textContent = formatBRL(subtotal);
   $("#checkoutTotal").textContent = formatBRL(total);
-  $("#checkoutParcelamento").textContent = `ou ${formatParcelamento(total)} no cartão`;
+  $("#checkoutParcelamento").textContent = `${t("ou")} ${formatParcelamento(total)} ${t("no cartão")}`;
   popularParcelasCheckout(total);
 }
 
@@ -1372,7 +1373,7 @@ function popularParcelasCheckout(total){
   const select = $("#checkoutParcelasSelect");
   if(!select) return;
   select.innerHTML = Array.from({ length: MAX_PARCELAS_SEM_JUROS }, (_, i) => i + 1)
-    .map(n => `<option value="${n}">${n === 1 ? `1x de ${formatBRL(total)} (à vista)` : formatParcelamento(total, n)}</option>`)
+    .map(n => `<option value="${n}">${n === 1 ? `1x ${t("de")} ${formatBRL(total)} ${t("(à vista)")}` : formatParcelamento(total, n)}</option>`)
     .join("");
 }
 
@@ -1402,7 +1403,7 @@ async function buscarEnderecoPorCep(rawCep){
   if(statusEl){
     statusEl.hidden = false;
     statusEl.className = "field-hint";
-    statusEl.textContent = "Buscando endereço...";
+    statusEl.textContent = t("Buscando endereço...");
   }
 
   try{
@@ -1412,7 +1413,7 @@ async function buscarEnderecoPorCep(rawCep){
     if(data.erro){
       if(statusEl){
         statusEl.className = "field-hint field-hint-error";
-        statusEl.textContent = "CEP não encontrado. Preencha o endereço manualmente.";
+        statusEl.textContent = t("CEP não encontrado. Preencha o endereço manualmente.");
       }
       return;
     }
@@ -1428,12 +1429,12 @@ async function buscarEnderecoPorCep(rawCep){
 
     if(statusEl){
       statusEl.className = "field-hint field-hint-ok";
-      statusEl.textContent = "Endereço encontrado. Confira e complete se precisar.";
+      statusEl.textContent = t("Endereço encontrado. Confira e complete se precisar.");
     }
   } catch(err){
     if(statusEl){
       statusEl.className = "field-hint field-hint-error";
-      statusEl.textContent = "Não foi possível buscar o CEP agora. Preencha manualmente.";
+      statusEl.textContent = t("Não foi possível buscar o CEP agora. Preencha manualmente.");
     }
   }
 }
@@ -1470,19 +1471,19 @@ $("#checkoutForm").addEventListener("submit", async (e) => {
   const docEnderecoFile = $("#checkoutDocEndereco").files[0];
   const docFotoFile = $("#checkoutDocFoto").files[0];
   if(!docEnderecoFile || !docFotoFile){
-    errorBox.textContent = "Anexe o comprovante de endereço e um documento com foto.";
+    errorBox.textContent = t("Anexe o comprovante de endereço e um documento com foto.");
     errorBox.style.display = "block";
     return;
   }
   const MAX_DOC_BYTES = 5 * 1024 * 1024;
   if(docEnderecoFile.size > MAX_DOC_BYTES || docFotoFile.size > MAX_DOC_BYTES){
-    errorBox.textContent = "Cada documento deve ter no máximo 5MB.";
+    errorBox.textContent = t("Cada documento deve ter no máximo 5MB.");
     errorBox.style.display = "block";
     return;
   }
 
   submitBtn.disabled = true;
-  submitBtn.textContent = "Enviando pedido...";
+  submitBtn.textContent = t("Enviando pedido...");
 
   const formData = new FormData(e.target);
   const payload = {
@@ -1522,10 +1523,10 @@ $("#checkoutForm").addEventListener("submit", async (e) => {
     payload.docFotoTipo = docFotoFile.type;
     payload.docFotoNome = docFotoFile.name;
   } catch (err) {
-    errorBox.textContent = "Não foi possível ler os documentos anexados. Tente escolher os arquivos de novo.";
+    errorBox.textContent = t("Não foi possível ler os documentos anexados. Tente escolher os arquivos de novo.");
     errorBox.style.display = "block";
     submitBtn.disabled = false;
-    submitBtn.textContent = "Finalizar Pedido";
+    submitBtn.textContent = t("Finalizar Pedido");
     return;
   }
 
@@ -1559,10 +1560,10 @@ $("#checkoutForm").addEventListener("submit", async (e) => {
     const data = await res.json();
 
     if(!data.ok){
-      errorBox.textContent = data.error || "Não foi possível registrar o pedido. Tente novamente.";
+      errorBox.textContent = data.error || t("Não foi possível registrar o pedido. Tente novamente.");
       errorBox.style.display = "block";
       submitBtn.disabled = false;
-      submitBtn.textContent = "Finalizar Pedido";
+      submitBtn.textContent = t("Finalizar Pedido");
       return;
     }
 
@@ -1575,11 +1576,11 @@ $("#checkoutForm").addEventListener("submit", async (e) => {
     updateCartCount();
     location.hash = "#confirmacao";
   } catch(err){
-    errorBox.textContent = "Não foi possível conectar ao servidor. Verifique se o backend está rodando (ver README) e tente novamente.";
+    errorBox.textContent = t("Não foi possível conectar ao servidor. Verifique se o backend está rodando (ver README) e tente novamente.");
     errorBox.style.display = "block";
   } finally {
     submitBtn.disabled = false;
-    submitBtn.textContent = "Finalizar Pedido";
+    submitBtn.textContent = t("Finalizar Pedido");
   }
 });
 
@@ -1633,7 +1634,7 @@ async function initApp(){
     if(main){
       const warn = document.createElement("p");
       warn.className = "catalog-load-error";
-      warn.textContent = "Não foi possível carregar o catálogo agora. Recarregue a página ou tente novamente em instantes.";
+      warn.textContent = t("Não foi possível carregar o catálogo agora. Recarregue a página ou tente novamente em instantes.");
       main.prepend(warn);
     }
   }
