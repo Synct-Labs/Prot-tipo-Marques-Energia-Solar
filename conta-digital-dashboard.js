@@ -37,6 +37,9 @@ function formatBRL(value) {
 function formatDateBR(isoDate) {
   return isoDate ? isoDate.split("-").reverse().join("/") : "";
 }
+function t(text) {
+  return window.MES_I18N ? window.MES_I18N.t(text) : text;
+}
 
 const ICON_LOAN = `<svg class="icon icon-sm" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>`;
 const ICON_PS = `<svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>`;
@@ -47,10 +50,10 @@ const ICON_CREDITO = `<svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="2" 
 function installmentRowHTML(inst, { showBadge }) {
   const pago = inst.status === "pago";
   const sub = pago
-    ? `Parcela ${inst.numero}/${inst.contractTotalParcelas} · Pago em ${formatDateBR(inst.pagoEm)}`
-    : `Parcela ${inst.numero}/${inst.contractTotalParcelas} · Vencimento: ${formatDateBR(inst.vencimento)}`;
+    ? `${t("Parcela")} ${inst.numero}/${inst.contractTotalParcelas} · ${t("Pago em")} ${formatDateBR(inst.pagoEm)}`
+    : `${t("Parcela")} ${inst.numero}/${inst.contractTotalParcelas} · ${t("Vencimento:")} ${formatDateBR(inst.vencimento)}`;
   const badge = showBadge
-    ? `<span class="account-status-badge ${pago ? "status-success" : ""}">${pago ? "Pago" : "Pendente"}</span>`
+    ? `<span class="account-status-badge ${pago ? "status-success" : ""}">${pago ? t("Pago") : t("Pendente")}</span>`
     : "";
   return `
     <div class="pay-boleto-row">
@@ -62,7 +65,7 @@ function installmentRowHTML(inst, { showBadge }) {
 }
 
 const LOAN_STATUS_BADGE = { ativo: "status-success", quitado: "status-neutral", cancelado: "status-danger" };
-const LOAN_STATUS_LABEL = { ativo: "Ativo", quitado: "Quitado", cancelado: "Cancelado" };
+const LOAN_STATUS_LABEL = { ativo: t("Ativo"), quitado: t("Quitado"), cancelado: t("Cancelado") };
 
 // Cada empréstimo vira um bloco recolhível, igual à Participação nos
 // Lucros: as parcelas ficam presas ao próprio contrato, escondidas até a
@@ -79,13 +82,13 @@ function loanContractBlockHTML(contract, contractInstallments) {
           <strong>${contract.titulo}</strong>
           <span class="account-status-badge ${LOAN_STATUS_BADGE[contract.status] || ""}">${LOAN_STATUS_LABEL[contract.status] || contract.status}</span>
         </span>
-        <span class="ps-contract-toggle-sub">${formatBRL(contract.valorParcela)} · ${contract.totalParcelas}x${pendentes.length ? ` · ${pendentes.length} pendente${pendentes.length > 1 ? "s" : ""}` : ""}</span>
+        <span class="ps-contract-toggle-sub">${formatBRL(contract.valorParcela)} · ${contract.totalParcelas}x${pendentes.length ? ` · ${pendentes.length} ${pendentes.length > 1 ? t("pendentes") : t("pendente")}` : ""}</span>
         <svg class="icon ps-contract-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       <div class="ps-contract-body" hidden>
-        ${contract.temContrato ? `<a class="btn btn-outline" style="margin-bottom:14px;" href="${API_BASE}/api/customers/me/loans/${contract.id}/contrato" target="_blank" rel="noopener">Baixar contrato assinado</a>` : ""}
+        ${contract.temContrato ? `<a class="btn btn-outline" style="margin-bottom:14px;" href="${API_BASE}/api/customers/me/loans/${contract.id}/contrato" target="_blank" rel="noopener">${t("Baixar contrato assinado")}</a>` : ""}
         <div class="pay-boletos-list">
-          ${ordenadas.length ? ordenadas.map(i => installmentRowHTML(i, { showBadge: true })).join("") : `<p class="pay-empty-note">Nenhuma parcela cadastrada ainda.</p>`}
+          ${ordenadas.length ? ordenadas.map(i => installmentRowHTML(i, { showBadge: true })).join("") : `<p class="pay-empty-note">${t("Nenhuma parcela cadastrada ainda.")}</p>`}
         </div>
       </div>
     </div>`;
@@ -95,7 +98,7 @@ function renderMeusBoletos(contracts, installments) {
   const container = document.getElementById("loanContractsList");
   if (!container) return;
   if (!contracts.length) {
-    container.innerHTML = `<div class="pay-card"><p class="pay-empty-note">Você ainda não tem nenhum boleto de empréstimo com a Marques.</p></div>`;
+    container.innerHTML = `<div class="pay-card"><p class="pay-empty-note">${t("Você ainda não tem nenhum boleto de empréstimo com a Marques.")}</p></div>`;
     return;
   }
   container.innerHTML = contracts.map(c => {
@@ -112,7 +115,7 @@ function renderProximosBoletos(installments) {
     .sort((a, b) => a.vencimento.localeCompare(b.vencimento))
     .slice(0, 3);
   if (!pendentes.length) {
-    el.innerHTML = `<p class="pay-empty-note">Nenhum boleto pendente no momento.</p>`;
+    el.innerHTML = `<p class="pay-empty-note">${t("Nenhum boleto pendente no momento.")}</p>`;
     return;
   }
   el.innerHTML = pendentes.map(i => installmentRowHTML(i, { showBadge: false })).join("");
@@ -128,19 +131,19 @@ function updateBoletosStat(installments) {
   const total = pendentesMes.reduce((sum, i) => sum + i.valor, 0);
   valorEl.textContent = formatBRL(total);
   trendEl.textContent = pendentesMes.length
-    ? `${pendentesMes.length} boleto${pendentesMes.length > 1 ? "s" : ""} pendente${pendentesMes.length > 1 ? "s" : ""}`
-    : "Nenhum boleto pendente este mês";
+    ? `${pendentesMes.length} ${pendentesMes.length > 1 ? t("boletos pendentes") : t("boleto pendente")}`
+    : t("Nenhum boleto pendente este mês");
 }
 
 function paymentRowHTML(payment) {
   const comprovante = payment.temComprovante
-    ? `<a class="pay-boleto-pay-btn pay-comprovante-btn" href="${API_BASE}/api/customers/me/profit-share/payments/${payment.id}/comprovante" target="_blank" rel="noopener">Ver comprovante</a>`
+    ? `<a class="pay-boleto-pay-btn pay-comprovante-btn" href="${API_BASE}/api/customers/me/profit-share/payments/${payment.id}/comprovante" target="_blank" rel="noopener">${t("Ver comprovante")}</a>`
     : "";
-  const sub = `Lançado pela Marques · ${formatDateBR(payment.dataPagamento)}${payment.observacao ? " · " + payment.observacao : ""}`;
+  const sub = `${t("Lançado pela Marques ·")} ${formatDateBR(payment.dataPagamento)}${payment.observacao ? " · " + payment.observacao : ""}`;
   return `
     <div class="pay-boleto-row">
       <span class="pay-boleto-icon" style="background:rgba(52,211,153,0.15); color:var(--success);">${ICON_PS}</span>
-      <div class="pay-boleto-body"><strong>Repasse de Participação nos Lucros</strong><span>${sub}</span></div>
+      <div class="pay-boleto-body"><strong>${t("Repasse de Participação nos Lucros")}</strong><span>${sub}</span></div>
       <span class="pay-boleto-value" style="color:var(--success);">+ ${formatBRL(payment.valor)}</span>
       ${comprovante}
     </div>`;
@@ -162,24 +165,24 @@ function contractBlockHTML(contract, contractPayments) {
     const barPct = (v) => (v > 0 ? Math.max((v / max) * 100, 3) : 0);
     roiHTML = `
       <div class="pay-card" style="margin-bottom:20px;">
-        <div class="pay-card-head"><h2>Retorno até agora</h2></div>
+        <div class="pay-card-head"><h2>${t("Retorno até agora")}</h2></div>
         <div class="roi-summary">
           <div>
             <span>ROI</span>
             <strong>${roiPct.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%</strong>
-            <small>${formatBRL(ganhos)} recebidos de ${formatBRL(investido)} investidos</small>
+            <small>${formatBRL(ganhos)} ${t("recebidos de")} ${formatBRL(investido)} ${t("investidos")}</small>
           </div>
         </div>
         <div class="roi-chart">
           <div class="roi-bar-col">
             <span class="roi-bar-value">${formatBRL(investido)}</span>
             <div class="roi-bar-track"><div class="roi-bar-fill is-investido" style="height:${barPct(investido)}%"></div></div>
-            <span class="roi-bar-label"><span class="roi-dot is-investido"></span>Investido</span>
+            <span class="roi-bar-label"><span class="roi-dot is-investido"></span>${t("Investido")}</span>
           </div>
           <div class="roi-bar-col">
             <span class="roi-bar-value">${formatBRL(ganhos)}</span>
             <div class="roi-bar-track"><div class="roi-bar-fill is-ganhos" style="height:${barPct(ganhos)}%"></div></div>
-            <span class="roi-bar-label"><span class="roi-dot is-ganhos"></span>Ganhos</span>
+            <span class="roi-bar-label"><span class="roi-dot is-ganhos"></span>${t("Ganhos")}</span>
           </div>
         </div>
       </div>`;
@@ -190,7 +193,7 @@ function contractBlockHTML(contract, contractPayments) {
       <button type="button" class="ps-contract-toggle" data-toggle-contract aria-expanded="false">
         <span class="ps-contract-toggle-main">
           <strong>${contract.numeroContrato}</strong>
-          <span class="account-status-badge ${ativo ? "status-success" : ""}">${ativo ? "Ativo" : "Encerrado"}</span>
+          <span class="account-status-badge ${ativo ? "status-success" : ""}">${ativo ? t("Ativo") : t("Encerrado")}</span>
         </span>
         <span class="ps-contract-toggle-sub">${investido != null ? formatBRL(investido) + " · " : ""}${String(contract.percentual).replace(".", ",")}%</span>
         <svg class="icon ps-contract-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -198,17 +201,17 @@ function contractBlockHTML(contract, contractPayments) {
       <div class="ps-contract-body" hidden>
         <div class="pay-card" style="margin-bottom:20px;">
           <div class="pay-contract-grid">
-            <div><span>Início</span><strong>${formatDateBR(contract.dataInicio)}</strong></div>
-            <div><span>Repasse</span><strong>${contract.periodicidade || "-"}</strong></div>
+            <div><span>${t("Data de início")}</span><strong>${formatDateBR(contract.dataInicio)}</strong></div>
+            <div><span>${t("Repasse")}</span><strong>${contract.periodicidade || "-"}</strong></div>
           </div>
-          <p class="pay-empty-note" style="margin-top:14px;">Contrato cadastrado e atualizado pela equipe Marques. Alguma dúvida sobre os valores? Fale com a gente pelo WhatsApp.</p>
-          ${contract.temContrato ? `<a class="btn btn-outline" style="margin-top:14px;" href="${API_BASE}/api/customers/me/profit-share/${contract.id}/contrato" target="_blank" rel="noopener">Baixar contrato assinado</a>` : ""}
+          <p class="pay-empty-note" style="margin-top:14px;">${t("Contrato cadastrado e atualizado pela equipe Marques. Alguma dúvida sobre os valores? Fale com a gente pelo WhatsApp.")}</p>
+          ${contract.temContrato ? `<a class="btn btn-outline" style="margin-top:14px;" href="${API_BASE}/api/customers/me/profit-share/${contract.id}/contrato" target="_blank" rel="noopener">${t("Baixar contrato assinado")}</a>` : ""}
         </div>
         ${roiHTML}
         <div class="pay-card">
-          <div class="pay-card-head"><h2>Repasses recebidos</h2></div>
+          <div class="pay-card-head"><h2>${t("Repasses recebidos")}</h2></div>
           <div class="pay-boletos-list">
-            ${contractPayments.length ? contractPayments.map(paymentRowHTML).join("") : `<p class="pay-empty-note">Nenhum repasse lançado ainda.</p>`}
+            ${contractPayments.length ? contractPayments.map(paymentRowHTML).join("") : `<p class="pay-empty-note">${t("Nenhum repasse lançado ainda.")}</p>`}
           </div>
         </div>
       </div>
@@ -219,7 +222,7 @@ function renderParticipacaoLucros(contracts, payments) {
   const container = document.getElementById("psContractsList");
   if (!container) return;
   if (!contracts.length) {
-    container.innerHTML = `<div class="pay-card"><p class="pay-empty-note">Você ainda não tem um contrato de participação nos lucros ativo. Fale com a nossa equipe pra saber mais.</p></div>`;
+    container.innerHTML = `<div class="pay-card"><p class="pay-empty-note">${t("Você ainda não tem um contrato de participação nos lucros ativo. Fale com a nossa equipe pra saber mais.")}</p></div>`;
     return;
   }
   container.innerHTML = contracts.map(c => {
@@ -239,7 +242,7 @@ function contratoItemHTML(item) {
     <div class="pay-boleto-row">
       <span class="pay-boleto-icon" style="background:rgba(247,148,30,0.15); color:var(--orange);">${icon}</span>
       <div class="pay-boleto-body"><strong>${item.numero}</strong><span>${item.tipoLabel} · ${formatDateBR(item.createdAt.slice(0, 10))}</span></div>
-      <a class="pay-boleto-pay-btn pay-comprovante-btn" href="${API_BASE}${item.contratoUrl}" target="_blank" rel="noopener">Baixar contrato</a>
+      <a class="pay-boleto-pay-btn pay-comprovante-btn" href="${API_BASE}${item.contratoUrl}" target="_blank" rel="noopener">${t("Baixar contrato")}</a>
     </div>`;
 }
 
@@ -253,20 +256,20 @@ async function loadContratos() {
   const items = [];
   if (ordersRes.ok) {
     ordersRes.orders.filter((o) => o.temContrato).forEach((o) => items.push({
-      tipo: "pedido", numero: o.orderNumber, createdAt: o.createdAt, tipoLabel: "Compra na loja",
+      tipo: "pedido", numero: o.orderNumber, createdAt: o.createdAt, tipoLabel: t("Compra na loja"),
       contratoUrl: `/api/customers/me/orders/${o.id}/contrato`,
     }));
   }
   if (leadsRes.ok) {
     leadsRes.leads.filter((l) => l.temContrato).forEach((l) => items.push({
-      tipo: "credito", numero: l.leadNumber, createdAt: l.createdAt, tipoLabel: "Solicitação de crédito",
+      tipo: "credito", numero: l.leadNumber, createdAt: l.createdAt, tipoLabel: t("Solicitação de crédito"),
       contratoUrl: `/api/customers/me/credit-leads/${l.id}/contrato`,
     }));
   }
   items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   box.innerHTML = items.length
     ? `<div class="pay-card"><div class="pay-boletos-list">${items.map(contratoItemHTML).join("")}</div></div>`
-    : `<div class="pay-card"><p class="pay-empty-note">Nenhum contrato anexado ainda. Assim que a equipe Marques anexar o contrato do seu pedido ou da sua solicitação de crédito, ele aparece aqui.</p></div>`;
+    : `<div class="pay-card"><p class="pay-empty-note">${t("Nenhum contrato anexado ainda. Assim que a equipe Marques anexar o contrato do seu pedido ou da sua solicitação de crédito, ele aparece aqui.")}</p></div>`;
 }
 
 // Um só listener pros dois: "Meus Boletos" e "Participação nos Lucros"
@@ -287,15 +290,15 @@ function updatePsStat(payments) {
   const trendEl = document.getElementById("statPsTrend");
   if (!labelEl || !valorEl || !trendEl) return;
   if (!payments.length) {
-    labelEl.textContent = "Participação nos lucros";
+    labelEl.textContent = t("Participação nos lucros");
     valorEl.textContent = formatBRL(0);
-    trendEl.textContent = "Nenhum repasse recebido ainda";
+    trendEl.textContent = t("Nenhum repasse recebido ainda");
     return;
   }
   const ultimo = payments[0]; // backend já ordena por data_pagamento desc
-  labelEl.textContent = "Último repasse recebido";
+  labelEl.textContent = t("Último repasse recebido");
   valorEl.textContent = formatBRL(ultimo.valor);
-  trendEl.textContent = `Em ${formatDateBR(ultimo.dataPagamento)}`;
+  trendEl.textContent = `${t("Em")} ${formatDateBR(ultimo.dataPagamento)}`;
 }
 
 function applyCustomerGreeting(customer) {
@@ -303,8 +306,8 @@ function applyCustomerGreeting(customer) {
   const greetingH1 = document.getElementById("payGreetingName");
   const greetingSmall = document.getElementById("payUserGreetingSmall");
   const avatar = document.getElementById("payUserAvatar");
-  if (greetingH1) greetingH1.textContent = `Olá, ${firstName}!`;
-  if (greetingSmall) greetingSmall.textContent = `Olá, ${firstName}`;
+  if (greetingH1) greetingH1.textContent = `${t("Olá")}, ${firstName}!`;
+  if (greetingSmall) greetingSmall.textContent = `${t("Olá")}, ${firstName}`;
   if (avatar) avatar.textContent = firstName.charAt(0).toUpperCase();
 }
 
@@ -329,9 +332,9 @@ function applyPayAccount(account, customer) {
   const nameEl = document.getElementById("payProfileName");
   const mailEl = document.getElementById("payProfileEmail");
   if (nameEl) nameEl.textContent = customer.nome;
-  if (mailEl) mailEl.textContent = `${customer.email} · Ag ${account.agencia} · Conta ${account.numeroConta}`;
+  if (mailEl) mailEl.textContent = `${customer.email} · ${t("Ag")} ${account.agencia} · ${t("Conta")} ${account.numeroConta}`;
   const el = document.getElementById("payUserAccountLabel");
-  if (el) el.textContent = `Ag ${account.agencia} · Conta ${account.numeroConta}`;
+  if (el) el.textContent = `${t("Ag")} ${account.agencia} · ${t("Conta")} ${account.numeroConta}`;
 }
 
 function applySaldo(saldo) {
@@ -340,7 +343,7 @@ function applySaldo(saldo) {
   const statTrendEl = document.getElementById("statSaldoTrend");
   const pixValorEl = document.getElementById("pixSaldoValor");
   if (statValorEl) statValorEl.textContent = formatted;
-  if (statTrendEl) statTrendEl.textContent = "Disponível na sua conta";
+  if (statTrendEl) statTrendEl.textContent = t("Disponível na sua conta");
   if (pixValorEl) pixValorEl.textContent = formatted;
 }
 
@@ -387,9 +390,9 @@ function consorcioPendenteRowHTML(a) {
     <div class="pay-card" style="padding:14px 16px; margin-bottom:10px; background:var(--surface-2);" data-pendente-adesao="${a.id}">
       <strong>${escConsorcioPendente(a.grupoNome)}</strong>
       <p style="color:var(--muted); font-size:0.85rem; margin:4px 0 10px;">
-        ${formatBRL(a.valorCota)}/cota · ${a.prazoMeses}x${a.parceiroNome ? ` · indicado por ${escConsorcioPendente(a.parceiroNome)}` : ""}
+        ${formatBRL(a.valorCota)}/${t("cota")} · ${a.prazoMeses}x${a.parceiroNome ? ` · ${t("indicado por")} ${escConsorcioPendente(a.parceiroNome)}` : ""}
       </p>
-      <button type="button" class="btn btn-primary" data-confirmar-adesao="${a.id}">Confirmar contratação</button>
+      <button type="button" class="btn btn-primary" data-confirmar-adesao="${a.id}">${t("Confirmar contratação")}</button>
     </div>`;
 }
 
@@ -407,21 +410,21 @@ document.addEventListener("click", async (e) => {
   const btn = e.target.closest("[data-confirmar-adesao]");
   if (!btn) return;
   btn.disabled = true;
-  btn.textContent = "Confirmando...";
+  btn.textContent = t("Confirmando...");
   try {
     const res = await fetch(`${API_BASE}/api/customers/me/consorcio-adesoes/${btn.dataset.confirmarAdesao}/confirmar`, {
       method: "POST", credentials: "include",
     }).then((r) => r.json());
     if (!res.ok) {
       btn.disabled = false;
-      btn.textContent = "Confirmar contratação";
-      alert(res.error || "Não foi possível confirmar agora.");
+      btn.textContent = t("Confirmar contratação");
+      alert(res.error || t("Não foi possível confirmar agora."));
       return;
     }
     loadConsorcioPendentes();
   } catch (err) {
     btn.disabled = false;
-    btn.textContent = "Confirmar contratação";
+    btn.textContent = t("Confirmar contratação");
   }
 });
 

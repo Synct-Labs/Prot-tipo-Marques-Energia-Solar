@@ -8,7 +8,8 @@ const API_BASE = window.MES_API_BASE || "";
 const form = document.getElementById("kycForm");
 const $err = document.getElementById("formError");
 const MAX_BYTES = 15 * 1024 * 1024;
-const DOC_LABEL_OK = "Enviado";
+function t(text) { return window.MES_I18N ? window.MES_I18N.t(text) : text; }
+const DOC_LABEL_OK = t("Enviado");
 
 async function api(method, path, body) {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -24,7 +25,7 @@ async function api(method, path, body) {
   try {
     return await res.json();
   } catch (e) {
-    return { ok: false, error: "Não foi possível enviar. Verifique sua conexão e tente de novo." };
+    return { ok: false, error: t("Não foi possível enviar. Verifique sua conexão e tente de novo.") };
   }
 }
 
@@ -73,11 +74,11 @@ async function lookupCep() {
   if (cep.length !== 8 || cep === lastCep) return;
   lastCep = cep;
   const hint = document.getElementById("cepHint");
-  hint.textContent = "Buscando endereço...";
+  hint.textContent = t("Buscando endereço...");
   try {
     const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
     const d = await res.json();
-    if (d.erro) { hint.textContent = "CEP não encontrado. Preencha o endereço manualmente."; return; }
+    if (d.erro) { hint.textContent = t("CEP não encontrado. Preencha o endereço manualmente."); return; }
     field("end_rua").value = d.logradouro || field("end_rua").value;
     field("end_bairro").value = d.bairro || field("end_bairro").value;
     field("end_cidade").value = d.localidade || "";
@@ -86,7 +87,7 @@ async function lookupCep() {
     field(d.logradouro ? "end_numero" : "end_rua").focus();
   } catch (err) {
     lastCep = "";
-    hint.textContent = "Não foi possível buscar o CEP agora. Preencha o endereço manualmente.";
+    hint.textContent = t("Não foi possível buscar o CEP agora. Preencha o endereço manualmente.");
   }
 }
 
@@ -150,7 +151,7 @@ function markDoc(tipo, text, isError) {
 
 async function saveDraft() {
   const res = await api("PUT", "/api/customers/me/pay-kyc", collect());
-  if (!res.ok) throw new Error(res.error || "Não foi possível salvar.");
+  if (!res.ok) throw new Error(res.error || t("Não foi possível salvar."));
   return res.kyc;
 }
 
@@ -205,18 +206,18 @@ document.querySelectorAll(".kyc-doc input[type=file]").forEach((input) => {
     const tipo = input.closest(".kyc-doc").dataset.tipo;
     let file = input.files[0];
     if (!file) return;
-    if (file.size > MAX_BYTES) { markDoc(tipo, "Arquivo maior que 15 MB.", true); return; }
-    markDoc(tipo, "Enviando...");
+    if (file.size > MAX_BYTES) { markDoc(tipo, t("Arquivo maior que 15 MB."), true); return; }
+    markDoc(tipo, t("Enviando..."));
     try {
       file = await resizeImageFile(file);
       await saveDraft(); // o documento precisa de um cadastro já salvo
       const res = await api("PUT", `/api/customers/me/pay-kyc/documents/${tipo}`, {
         base64: await readAsBase64(file), mime: file.type, nome: file.name,
       });
-      if (!res.ok) throw new Error(res.error || "Falha no envio.");
+      if (!res.ok) throw new Error(res.error || t("Falha no envio."));
       markDoc(tipo, `${DOC_LABEL_OK}: ${file.name}`);
     } catch (err) {
-      markDoc(tipo, err.message || "Não foi possível enviar o arquivo. Tente novamente.", true);
+      markDoc(tipo, err.message || t("Não foi possível enviar o arquivo. Tente novamente."), true);
     }
   });
 });
@@ -224,7 +225,7 @@ document.querySelectorAll(".kyc-doc input[type=file]").forEach((input) => {
 document.getElementById("saveDraftBtn").addEventListener("click", async (e) => {
   clearError();
   e.target.disabled = true;
-  try { await saveDraft(); e.target.textContent = "Rascunho salvo"; setTimeout(() => (e.target.textContent = "Salvar rascunho"), 1800); }
+  try { await saveDraft(); e.target.textContent = t("Rascunho salvo"); setTimeout(() => (e.target.textContent = t("Salvar rascunho")), 1800); }
   catch (err) { showError(err.message); }
   finally { e.target.disabled = false; }
 });
@@ -234,19 +235,19 @@ form.addEventListener("submit", async (e) => {
   clearError();
   const btn = document.getElementById("submitBtn");
   btn.disabled = true;
-  btn.textContent = "Enviando...";
+  btn.textContent = t("Enviando...");
   try {
     await saveDraft();
     const res = await api("POST", "/api/customers/me/pay-kyc/submit", {
       aceiteTermos: document.getElementById("aceiteTermos").checked,
     });
-    if (!res.ok) throw new Error(res.error || "Não foi possível enviar.");
+    if (!res.ok) throw new Error(res.error || t("Não foi possível enviar."));
     showView(res.kyc);
   } catch (err) {
     showError(err.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = "Enviar para análise";
+    btn.textContent = t("Enviar para análise");
   }
 });
 
@@ -255,7 +256,7 @@ function showView(kyc) {
   document.getElementById("viewAnalise").hidden = !analise;
   document.getElementById("viewForm").hidden = analise;
   if (analise && kyc.enviadoEm) {
-    document.getElementById("analiseInfo").textContent = `Enviado em ${new Date(kyc.enviadoEm).toLocaleString("pt-BR")}.`;
+    document.getElementById("analiseInfo").textContent = `${t("Enviado em")} ${new Date(kyc.enviadoEm).toLocaleString("pt-BR")}.`;
   }
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -269,7 +270,7 @@ function showView(kyc) {
   fill(kyc, customer);
   if (kyc && kyc.status === "reprovado") {
     const box = document.getElementById("motivoBox");
-    box.textContent = `Seu cadastro não foi aprovado: ${kyc.motivoReprovacao || "sem motivo informado"}. Corrija e envie de novo.`;
+    box.textContent = `${t("Seu cadastro não foi aprovado:")} ${kyc.motivoReprovacao || t("sem motivo informado")}${t(". Corrija e envie de novo.")}`;
     box.classList.add("show");
   }
   showView(kyc);

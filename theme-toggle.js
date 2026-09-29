@@ -54,7 +54,7 @@
 
   function mountButton() {
     if (document.querySelector(".theme-toggle-btn")) return; // já montado (ex: script incluído 2x)
-    var container = document.querySelector(".header-actions") || document.querySelector(".admin-topbar-right");
+    var container = document.querySelector(".header-actions") || document.querySelector(".admin-topbar-right") || document.querySelector(".pay-topbar-actions");
     if (!container) return;
     var btn = document.createElement("button");
     btn.type = "button";

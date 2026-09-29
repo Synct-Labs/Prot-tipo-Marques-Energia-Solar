@@ -111,7 +111,7 @@
 
   function mountButton() {
     if (document.querySelector(".lang-toggle-btn")) return;
-    var container = document.querySelector(".header-actions") || document.querySelector(".admin-topbar-right");
+    var container = document.querySelector(".header-actions") || document.querySelector(".admin-topbar-right") || document.querySelector(".pay-topbar-actions");
     if (!container) return;
     var btn = document.createElement("button");
     btn.type = "button";
