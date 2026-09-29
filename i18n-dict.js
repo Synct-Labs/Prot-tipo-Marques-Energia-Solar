@@ -948,4 +948,48 @@ window.MES_I18N_DICT = {
   "6. Limitação de responsabilidade": "6. Limitation of liability",
   "7. Contato": "7. Contact",
 
+  /* ---------- privacidade.html (Política de Privacidade — Energia Solar) ---------- */
+  "Política de Privacidade | Marques Energia Solar": "Privacy Policy | Marques Energia Solar",
+  "Como a Marques Energia Solar coleta, usa e protege seus dados pessoais, em conformidade com a LGPD.":
+    "How Marques Energia Solar collects, uses, and protects your personal data, in accordance with Brazil's LGPD.",
+  "Política de Privacidade": "Privacy Policy",
+  "A Marques Energia Solar": "Marques Energia Solar",
+  "respeita a sua privacidade. Esta política explica quais dados pessoais coletamos, para que servem e quais são os seus direitos, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, LGPD).":
+    "respects your privacy. This policy explains what personal data we collect, what it's used for, and what your rights are, in accordance with Brazil's General Data Protection Law (Law No. 13,709/2018, LGPD).",
+  "1. Quais dados coletamos": "1. What data we collect",
+  "Dependendo de como você usa o site, podemos coletar:": "Depending on how you use the site, we may collect:",
+  "Simulação de crédito:": "Credit simulation:",
+  "nome, CPF, e-mail, telefone, renda bruta/líquida, forma de recebimento (CLT, FGTS, autônomo etc.) e a modalidade de crédito escolhida.":
+    "name, CPF, email, phone, gross/net income, income type (CLT, FGTS, self-employed, etc.), and the chosen credit option.",
+  "Compra na loja:": "Store purchase:",
+  "nome, CPF, e-mail, telefone e endereço de entrega completo (CEP, cidade, estado, rua, número, bairro).":
+    "name, CPF, email, phone, and complete delivery address (ZIP code, city, state, street, number, neighborhood).",
+  "Navegação:": "Browsing:",
+  "dados técnicos básicos (como endereço IP) usados apenas para segurança do formulário (ex: limitar tentativas de login no painel administrativo).":
+    "basic technical data (such as IP address) used only for form security (e.g., limiting login attempts on the admin panel).",
+  "2. Para que usamos esses dados": "2. What we use this data for",
+  "Processar e acompanhar sua solicitação de simulação de crédito ou seu pedido de compra.": "Process and track your credit simulation request or your purchase order.",
+  "Entrar em contato para dar andamento à sua solicitação (telefone, e-mail ou WhatsApp).": "Get in touch to move your request forward (phone, email, or WhatsApp).",
+  "Cumprir obrigações legais e fiscais relacionadas à venda de produtos.": "Comply with legal and tax obligations related to selling products.",
+  "Prevenir fraudes e proteger a segurança do site e do painel administrativo.": "Prevent fraud and protect the security of the site and the admin panel.",
+  "3. Com quem compartilhamos": "3. Who we share it with",
+  "Não vendemos seus dados. Compartilhamos apenas o necessário com prestadores que operam a infraestrutura do site (hospedagem e banco de dados) e, quando você solicita uma simulação de crédito, com as instituições financeiras que você mesmo escolhe consultar durante o processo.":
+    "We don't sell your data. We only share what's necessary with providers that run the site's infrastructure (hosting and database) and, when you request a credit simulation, with the financial institutions you yourself choose to consult during the process.",
+  "4. Armazenamento e segurança": "4. Storage and security",
+  "Seus dados ficam armazenados em banco de dados protegido por senha, com acesso restrito à equipe administrativa da Marques Energia Solar. Senhas de acesso ao painel são armazenadas com hash criptográfico (nunca em texto puro).":
+    "Your data is stored in a password-protected database, with access restricted to the Marques Energia Solar administrative team. Panel access passwords are stored with cryptographic hashing (never in plain text).",
+  "5. Seus direitos": "5. Your rights",
+  "Você pode, a qualquer momento, solicitar:": "You may, at any time, request:",
+  "Confirmação de que tratamos seus dados e acesso a eles;": "Confirmation that we process your data and access to it;",
+  "Correção de dados incompletos, inexatos ou desatualizados;": "Correction of incomplete, inaccurate, or outdated data;",
+  "Exclusão dos seus dados, exceto quando houver obrigação legal de retenção;": "Deletion of your data, except when there is a legal retention obligation;",
+  "Informação sobre com quem compartilhamos seus dados.": "Information about who we share your data with.",
+  "Para exercer esses direitos, entre em contato pelo WhatsApp": "To exercise these rights, get in touch via WhatsApp",
+  "6. Cookies": "6. Cookies",
+  "O site usa apenas armazenamento local do navegador (localStorage) para lembrar itens do seu carrinho de compras entre visitas. Nenhum dado é enviado a terceiros por meio desse armazenamento.":
+    "The site only uses the browser's local storage (localStorage) to remember items in your shopping cart between visits. No data is sent to third parties through this storage.",
+  "7. Alterações desta política": "7. Changes to this policy",
+  "Podemos atualizar esta política periodicamente. A data da última atualização estará sempre indicada no topo desta página.":
+    "We may update this policy periodically. The last-updated date will always be shown at the top of this page.",
+
 };
