@@ -339,6 +339,28 @@ input, select{ font-family: inherit; }
 .theme-toggle-btn .icon{ width: 18px; height: 18px; }
 .admin-topbar-right .theme-toggle-btn{ margin-right: 4px; }
 
+/* Botão de alternar idioma — montado sozinho pelo i18n.js, do lado do
+   botão de tema (mesmo container). Mostra a sigla do idioma pro qual vai
+   trocar. */
+.lang-toggle-btn{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: var(--white);
+  border: 1px solid var(--border);
+  background: var(--glass);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  transition: border-color .2s ease, background .2s ease, transform .2s ease;
+}
+.lang-toggle-btn:hover{ border-color: var(--border-orange); background: var(--glass-strong); transform: translateY(-1px); }
+.admin-topbar-right .lang-toggle-btn{ margin-right: 4px; }
+
 @media (min-width: 900px){
   .main-nav{ display: flex; }
   .hamburger{ display: none; }

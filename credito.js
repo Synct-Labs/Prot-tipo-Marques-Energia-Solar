@@ -13,6 +13,7 @@ const API_BASE = window.MES_API_BASE || "";
 /* ---------------------- HELPERS ---------------------- */
 function $(sel, root=document){ return root.querySelector(sel); }
 function $all(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
 
 const ICON_CHECK = `<svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
 const ICON_MENU = `<svg class="icon" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`;
@@ -69,14 +70,14 @@ const ICON_FINANCIAMENTO = `<svg class="icon" viewBox="0 0 24 24"><line x1="3" y
 
 const CREDIT_MODES = {
   clt: {
-    label: "Crédito CLT",
-    tag: "Direto no contracheque",
+    label: t("Crédito CLT"),
+    tag: t("Direto no contracheque"),
     icon: ICON_CLT,
-    highlight: "Mais escolhido",
-    description: "Se você tem carteira assinada, esse é o caminho mais direto: a parcela sai do contracheque todo mês, sem boleto pra esquecer e sem fiador. A análise costuma sair em poucos dias.",
+    highlight: t("Mais escolhido"),
+    description: t("Se você tem carteira assinada, esse é o caminho mais direto: a parcela sai do contracheque todo mês, sem boleto pra esquecer e sem fiador. A análise costuma sair em poucos dias."),
     fields: [
-      { key:"valor", label:"Valor desejado (R$)", type:"number", placeholder:"Ex: 18000", hint:"Quanto você quer contratar de crédito." },
-      { key:"parcelas", label:"Número de parcelas", type:"select", options:[12,24,36,48,60] },
+      { key:"valor", label:t("Valor desejado (R$)"), type:"number", placeholder:t("Ex: 18000"), hint:t("Quanto você quer contratar de crédito.") },
+      { key:"parcelas", label:t("Número de parcelas"), type:"select", options:[12,24,36,48,60] },
     ],
     calc(values){
       const valor = parseFloat(values.valor) || 0;
@@ -85,41 +86,41 @@ const CREDIT_MODES = {
       const parcela = pmt(valor, taxaMensal, parcelas);
       return {
         items: [
-          { label:"Parcela estimada", value: `${formatBRL(parcela)} / mês` },
-          { label:"Total estimado ao final do prazo", value: formatBRL(parcela * parcelas) },
+          { label:t("Parcela estimada"), value: `${formatBRL(parcela)} ${t("/ mês")}` },
+          { label:t("Total estimado ao final do prazo"), value: formatBRL(parcela * parcelas) },
         ],
-        note: "É uma despesa trocando de lugar: some o boleto da conta de luz, aparece o desconto no contracheque. Só que esse, um dia, acaba.",
+        note: t("É uma despesa trocando de lugar: some o boleto da conta de luz, aparece o desconto no contracheque. Só que esse, um dia, acaba."),
         compare: { type:"parcela", value: parcela },
       };
     },
   },
   fgts: {
-    label: "Saque FGTS",
-    tag: "Sem tirar do bolso",
+    label: t("Saque FGTS"),
+    tag: t("Sem tirar do bolso"),
     icon: ICON_FGTS,
-    description: "O saldo do saque-aniversário costuma ficar parado rendendo quase nada. Usado como entrada, ele reduz (ou até quita) o valor financiado sem mexer no seu salário do mês.",
+    description: t("O saldo do saque-aniversário costuma ficar parado rendendo quase nada. Usado como entrada, ele reduz (ou até quita) o valor financiado sem mexer no seu salário do mês."),
     fields: [
-      { key:"fgts", label:"Valor disponível no FGTS (R$)", type:"number", placeholder:"Ex: 3000", hint:"Consulte no app FGTS, na opção “Saque-Aniversário”." },
+      { key:"fgts", label:t("Valor disponível no FGTS (R$)"), type:"number", placeholder:t("Ex: 3000"), hint:t("Consulte no app FGTS, na opção “Saque-Aniversário”.") },
     ],
     calc(values){
       const fgts = parseFloat(values.fgts) || 0;
       return {
         items: [
-          { label:"Valor disponível para usar como entrada", value: formatBRL(fgts) },
+          { label:t("Valor disponível para usar como entrada"), value: formatBRL(fgts) },
         ],
-        note: "Use esse saldo como entrada ao contratar o financiamento, a compra programada ou o crédito CLT: ele reduz o valor financiado e a parcela.",
+        note: t("Use esse saldo como entrada ao contratar o financiamento, a compra programada ou o crédito CLT: ele reduz o valor financiado e a parcela."),
         compare: { type:"fgts", value: fgts },
       };
     },
   },
   consorcio: {
-    label: "Compra Programada",
-    tag: "Zero juros",
+    label: t("Compra Programada"),
+    tag: t("Zero juros"),
     icon: ICON_CONSORCIO,
-    description: "Não é financiamento, é um grupo que se cotiza para comprar sistemas solares, sem juros. Você paga uma taxa de administração e aguarda o sorteio ou dá um lance para ser contemplado antes.",
+    description: t("Não é financiamento, é um grupo que se cotiza para comprar sistemas solares, sem juros. Você paga uma taxa de administração e aguarda o sorteio ou dá um lance para ser contemplado antes."),
     fields: [
-      { key:"valor", label:"Valor do crédito desejado (R$)", type:"number", placeholder:"Ex: 18000", hint:"Quanto você quer contratar de crédito." },
-      { key:"parcelas", label:"Número de parcelas", type:"select", options:[60,72,80,100] },
+      { key:"valor", label:t("Valor do crédito desejado (R$)"), type:"number", placeholder:t("Ex: 18000"), hint:t("Quanto você quer contratar de crédito.") },
+      { key:"parcelas", label:t("Número de parcelas"), type:"select", options:[60,72,80,100] },
     ],
     calc(values){
       const valor = parseFloat(values.valor) || 0;
@@ -129,22 +130,22 @@ const CREDIT_MODES = {
       const parcela = total / parcelas;
       return {
         items: [
-          { label:"Parcela estimada", value: `${formatBRL(parcela)} / mês` },
-          { label:"Total estimado (com taxa de administração)", value: formatBRL(total) },
+          { label:t("Parcela estimada"), value: `${formatBRL(parcela)} ${t("/ mês")}` },
+          { label:t("Total estimado (com taxa de administração)"), value: formatBRL(total) },
         ],
-        note: "A vantagem aparece no total pago: sem juros compostos, o valor final tende a ficar menor que num financiamento tradicional de prazo parecido.",
+        note: t("A vantagem aparece no total pago: sem juros compostos, o valor final tende a ficar menor que num financiamento tradicional de prazo parecido."),
         compare: { type:"parcela", value: parcela },
       };
     },
   },
   financiamento: {
-    label: "Financiamento Solar",
-    tag: "Prazo mais longo",
+    label: t("Financiamento Solar"),
+    tag: t("Prazo mais longo"),
     icon: ICON_FINANCIAMENTO,
-    description: "Linha de banco específica para financiar sistemas de energia solar, com prazos de até 100 meses. Quanto mais longo o prazo, menor a parcela, e menor a diferença pro que você já paga de conta de luz.",
+    description: t("Linha de banco específica para financiar sistemas de energia solar, com prazos de até 100 meses. Quanto mais longo o prazo, menor a parcela, e menor a diferença pro que você já paga de conta de luz."),
     fields: [
-      { key:"valor", label:"Kit solar", type:"kits", hint:"Escolha o kit mais próximo do seu consumo mensal. Consumo diferente ou orçamento personalizado? Fale com um especialista." },
-      { key:"parcelas", label:"Número de parcelas", type:"select", options:[24,36,48,60,72,84,96,100] },
+      { key:"valor", label:t("Kit solar"), type:"kits", hint:t("Escolha o kit mais próximo do seu consumo mensal. Consumo diferente ou orçamento personalizado? Fale com um especialista.") },
+      { key:"parcelas", label:t("Número de parcelas"), type:"select", options:[24,36,48,60,72,84,96,100] },
     ],
     calc(values){
       const valor = parseFloat(values.valor) || 0;
@@ -153,10 +154,10 @@ const CREDIT_MODES = {
       const parcela = pmt(valor, taxaMensal, parcelas);
       return {
         items: [
-          { label:"Parcela estimada", value: `${formatBRL(parcela)} / mês` },
-          { label:"Total estimado ao final do prazo", value: formatBRL(parcela * parcelas) },
+          { label:t("Parcela estimada"), value: `${formatBRL(parcela)} ${t("/ mês")}` },
+          { label:t("Total estimado ao final do prazo"), value: formatBRL(parcela * parcelas) },
         ],
-        note: "Nos prazos mais longos, a parcela tende a chegar perto do valor da conta de luz que você deixa de pagar. O que muda é pra quem vai esse dinheiro.",
+        note: t("Nos prazos mais longos, a parcela tende a chegar perto do valor da conta de luz que você deixa de pagar. O que muda é pra quem vai esse dinheiro."),
         compare: { type:"parcela", value: parcela },
       };
     },
@@ -173,10 +174,10 @@ function creditFieldHTML(f){
   const hint = f.hint ? `<span class="credit-field-hint">${f.hint}</span>` : "";
   if(f.type === "kits"){
     if(!kitOptions.length){
-      return `<label>${f.label}<select name="${f.key}" disabled><option>Carregando kits...</option></select>${hint}</label>`;
+      return `<label>${f.label}<select name="${f.key}" disabled><option>${t("Carregando kits...")}</option></select>${hint}</label>`;
     }
     const opts = kitOptions.map(k => `<option value="${k.price}">${escConsorcio(k.name)} — ${formatBRL(k.price)}</option>`).join("");
-    return `<label>${f.label}<select name="${f.key}"><option value="">Selecione um kit</option>${opts}</select>${hint}</label>`;
+    return `<label>${f.label}<select name="${f.key}"><option value="">${t("Selecione um kit")}</option>${opts}</select>${hint}</label>`;
   }
   if(f.type === "select"){
     const opts = f.options.map(o => `<option value="${o}">${o}x</option>`).join("");
@@ -235,12 +236,12 @@ function renderCreditSimCard(){
           <p>${mode.description}</p>
         </div>
       </div>
-      <div id="consorcioGruposList"><p class="pay-empty-note">Carregando grupos...</p></div>
+      <div id="consorcioGruposList"><p class="pay-empty-note">${t("Carregando grupos...")}</p></div>
       <div class="credit-sim-cta">
-        <p>Ficou com dúvida sobre qual modalidade escolher?</p>
+        <p>${t("Ficou com dúvida sobre qual modalidade escolher?")}</p>
         <a href="https://wa.me/5565996591300" target="_blank" rel="noopener" class="btn btn-outline">
           <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-          Falar com um especialista
+          ${t("Falar com um especialista")}
         </a>
       </div>
     `;
@@ -257,18 +258,18 @@ function renderCreditSimCard(){
       </div>
     </div>
     <div class="credit-sim-form" id="creditSimForm">${mode.fields.map(creditFieldHTML).join("")}</div>
-    <button class="btn btn-primary btn-lg" id="creditSimSubmit" type="button">Simular parcela</button>
+    <button class="btn btn-primary btn-lg" id="creditSimSubmit" type="button">${t("Simular parcela")}</button>
     ${currentCreditMode === "fgts" ? `
     <button type="button" class="fgts-auth-reopen-btn fgts-auth-reopen-btn-inline" id="fgtsAuthReopenBtnSim">
-      Como autorizar os bancos a consultar meu FGTS?
+      ${t("Como autorizar os bancos a consultar meu FGTS?")}
     </button>` : ""}
     <div class="credit-sim-cta">
-      <p>Ficou com dúvida sobre qual modalidade escolher?</p>
+      <p>${t("Ficou com dúvida sobre qual modalidade escolher?")}</p>
       <a href="https://wa.me/5565996591300" target="_blank" rel="noopener" class="btn btn-outline">
         <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-        Falar com um especialista
+        ${t("Falar com um especialista")}
       </a>
-      <p class="credit-sim-disclaimer">Simulação ilustrativa e sem compromisso. Os valores reais dependem de análise de crédito, taxa contratada e instituição financeira.</p>
+      <p class="credit-sim-disclaimer">${t("Simulação ilustrativa e sem compromisso. Os valores reais dependem de análise de crédito, taxa contratada e instituição financeira.")}</p>
     </div>
 
   `;
@@ -292,21 +293,21 @@ function grupoCardHTML(g){
     <div class="consorcio-grupo-card" data-grupo-id="${g.id}">
       <strong>${escConsorcio(g.nome)}</strong>
       <p style="color:var(--muted); font-size:0.88rem; margin:6px 0 10px;">
-        ${formatBRL(g.valorCota)}/cota · ${g.prazoMeses}x · taxa adm. ${String(g.taxaAdministracaoPct).replace(".", ",")}%
+        ${formatBRL(g.valorCota)}/${t("cota")} · ${g.prazoMeses}x · ${t("taxa adm.")} ${String(g.taxaAdministracaoPct).replace(".", ",")}%
       </p>
       ${g.regras ? `<p style="color:var(--muted); font-size:0.82rem; margin:0 0 10px;">${escConsorcio(g.regras)}</p>` : ""}
-      <button type="button" class="btn btn-primary" data-contratar-grupo="${g.id}" ${semVaga ? "disabled" : ""}>${semVaga ? "Sem vagas" : "Contratar"}</button>
+      <button type="button" class="btn btn-primary" data-contratar-grupo="${g.id}" ${semVaga ? "disabled" : ""}>${semVaga ? t("Sem vagas") : t("Contratar")}</button>
       <form class="consorcio-contratar-form" data-grupo-id="${g.id}" hidden>
-        <p style="color:var(--muted); font-size:0.82rem; margin:0 0 12px;">Preencha seus dados e anexe os documentos pra reservar a cota. Depois de conferir, mandamos o link de pagamento (ou a chave PIX) pro seu e-mail.</p>
-        <label>Nome completo<input type="text" name="nome" required></label>
+        <p style="color:var(--muted); font-size:0.82rem; margin:0 0 12px;">${t("Preencha seus dados e anexe os documentos pra reservar a cota. Depois de conferir, mandamos o link de pagamento (ou a chave PIX) pro seu e-mail.")}</p>
+        <label>${t("Nome completo")}<input type="text" name="nome" required></label>
         <label>CPF<input type="text" name="cpf" required inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label>
-        <label>Telefone / WhatsApp<input type="tel" name="telefone" required></label>
-        <label>E-mail<input type="email" name="email" required></label>
-        <label>Comprovante de endereço<input type="file" name="docEndereco" accept="image/jpeg,image/png,application/pdf" required></label>
-        <label>Documento com foto (RG, CNH...)<input type="file" name="docFoto" accept="image/jpeg,image/png,application/pdf" required></label>
+        <label>${t("Telefone / WhatsApp")}<input type="tel" name="telefone" required></label>
+        <label>${t("E-mail")}<input type="email" name="email" required></label>
+        <label>${t("Comprovante de endereço")}<input type="file" name="docEndereco" accept="image/jpeg,image/png,application/pdf" required></label>
+        <label>${t("Documento com foto (RG, CNH...)")}<input type="file" name="docFoto" accept="image/jpeg,image/png,application/pdf" required></label>
         <div style="display:flex; gap:10px; margin-top:4px;">
-          <button type="submit" class="btn btn-primary" style="width:auto;">Enviar e reservar cota</button>
-          <button type="button" class="btn btn-ghost consorcio-cancelar-form" style="width:auto;">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="width:auto;">${t("Enviar e reservar cota")}</button>
+          <button type="button" class="btn btn-ghost consorcio-cancelar-form" style="width:auto;">${t("Cancelar")}</button>
         </div>
         <small class="consorcio-form-error" style="color:var(--danger); display:none; margin-top:8px;"></small>
       </form>
@@ -322,9 +323,9 @@ async function loadConsorcioGrupos(){
     if(!res.ok) throw new Error(res.error || "Erro ao carregar grupos.");
     box.innerHTML = res.grupos.length
       ? res.grupos.map(grupoCardHTML).join("")
-      : `<p class="pay-empty-note">Nenhum grupo disponível no momento. Fale com a gente pelo WhatsApp pra saber quando abrir novas turmas.</p>`;
+      : `<p class="pay-empty-note">${t("Nenhum grupo disponível no momento. Fale com a gente pelo WhatsApp pra saber quando abrir novas turmas.")}</p>`;
   } catch(e) {
-    box.innerHTML = `<p class="pay-empty-note">Não foi possível carregar os grupos agora. Tente novamente em instantes.</p>`;
+    box.innerHTML = `<p class="pay-empty-note">${t("Não foi possível carregar os grupos agora. Tente novamente em instantes.")}</p>`;
   }
 }
 
@@ -367,19 +368,19 @@ async function enviarContratacao(form){
   const docEnderecoFile = form.querySelector('[name="docEndereco"]').files[0];
   const docFotoFile = form.querySelector('[name="docFoto"]').files[0];
   if(!docEnderecoFile || !docFotoFile){
-    errorBox.textContent = "Anexe o comprovante de endereço e um documento com foto.";
+    errorBox.textContent = t("Anexe o comprovante de endereço e um documento com foto.");
     errorBox.style.display = "block";
     return;
   }
   const MAX_DOC_BYTES = 5 * 1024 * 1024;
   if(docEnderecoFile.size > MAX_DOC_BYTES || docFotoFile.size > MAX_DOC_BYTES){
-    errorBox.textContent = "Cada documento deve ter no máximo 5MB.";
+    errorBox.textContent = t("Cada documento deve ter no máximo 5MB.");
     errorBox.style.display = "block";
     return;
   }
 
   const btn = form.querySelector("button[type=submit]");
-  btn.disabled = true; btn.textContent = "Enviando...";
+  btn.disabled = true; btn.textContent = t("Enviando...");
   try {
     const res = await CONTA_apiPost(`/api/consorcio/grupos/${grupoId}/contratar`, {
       nome: form.querySelector('[name="nome"]').value.trim(),
@@ -395,19 +396,19 @@ async function enviarContratacao(form){
       ref: window.MES_REF ? window.MES_REF.get() : "",
     });
     if(!res.ok){
-      errorBox.textContent = res.error || "Não foi possível contratar esse grupo.";
+      errorBox.textContent = res.error || t("Não foi possível contratar esse grupo.");
       errorBox.style.display = "block";
       return;
     }
-    showToast("Dados recebidos! Em breve você recebe o link de pagamento por e-mail.");
+    showToast(t("Dados recebidos! Em breve você recebe o link de pagamento por e-mail."));
     form.reset();
     form.hidden = true;
     loadConsorcioGrupos();
   } catch(e) {
-    errorBox.textContent = "Erro de conexão. Tente novamente.";
+    errorBox.textContent = t("Erro de conexão. Tente novamente.");
     errorBox.style.display = "block";
   } finally {
-    btn.disabled = false; btn.textContent = "Enviar e reservar cota";
+    btn.disabled = false; btn.textContent = t("Enviar e reservar cota");
   }
 }
 
@@ -500,7 +501,7 @@ document.addEventListener("click", async (e) => {
   const mode = CREDIT_MODES[currentCreditMode];
   const requiredField = mode.fields[0];
   if(!(parseFloat(values[requiredField.key]) > 0)){
-    showToast(`Informe ${requiredField.label.toLowerCase()} para simular.`);
+    showToast(`${t("Informe")} ${requiredField.label.toLowerCase()} ${t("para simular.")}`);
     return;
   }
 
@@ -552,10 +553,10 @@ function renderLeadSimSummary(){
   const { modalidade, values } = lastSimResult;
 
   const detalhe = modalidade === "fgts"
-    ? `${formatBRL(parseFloat(values.fgts) || 0)} disponíveis no FGTS`
-    : `${formatBRL(parseFloat(values.valor) || 0)} em ${values.parcelas}x`;
+    ? `${formatBRL(parseFloat(values.fgts) || 0)} ${t("disponíveis no FGTS")}`
+    : `${formatBRL(parseFloat(values.valor) || 0)} ${t("em")} ${values.parcelas}x`;
 
-  box.innerHTML = `${ICON_CHECK}<span>Simulação: <strong>${mode.label}</strong>, ${detalhe}. <a href="#simulacao-credito">Alterar simulação</a></span>`;
+  box.innerHTML = `${ICON_CHECK}<span>${t("Simulação:")} <strong>${mode.label}</strong>, ${detalhe}. <a href="#simulacao-credito">${t("Alterar simulação")}</a></span>`;
   box.hidden = false;
 }
 
@@ -628,7 +629,7 @@ $("#creditLeadForm")?.addEventListener("submit", async (e) => {
   const errorBox = $("#leadFormError");
   errorBox.style.display = "none";
   submitBtn.disabled = true;
-  submitBtn.textContent = "Enviando solicitação...";
+  submitBtn.textContent = t("Enviando solicitação...");
 
   const formData = new FormData(e.target);
   const payload = {
@@ -670,10 +671,10 @@ $("#creditLeadForm")?.addEventListener("submit", async (e) => {
     const data = await res.json();
 
     if(!data.ok){
-      errorBox.textContent = data.error || "Não foi possível enviar sua solicitação. Tente novamente.";
+      errorBox.textContent = data.error || t("Não foi possível enviar sua solicitação. Tente novamente.");
       errorBox.style.display = "block";
       submitBtn.disabled = false;
-      submitBtn.textContent = "Solicitar Simulação Personalizada";
+      submitBtn.textContent = t("Solicitar Simulação Personalizada");
       return;
     }
 
@@ -691,11 +692,11 @@ $("#creditLeadForm")?.addEventListener("submit", async (e) => {
       setTimeout(openFgtsAuthModal, 500);
     }
   } catch(err){
-    errorBox.textContent = "Não foi possível conectar ao servidor. Verifique se o backend está rodando (ver README) e tente novamente.";
+    errorBox.textContent = t("Não foi possível conectar ao servidor. Verifique se o backend está rodando (ver README) e tente novamente.");
     errorBox.style.display = "block";
   } finally {
     submitBtn.disabled = false;
-    submitBtn.textContent = "Solicitar Simulação Personalizada";
+    submitBtn.textContent = t("Solicitar Simulação Personalizada");
   }
 });
 
@@ -752,7 +753,7 @@ async function buscarEnderecoLeadPorCep(rawCep){
   if(statusEl){
     statusEl.hidden = false;
     statusEl.className = "field-hint";
-    statusEl.textContent = "Buscando endereço...";
+    statusEl.textContent = t("Buscando endereço...");
   }
 
   try {
@@ -762,7 +763,7 @@ async function buscarEnderecoLeadPorCep(rawCep){
     if(data.erro){
       if(statusEl){
         statusEl.className = "field-hint field-hint-error";
-        statusEl.textContent = "CEP não encontrado. Preencha o endereço manualmente.";
+        statusEl.textContent = t("CEP não encontrado. Preencha o endereço manualmente.");
       }
       return;
     }
@@ -778,12 +779,12 @@ async function buscarEnderecoLeadPorCep(rawCep){
 
     if(statusEl){
       statusEl.className = "field-hint field-hint-ok";
-      statusEl.textContent = "Endereço encontrado. Confira e complete se precisar.";
+      statusEl.textContent = t("Endereço encontrado. Confira e complete se precisar.");
     }
   } catch(err){
     if(statusEl){
       statusEl.className = "field-hint field-hint-error";
-      statusEl.textContent = "Não foi possível buscar o CEP agora. Preencha manualmente.";
+      statusEl.textContent = t("Não foi possível buscar o CEP agora. Preencha manualmente.");
     }
   }
 }

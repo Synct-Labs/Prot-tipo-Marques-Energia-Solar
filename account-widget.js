@@ -36,16 +36,20 @@ window.MES_ACCOUNT = (function () {
     return null;
   }
 
+  function t(text) {
+    return window.MES_I18N ? window.MES_I18N.t(text) : text;
+  }
+
   function updateHeaderLink(customer) {
     const link = document.getElementById("accountLink");
     if (!link) return;
     if (customer) {
-      const primeiroNome = String(customer.nome || "").trim().split(" ")[0] || "Minha conta";
+      const primeiroNome = String(customer.nome || "").trim().split(" ")[0] || t("Minha conta");
       link.textContent = primeiroNome;
       link.href = "conta/minha-conta.html";
       link.classList.add("nav-account-link-logged");
     } else {
-      link.textContent = "Entrar";
+      link.textContent = t("Entrar");
       link.href = "conta/entrar.html";
       link.classList.remove("nav-account-link-logged");
     }
