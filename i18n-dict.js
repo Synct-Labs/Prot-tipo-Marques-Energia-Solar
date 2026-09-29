@@ -766,4 +766,17 @@ window.MES_I18N_DICT = {
   "item": "item",
   "Modalidade:": "Option:",
 
+  /* ---------- conta/conta.js (status labels, compartilhado) ---------- */
+  "Novo": "New",
+  "Confirmado": "Confirmed",
+  "Em preparação": "In preparation",
+  "Enviado": "Shipped",
+  "Entregue": "Delivered",
+  "Cancelado": "Cancelled",
+  "Em análise": "Under review",
+  "Contatado": "Contacted",
+  "Proposta enviada": "Proposal sent",
+  "Convertido": "Converted",
+  "Recusado": "Declined",
+
 };

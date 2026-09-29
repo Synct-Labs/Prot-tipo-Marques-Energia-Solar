@@ -36,22 +36,26 @@ window.CONTA = (function () {
     return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
   }
 
+  function t(text) {
+    return window.MES_I18N ? window.MES_I18N.t(text) : text;
+  }
+
   const ORDER_STATUS_LABELS = {
-    novo: "Novo",
-    confirmado: "Confirmado",
-    em_preparacao: "Em preparação",
-    enviado: "Enviado",
-    entregue: "Entregue",
-    cancelado: "Cancelado",
+    novo: t("Novo"),
+    confirmado: t("Confirmado"),
+    em_preparacao: t("Em preparação"),
+    enviado: t("Enviado"),
+    entregue: t("Entregue"),
+    cancelado: t("Cancelado"),
   };
 
   const LEAD_STATUS_LABELS = {
-    novo: "Novo",
-    em_analise: "Em análise",
-    contatado: "Contatado",
-    proposta_enviada: "Proposta enviada",
-    convertido: "Convertido",
-    recusado: "Recusado",
+    novo: t("Novo"),
+    em_analise: t("Em análise"),
+    contatado: t("Contatado"),
+    proposta_enviada: t("Proposta enviada"),
+    convertido: t("Convertido"),
+    recusado: t("Recusado"),
   };
 
   /* Protege páginas que exigem login. Redireciona para entrar.html se não
