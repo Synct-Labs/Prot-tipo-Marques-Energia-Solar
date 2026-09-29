@@ -1053,4 +1053,62 @@ window.MES_I18N_DICT = {
   "© 2026 Marques Energia Solar e Marques Promotora, sediadas em Mato Grosso, atendendo todo o Brasil.":
     "© 2026 Marques Energia Solar and Marques Promotora, based in Mato Grosso, serving all of Brazil.",
 
+  /* ---------- conta-digital.html (Marques Pay: landing) ---------- */
+  "Marques Pay | Abra sua conta": "Marques Pay | Open your account",
+  "Abra sua conta Marques Pay e acompanhe seus boletos e sua participação nos lucros.":
+    "Open your Marques Pay account and track your bills and profit-share payouts.",
+  "Abertura de contas": "Account opening",
+  "Sua conta digital,": "Your digital account,",
+  "já pode ser aberta.": "can be opened now.",
+  "Pix sem tarifa, cartão e cashback em energia solar — direto pelo mesmo lugar onde você já cuida do seu crédito solar. Abra sua conta agora: você cria seu cadastro Marques e já acompanha seus boletos e sua participação nos lucros. Pix e cartão entram assim que o parceiro financeiro for ativado.":
+    "Fee-free Pix, a card, and cashback on solar energy — right in the same place where you already manage your solar credit. Open your account now: you create your Marques account and can already track your bills and profit-share payouts. Pix and the card arrive as soon as the financial partner is activated.",
+  "Pix": "Pix",
+  "sem tarifa": "fee-free",
+  "Cartão": "Card",
+  "virtual e físico": "virtual and physical",
+  "Sem": "No",
+  "mensalidade": "monthly fee",
+  "Cashback": "Cashback",
+  "em energia solar": "on solar energy",
+  "Abrir minha conta": "Open my account",
+  "Pix, cartão e saldo ainda não estão disponíveis: serão oferecidos em parceria com uma instituição financeira autorizada pelo Banco Central.":
+    "Pix, card, and balance aren't available yet: they will be offered in partnership with a financial institution authorized by the Central Bank.",
+
+  "O que vem por aí": "What's coming",
+  "Tudo que uma conta digital devia ter": "Everything a digital account should have",
+  "Pix ilimitado e sem tarifa": "Unlimited, fee-free Pix",
+  "Envie e receba Pix a qualquer hora, sem taxa de manutenção de conta.": "Send and receive Pix anytime, with no account maintenance fee.",
+  "Cartão virtual e físico": "Virtual and physical card",
+  "Peça seu cartão de débito Marques e use no dia a dia, com aprovação simplificada.": "Request your Marques debit card and use it day to day, with simplified approval.",
+  "Cashback em energia solar": "Cashback on solar energy",
+  "Acumule cashback nas suas compras e use pra abater direto na parcela do seu sistema solar.": "Build up cashback on your purchases and use it to reduce your solar system's payment directly.",
+  "Central 100% humanizada": "100% human support",
+  "Atendimento pelo WhatsApp, sem robô, com quem já cuida do seu crédito hoje.": "Support via WhatsApp, no bots, with the same people who already manage your credit today.",
+
+  "Como vai funcionar": "How it will work",
+  "Crie seu cadastro": "Create your account",
+  "Cadastro Marques com e-mail e senha, o mesmo da loja e do crédito.": "A Marques account with email and password, the same one used for the store and for credit.",
+  "Abra sua conta": "Open your account",
+  "Confirme CPF e telefone, aceite os termos e receba seu número de conta na hora.": "Confirm your CPF and phone, accept the terms, and get your account number instantly.",
+  "Acompanhe tudo": "Track everything",
+  "Veja seus boletos e repasses de participação nos lucros. Pix e cartão chegam com o parceiro financeiro.": "See your bills and profit-share payouts. Pix and the card arrive with the financial partner.",
+
+  "O Marques Pay já está disponível?": "Is Marques Pay available yet?",
+  "Você já pode abrir sua conta e acompanhar boletos e participação nos lucros. Pix, cartão e saldo dependem de um parceiro financeiro autorizado pelo Banco Central e entram quando esse parceiro estiver ativo.":
+    "You can already open your account and track bills and profit-share payouts. Pix, card, and balance depend on a financial partner authorized by the Central Bank and will arrive once that partner is active.",
+  "É seguro? Quem vai cuidar do meu dinheiro?": "Is it safe? Who will take care of my money?",
+  "A conta será oferecida em parceria com uma instituição financeira regulada e autorizada pelo Banco Central. A Marques cuida da experiência e do atendimento, mas o seu dinheiro fica protegido pelas mesmas regras que valem pra qualquer banco ou fintech do país.":
+    "The account will be offered in partnership with a regulated financial institution authorized by the Central Bank. Marques handles the experience and support, but your money stays protected by the same rules that apply to any bank or fintech in the country.",
+  "Isso muda alguma coisa na simulação de crédito solar que já existe?": "Does this change anything about the existing solar credit simulation?",
+  "Não. A": "No. The",
+  "simulação de crédito para energia solar": "solar energy credit simulation",
+  "continua funcionando exatamente como hoje. A conta digital é um produto novo e separado.":
+    "keeps working exactly as it does today. The digital account is a new, separate product.",
+  "Vou pagar alguma coisa pra usar?": "Will I have to pay anything to use it?",
+  "A ideia é oferecer Pix e manutenção de conta sem tarifa. Os detalhes completos de tarifário serão divulgados no lançamento.":
+    "The plan is to offer Pix and account maintenance with no fee. Full fee details will be announced at launch.",
+
+  "Pronto para abrir sua conta?": "Ready to open your account?",
+  "Abrir conta": "Open account",
+
 };
