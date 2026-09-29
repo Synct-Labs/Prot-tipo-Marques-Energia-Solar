@@ -653,4 +653,48 @@ window.MES_I18N_DICT = {
   "Chumbo-Ácido (Estacionária)": "Lead-Acid (Stationary)",
   "Lítio (LiFePO4)": "Lithium (LiFePO4)",
 
+  /* ---------- conta/entrar.html (login) ---------- */
+  "Marques - Início": "Marques - Home",
+  "Entrar na sua conta | Marques": "Log in to your account | Marques",
+  "Entrar na sua conta": "Log in to your account",
+  "Acompanhe seus pedidos da loja e suas solicitações de crédito num só lugar.":
+    "Track your store orders and credit applications in one place.",
+  "Senha": "Password",
+  "Entrando...": "Logging in...",
+  "Ainda não tem conta?": "Don't have an account yet?",
+  "Cadastre-se": "Sign up",
+  "Verificação em duas etapas": "Two-factor verification",
+  "Digite o código de 6 dígitos que mandamos pro seu e-mail, ou um dos seus códigos de backup.":
+    "Enter the 6-digit code we sent to your email, or one of your backup codes.",
+  "Código": "Code",
+  "Confirmar": "Confirm",
+  "Não foi possível entrar.": "Couldn't log in.",
+  "Digite o código de 6 dígitos que mandamos pro seu e-mail.": "Enter the 6-digit code we sent to your email.",
+  "Digite o código de 6 dígitos do seu app autenticador, ou um dos seus códigos de backup.":
+    "Enter the 6-digit code from your authenticator app, or one of your backup codes.",
+  "Erro de conexão com o servidor. Tente novamente em instantes.": "Connection error with the server. Please try again in a moment.",
+  "Confirmando...": "Confirming...",
+  "Não foi possível confirmar o código.": "Couldn't confirm the code.",
+
+  /* ---------- conta/cadastro.html (signup) ---------- */
+  "Criar conta | Marques": "Create account | Marques",
+  "Criar sua conta": "Create your account",
+  "Uma conta só para acompanhar tudo: pedidos da loja Marques Energia Solar e solicitações de crédito da Marques Promotora.":
+    "One account to track everything: Marques Energia Solar store orders and Marques Promotora credit applications.",
+  "CPF": "CPF",
+  "(opcional)": "(optional)",
+  "Telefone": "Phone",
+  "Confirmar senha": "Confirm password",
+  "Mínimo de 8 caracteres": "Minimum of 8 characters",
+  "Repita a senha": "Repeat the password",
+  "Li e concordo com a": "I have read and agree to the",
+  "Política de Privacidade e Termos de Uso": "Privacy Policy and Terms of Use",
+  "da Marques Energia Solar e da": "of Marques Energia Solar and of",
+  "Criar conta": "Create account",
+  "Já tem conta?": "Already have an account?",
+  "As senhas não coincidem.": "The passwords don't match.",
+  "É preciso concordar com os termos para continuar.": "You need to agree to the terms to continue.",
+  "Criando conta...": "Creating account...",
+  "Não foi possível criar sua conta.": "Couldn't create your account.",
+
 };

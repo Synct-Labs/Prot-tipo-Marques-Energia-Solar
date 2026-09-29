@@ -96,6 +96,8 @@
 // Pra onde ir depois de autenticar: ?redirect=loja.html%23checkout leva de
 // volta pro checkout/simulação que a pessoa estava fazendo; sem isso, cai
 // na tela de Minha Conta.
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
+
 function getRedirectTarget(){
   const raw = new URLSearchParams(location.search).get("redirect");
   return raw ? `../${raw}` : "minha-conta.html";
@@ -131,7 +133,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   const btn = document.getElementById("loginBtn");
   errorBox.classList.remove("show");
   btn.disabled = true;
-  btn.textContent = "Entrando...";
+  btn.textContent = t("Entrando...");
 
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
@@ -139,7 +141,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   try {
     const res = await CONTA.apiPost("/api/session/login", { email, password });
     if (!res.ok) {
-      errorBox.textContent = res.error || "Não foi possível entrar.";
+      errorBox.textContent = res.error || t("Não foi possível entrar.");
       errorBox.classList.add("show");
       return;
     }
@@ -148,10 +150,10 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       pendingTwoFaToken = res.pendingToken;
       document.getElementById("twoFaSubtitle").textContent =
         pendingKind === "admin"
-          ? "Digite o código de 6 dígitos que mandamos pro seu e-mail."
+          ? t("Digite o código de 6 dígitos que mandamos pro seu e-mail.")
           : res.method === "app"
-            ? "Digite o código de 6 dígitos do seu app autenticador, ou um dos seus códigos de backup."
-            : "Digite o código de 6 dígitos que mandamos pro seu e-mail, ou um dos seus códigos de backup.";
+            ? t("Digite o código de 6 dígitos do seu app autenticador, ou um dos seus códigos de backup.")
+            : t("Digite o código de 6 dígitos que mandamos pro seu e-mail, ou um dos seus códigos de backup.");
       document.getElementById("loginForm").closest(".account-card").hidden = true;
       document.getElementById("twoFaCard").hidden = false;
       document.getElementById("twoFaCode").focus();
@@ -159,11 +161,11 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     }
     window.location.href = getRedirectTarget();
   } catch (err) {
-    errorBox.textContent = "Erro de conexão com o servidor. Tente novamente em instantes.";
+    errorBox.textContent = t("Erro de conexão com o servidor. Tente novamente em instantes.");
     errorBox.classList.add("show");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Entrar";
+    btn.textContent = t("Entrar");
   }
 });
 
@@ -173,7 +175,7 @@ document.getElementById("twoFaForm").addEventListener("submit", async (e) => {
   const btn = document.getElementById("twoFaBtn");
   errorBox.classList.remove("show");
   btn.disabled = true;
-  btn.textContent = "Confirmando...";
+  btn.textContent = t("Confirmando...");
 
   const code = document.getElementById("twoFaCode").value.trim();
   const endpoint = pendingKind === "admin" ? "/api/auth/login/2fa" : "/api/customers/login/2fa";
@@ -182,7 +184,7 @@ document.getElementById("twoFaForm").addEventListener("submit", async (e) => {
     const res = await CONTA.apiPost(endpoint, { pendingToken: pendingTwoFaToken, code });
     if (!res.ok) {
       if (res.pendingToken) pendingTwoFaToken = res.pendingToken;
-      errorBox.textContent = res.error || "Não foi possível confirmar o código.";
+      errorBox.textContent = res.error || t("Não foi possível confirmar o código.");
       errorBox.classList.add("show");
       if (res.expired) {
         document.getElementById("twoFaCard").hidden = true;
@@ -192,11 +194,11 @@ document.getElementById("twoFaForm").addEventListener("submit", async (e) => {
     }
     window.location.href = pendingKind === "admin" ? adminRedirectTarget() : getRedirectTarget();
   } catch (err) {
-    errorBox.textContent = "Erro de conexão com o servidor. Tente novamente em instantes.";
+    errorBox.textContent = t("Erro de conexão com o servidor. Tente novamente em instantes.");
     errorBox.classList.add("show");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Confirmar";
+    btn.textContent = t("Confirmar");
   }
 });
 

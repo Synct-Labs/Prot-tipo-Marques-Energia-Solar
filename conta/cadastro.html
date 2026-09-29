@@ -93,6 +93,8 @@
 <script>
 // Pra onde ir depois de cadastrar: ?redirect=loja.html%23checkout leva de
 // volta pro checkout/simulação que a pessoa estava fazendo.
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
+
 function getRedirectTarget(){
   const raw = new URLSearchParams(location.search).get("redirect");
   return raw ? `../${raw}` : "minha-conta.html";
@@ -126,33 +128,33 @@ document.getElementById("cadastroForm").addEventListener("submit", async (e) => 
   const consent = document.getElementById("consent").checked;
 
   if (password !== passwordConfirm) {
-    errorBox.textContent = "As senhas não coincidem.";
+    errorBox.textContent = t("As senhas não coincidem.");
     errorBox.classList.add("show");
     return;
   }
   if (!consent) {
-    errorBox.textContent = "É preciso concordar com os termos para continuar.";
+    errorBox.textContent = t("É preciso concordar com os termos para continuar.");
     errorBox.classList.add("show");
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = "Criando conta...";
+  btn.textContent = t("Criando conta...");
 
   try {
     const res = await CONTA.apiPost("/api/customers/register", { nome, email, cpf, telefone, password });
     if (!res.ok) {
-      errorBox.textContent = res.error || "Não foi possível criar sua conta.";
+      errorBox.textContent = res.error || t("Não foi possível criar sua conta.");
       errorBox.classList.add("show");
       return;
     }
     window.location.href = getRedirectTarget();
   } catch (err) {
-    errorBox.textContent = "Erro de conexão com o servidor. Tente novamente em instantes.";
+    errorBox.textContent = t("Erro de conexão com o servidor. Tente novamente em instantes.");
     errorBox.classList.add("show");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Criar conta";
+    btn.textContent = t("Criar conta");
   }
 });
 </script>
