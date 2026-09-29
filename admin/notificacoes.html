@@ -66,6 +66,7 @@
 <script src="admin.js"></script>
 <script>
 const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
 
 function renderEmails(items){
   const box = document.getElementById("emailList");
@@ -73,14 +74,14 @@ function renderEmails(items){
     ? items.map(e => `
       <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; border-bottom:1px solid var(--border);">
         <span>${esc(e.email)}</span>
-        <button type="button" class="admin-btn admin-btn-ghost" data-remove="${e.id}">Remover</button>
+        <button type="button" class="admin-btn admin-btn-ghost" data-remove="${e.id}">${t("Remover")}</button>
       </div>`).join("")
-    : `<p class="admin-empty">Nenhum e-mail cadastrado ainda.</p>`;
+    : `<p class="admin-empty">${t("Nenhum e-mail cadastrado ainda.")}</p>`;
 }
 
 async function loadEmails(){
   const res = await MES.apiGet("/api/admin/notification-emails");
-  if(!res.ok){ document.getElementById("emailList").innerHTML = `<p class="admin-empty">${esc(res.error || "Erro ao carregar.")}</p>`; return; }
+  if(!res.ok){ document.getElementById("emailList").innerHTML = `<p class="admin-empty">${esc(res.error || t("Erro ao carregar."))}</p>`; return; }
   renderEmails(res.items);
 }
 
@@ -90,25 +91,25 @@ document.getElementById("emailForm").addEventListener("submit", async (e) => {
   box.classList.remove("show");
   const input = document.getElementById("newEmail");
   const res = await MES.apiPost("/api/admin/notification-emails", { email: input.value });
-  if(!res.ok){ box.textContent = res.error || "Erro ao adicionar."; box.classList.add("show"); return; }
+  if(!res.ok){ box.textContent = res.error || t("Erro ao adicionar."); box.classList.add("show"); return; }
   input.value = "";
   renderEmails(res.items);
-  MES.showToast("E-mail adicionado.");
+  MES.showToast(t("E-mail adicionado."));
 });
 
 document.getElementById("emailList").addEventListener("click", async (e) => {
   const btn = e.target.closest("[data-remove]");
   if(!btn) return;
   const res = await MES.apiDelete(`/api/admin/notification-emails/${btn.dataset.remove}`);
-  if(!res.ok){ MES.showToast(res.error || "Erro ao remover."); return; }
+  if(!res.ok){ MES.showToast(res.error || t("Erro ao remover.")); return; }
   renderEmails(res.items);
-  MES.showToast("E-mail removido.");
+  MES.showToast(t("E-mail removido."));
 });
 
 async function init(){
   const admin = await MES.requireAuth();
   if(!admin) return;
-  if(admin.role !== "owner"){ document.querySelector(".admin-container").innerHTML = `<p class="admin-empty">Apenas o dono pode gerenciar as notificações.</p>`; return; }
+  if(admin.role !== "owner"){ document.querySelector(".admin-container").innerHTML = `<p class="admin-empty">${t("Apenas o dono pode gerenciar as notificações.")}</p>`; return; }
   await loadEmails();
 }
 document.getElementById("logoutBtn").addEventListener("click", () => MES.logout());
