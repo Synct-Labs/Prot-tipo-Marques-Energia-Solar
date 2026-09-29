@@ -16,7 +16,7 @@ window.MES = (function(){
     });
     let data;
     try { data = await res.json(); }
-    catch(e){ data = { ok:false, error:"Resposta inválida do servidor." }; }
+    catch(e){ data = { ok:false, error: t("Resposta inválida do servidor.") }; }
     return data;
   }
 
@@ -33,13 +33,17 @@ window.MES = (function(){
     return new Date(iso).toLocaleString("pt-BR", { dateStyle:"short", timeStyle:"short" });
   }
 
+  function t(text){
+    return window.MES_I18N ? window.MES_I18N.t(text) : text;
+  }
+
   const STATUS_LABELS = {
-    novo: "Novo",
-    confirmado: "Confirmado",
-    em_preparacao: "Em preparação",
-    enviado: "Enviado",
-    entregue: "Entregue",
-    cancelado: "Cancelado",
+    novo: t("Novo"),
+    confirmado: t("Confirmado"),
+    em_preparacao: t("Em preparação"),
+    enviado: t("Enviado"),
+    entregue: t("Entregue"),
+    cancelado: t("Cancelado"),
   };
   const STATUS_ORDER = ["novo","confirmado","em_preparacao","enviado","entregue","cancelado"];
 
@@ -57,12 +61,12 @@ window.MES = (function(){
 
   /* ---- status das solicitações de análise de crédito ---- */
   const LEAD_STATUS_LABELS = {
-    novo: "Novo",
-    em_analise: "Em análise",
-    contatado: "Contatado",
-    proposta_enviada: "Proposta enviada",
-    convertido: "Convertido",
-    recusado: "Recusado",
+    novo: t("Novo"),
+    em_analise: t("Em análise"),
+    contatado: t("Contatado"),
+    proposta_enviada: t("Proposta enviada"),
+    convertido: t("Convertido"),
+    recusado: t("Recusado"),
   };
   const LEAD_STATUS_ORDER = ["novo","em_analise","contatado","proposta_enviada","convertido","recusado"];
 
@@ -79,12 +83,12 @@ window.MES = (function(){
   }
 
   /* ---- status: contratos de empréstimo ---- */
-  const LOAN_CONTRACT_STATUS_LABELS = { ativo: "Ativo", quitado: "Quitado", cancelado: "Cancelado" };
+  const LOAN_CONTRACT_STATUS_LABELS = { ativo: t("Ativo"), quitado: t("Quitado"), cancelado: t("Cancelado") };
   const LOAN_CONTRACT_STATUS_ORDER = ["ativo", "quitado", "cancelado"];
-  const LOAN_INSTALLMENT_STATUS_LABELS = { pendente: "Pendente", pago: "Pago" };
+  const LOAN_INSTALLMENT_STATUS_LABELS = { pendente: t("Pendente"), pago: t("Pago") };
 
   /* ---- status: contratos de participação nos lucros ---- */
-  const PROFIT_SHARE_STATUS_LABELS = { ativo: "Ativo", encerrado: "Encerrado" };
+  const PROFIT_SHARE_STATUS_LABELS = { ativo: t("Ativo"), encerrado: t("Encerrado") };
   const PROFIT_SHARE_STATUS_ORDER = ["ativo", "encerrado"];
 
   function showToast(msg){
@@ -104,9 +108,9 @@ window.MES = (function(){
   const COMPANY_LABELS = {
     energia_solar: "Marques Energia Solar",
     promotora: "Marques Promotora",
-    ambas: "Marques (ambas as empresas)",
+    ambas: t("Marques (ambas as empresas)"),
   };
-  const ROLE_LABELS = { owner: "Dono", funcionario: "Funcionário" };
+  const ROLE_LABELS = { owner: t("Dono"), funcionario: t("Funcionário") };
 
   function hasCompanyAccess(admin, company){
     return admin.company === "ambas" || admin.company === company;

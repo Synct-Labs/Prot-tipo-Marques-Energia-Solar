@@ -77,6 +77,7 @@
 <script>
 const API_BASE = window.MES_API_BASE || "";
 let allOrders = [];
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
 
 function fileToBase64(file){
   return new Promise((resolve, reject) => {
@@ -94,7 +95,7 @@ function statOptionsHTML(){
 function renderStats(stats){
   const grid = document.getElementById("statsGrid");
   const total = Object.values(stats).reduce((a,b) => a+b, 0);
-  const cards = [["Total", total]].concat(
+  const cards = [[t("Total"), total]].concat(
     MES.STATUS_ORDER.map(s => [MES.STATUS_LABELS[s], stats[s] || 0])
   );
   grid.innerHTML = cards.map(([label, value]) => `
@@ -116,65 +117,65 @@ function orderDetailHTML(order){
 
   return `
     <div class="admin-detail-block">
-      <h4>Cliente</h4>
+      <h4>${t("Cliente")}</h4>
       <p>${order.customer.nome}</p>
       <p>${order.customer.cpf}</p>
       <p>${order.customer.email}</p>
       <p>${order.customer.telefone}</p>
     </div>
     <div class="admin-detail-block">
-      <h4>Endereço de entrega</h4>
+      <h4>${t("Endereço de entrega")}</h4>
       <p>${enderecoLinha}</p>
       <p>${end.bairro || ""}</p>
       <p>${end.cidade || ""} / ${end.estado || ""}</p>
-      <p>CEP ${end.cep || ""}</p>
+      <p>${t("CEP")} ${end.cep || ""}</p>
     </div>
     <div class="admin-detail-block">
-      <h4>Pagamento</h4>
-      <p>${order.pagamento ? order.pagamento.toUpperCase() : "-"}${order.parcelas > 1 ? ` em ${order.parcelas}x sem juros` : ""}</p>
-      <h4 style="margin-top:14px;">Itens do pedido</h4>
+      <h4>${t("Pagamento")}</h4>
+      <p>${order.pagamento ? order.pagamento.toUpperCase() : "-"}${order.parcelas > 1 ? ` ${t("em")} ${order.parcelas}${t("x sem juros")}` : ""}</p>
+      <h4 style="margin-top:14px;">${t("Itens do pedido")}</h4>
       <div class="admin-detail-items">${itemsHTML}</div>
     </div>
     <div class="admin-detail-block">
-      <h4>Documentos do cliente</h4>
-      <p>${order.temDocEndereco ? `<a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/orders/${order.id}/doc-endereco" target="_blank" rel="noopener">Comprovante de endereço</a>` : `<span class="admin-muted">Sem comprovante de endereço</span>`}</p>
-      <p style="margin-top:8px;">${order.temDocFoto ? `<a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/orders/${order.id}/doc-foto" target="_blank" rel="noopener">Documento com foto</a>` : `<span class="admin-muted">Sem documento com foto</span>`}</p>
+      <h4>${t("Documentos do cliente")}</h4>
+      <p>${order.temDocEndereco ? `<a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/orders/${order.id}/doc-endereco" target="_blank" rel="noopener">${t("Comprovante de endereço")}</a>` : `<span class="admin-muted">${t("Sem comprovante de endereço")}</span>`}</p>
+      <p style="margin-top:8px;">${order.temDocFoto ? `<a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/orders/${order.id}/doc-foto" target="_blank" rel="noopener">${t("Documento com foto")}</a>` : `<span class="admin-muted">${t("Sem documento com foto")}</span>`}</p>
     </div>
     <div class="admin-detail-block">
-      <h4>Contrato</h4>
-      ${order.temContrato ? `<p><a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/orders/${order.id}/contrato" target="_blank" rel="noopener">Baixar contrato</a></p>` : `<p class="admin-muted">Nenhum contrato anexado ainda.</p>`}
+      <h4>${t("Contrato")}</h4>
+      ${order.temContrato ? `<p><a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/orders/${order.id}/contrato" target="_blank" rel="noopener">${t("Baixar contrato")}</a></p>` : `<p class="admin-muted">${t("Nenhum contrato anexado ainda.")}</p>`}
       <form class="admin-contrato-form" data-order-id="${order.id}" style="display:flex; gap:8px; align-items:center; margin-top:8px;">
         <input type="file" accept="image/*,application/pdf" required>
-        <button type="submit" class="admin-btn admin-btn-ghost" style="width:auto;">${order.temContrato ? "Substituir" : "Anexar"} contrato</button>
+        <button type="submit" class="admin-btn admin-btn-ghost" style="width:auto;">${order.temContrato ? t("Substituir") : t("Anexar")} ${t("contrato")}</button>
       </form>
     </div>
     <div class="admin-detail-block">
-      <h4>Link de pagamento ${order.pagamento === "boleto" ? "(boleto)" : ""}</h4>
-      <p class="admin-note" style="margin:0 0 8px; text-align:left;">${order.partnerId ? "Enviado por e-mail pro parceiro que indicou/assistiu o pedido." : "Enviado por e-mail direto pro cliente."}</p>
-      ${order.paymentLink ? `<p class="admin-muted" style="word-break:break-all;">Último enviado: ${order.paymentLink}</p>` : `<p class="admin-muted">Nenhum link enviado ainda.</p>`}
+      <h4>${t("Link de pagamento")} ${order.pagamento === "boleto" ? t("(boleto)") : ""}</h4>
+      <p class="admin-note" style="margin:0 0 8px; text-align:left;">${order.partnerId ? t("Enviado por e-mail pro parceiro que indicou/assistiu o pedido.") : t("Enviado por e-mail direto pro cliente.")}</p>
+      ${order.paymentLink ? `<p class="admin-muted" style="word-break:break-all;">${t("Último enviado:")} ${order.paymentLink}</p>` : `<p class="admin-muted">${t("Nenhum link enviado ainda.")}</p>`}
       <form class="admin-payment-link-form" data-order-id="${order.id}" style="display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap;">
-        <input type="text" name="link" placeholder="${order.pagamento === "boleto" ? "Link ou linha digitável do boleto" : "Link de pagamento"}" style="flex:1; min-width:220px;" required>
-        <button type="submit" class="admin-btn admin-btn-ghost" style="width:auto;">Enviar</button>
+        <input type="text" name="link" placeholder="${order.pagamento === "boleto" ? t("Link ou linha digitável do boleto") : t("Link de pagamento")}" style="flex:1; min-width:220px;" required>
+        <button type="submit" class="admin-btn admin-btn-ghost" style="width:auto;">${t("Enviar")}</button>
       </form>
     </div>
     <div class="admin-detail-block">
-      <h4>Pendência</h4>
+      <h4>${t("Pendência")}</h4>
       ${order.pendencia ? `
         <p class="admin-error show">${order.pendencia.texto}</p>
-        <p class="admin-muted" style="margin-top:-4px;">Lançada em ${MES.formatDate(order.pendencia.criadaEm)} por ${order.pendencia.autor}</p>
+        <p class="admin-muted" style="margin-top:-4px;">${t("Lançada em")} ${MES.formatDate(order.pendencia.criadaEm)} ${t("por")} ${order.pendencia.autor}</p>
         ${order.pendencia.resposta ? `
           <div style="margin-top:10px; padding:10px 12px; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm);">
-            <strong style="font-size:.85rem;">Resposta recebida</strong>
-            <p class="admin-muted" style="margin:4px 0 0;">Em ${MES.formatDate(order.pendencia.resposta.criadaEm)}${order.pendencia.resposta.texto ? " — " + order.pendencia.resposta.texto : ""}</p>
-            ${order.pendencia.resposta.temArquivo ? `<p style="margin-top:8px;"><a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/orders/${order.id}/pendencia-resposta" target="_blank" rel="noopener">Baixar anexo</a></p>` : ""}
+            <strong style="font-size:.85rem;">${t("Resposta recebida")}</strong>
+            <p class="admin-muted" style="margin:4px 0 0;">${t("Em")} ${MES.formatDate(order.pendencia.resposta.criadaEm)}${order.pendencia.resposta.texto ? " — " + order.pendencia.resposta.texto : ""}</p>
+            ${order.pendencia.resposta.temArquivo ? `<p style="margin-top:8px;"><a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/orders/${order.id}/pendencia-resposta" target="_blank" rel="noopener">${t("Baixar anexo")}</a></p>` : ""}
           </div>
-        ` : `<p class="admin-muted" style="margin-top:6px;">Ainda sem resposta.</p>`}
-        <button type="button" class="admin-btn admin-btn-ghost admin-resolve-pendencia-btn" data-order-id="${order.id}" style="margin-top:8px;">Marcar como resolvida</button>
+        ` : `<p class="admin-muted" style="margin-top:6px;">${t("Ainda sem resposta.")}</p>`}
+        <button type="button" class="admin-btn admin-btn-ghost admin-resolve-pendencia-btn" data-order-id="${order.id}" style="margin-top:8px;">${t("Marcar como resolvida")}</button>
       ` : `
-        <p class="admin-muted">Nenhuma pendência aberta.</p>
+        <p class="admin-muted">${t("Nenhuma pendência aberta.")}</p>
         <form class="admin-pendencia-form" data-order-id="${order.id}" style="display:flex; gap:8px; align-items:flex-start; margin-top:8px; flex-wrap:wrap;">
-          <textarea name="texto" placeholder="Ex: comprovante de endereço ilegível, pedir outro." style="flex:1; min-width:220px; min-height:56px; background:var(--surface-2); color:var(--white); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px;" required></textarea>
-          <button type="submit" class="admin-btn admin-btn-ghost" style="width:auto;">Lançar pendência</button>
+          <textarea name="texto" placeholder="${t("Ex: comprovante de endereço ilegível, pedir outro.")}" style="flex:1; min-width:220px; min-height:56px; background:var(--surface-2); color:var(--white); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px;" required></textarea>
+          <button type="submit" class="admin-btn admin-btn-ghost" style="width:auto;">${t("Lançar pendência")}</button>
         </form>
       `}
     </div>
@@ -184,7 +185,7 @@ function orderDetailHTML(order){
 function renderOrders(list){
   const tbody = document.getElementById("ordersTableBody");
   if(list.length === 0){
-    tbody.innerHTML = `<tr><td colspan="7" class="admin-empty">Nenhum pedido encontrado.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="admin-empty">${t("Nenhum pedido encontrado.")}</td></tr>`;
     return;
   }
 
@@ -228,10 +229,10 @@ async function loadStats(){
 
 async function loadOrders(){
   document.getElementById("ordersTableBody").innerHTML =
-    `<tr><td colspan="7" class="admin-loading">Carregando pedidos...</td></tr>`;
+    `<tr><td colspan="7" class="admin-loading">${t("Carregando pedidos...")}</td></tr>`;
   const res = await MES.apiGet("/api/admin/orders");
   if(!res.ok){
-    MES.showToast(res.error || "Erro ao carregar pedidos.");
+    MES.showToast(res.error || t("Erro ao carregar pedidos."));
     return;
   }
   allOrders = res.orders;
@@ -257,20 +258,20 @@ document.getElementById("ordersTableBody").addEventListener("submit", async (e) 
   e.preventDefault();
   const file = form.querySelector('input[type="file"]').files[0];
   if(!file) return;
-  if(file.size > 8 * 1024 * 1024){ MES.showToast("Contrato muito grande (máximo 8MB)."); return; }
+  if(file.size > 8 * 1024 * 1024){ MES.showToast(t("Contrato muito grande (máximo 8MB).")); return; }
   const btn = form.querySelector("button[type=submit]");
-  btn.disabled = true; btn.textContent = "Enviando...";
+  btn.disabled = true; btn.textContent = t("Enviando...");
   try{
     const res = await MES.apiPost(`/api/admin/orders/${form.dataset.orderId}/contrato`, {
       contratoBase64: await fileToBase64(file), contratoTipo: file.type, contratoNome: file.name,
     });
-    if(!res.ok){ MES.showToast(res.error || "Erro ao anexar contrato."); return; }
-    MES.showToast("Contrato anexado.");
+    if(!res.ok){ MES.showToast(res.error || t("Erro ao anexar contrato.")); return; }
+    MES.showToast(t("Contrato anexado."));
     const idx = allOrders.findIndex(o => String(o.id) === form.dataset.orderId);
     if(idx > -1) allOrders[idx] = res.order;
     document.querySelector(`[data-detail-for="${form.dataset.orderId}"] .admin-order-detail-inner`).innerHTML = orderDetailHTML(res.order);
   } finally {
-    btn.disabled = false; btn.textContent = "Anexar contrato";
+    btn.disabled = false; btn.textContent = `${t("Anexar")} ${t("contrato")}`;
   }
 });
 
@@ -301,14 +302,14 @@ document.getElementById("ordersTableBody").addEventListener("submit", async (e) 
     const link = linkForm.querySelector('[name="link"]').value.trim();
     if(!link) return;
     const btn = linkForm.querySelector("button[type=submit]");
-    btn.disabled = true; btn.textContent = "Enviando...";
+    btn.disabled = true; btn.textContent = t("Enviando...");
     try{
       const res = await MES.apiPost(`/api/admin/orders/${linkForm.dataset.orderId}/payment-link`, { link });
-      if(!res.ok){ MES.showToast(res.error || "Erro ao enviar link."); return; }
-      MES.showToast("Link enviado por e-mail.");
+      if(!res.ok){ MES.showToast(res.error || t("Erro ao enviar link.")); return; }
+      MES.showToast(t("Link enviado por e-mail."));
       updateOrderDetail(res.order);
     } finally {
-      btn.disabled = false; btn.textContent = "Enviar";
+      btn.disabled = false; btn.textContent = t("Enviar");
     }
     return;
   }
@@ -316,28 +317,28 @@ document.getElementById("ordersTableBody").addEventListener("submit", async (e) 
   const texto = pendenciaForm.querySelector('[name="texto"]').value.trim();
   if(!texto) return;
   const btn = pendenciaForm.querySelector("button[type=submit]");
-  btn.disabled = true; btn.textContent = "Lançando...";
+  btn.disabled = true; btn.textContent = t("Lançando...");
   try{
     const res = await MES.apiPost(`/api/admin/orders/${pendenciaForm.dataset.orderId}/pendencia`, { texto });
-    if(!res.ok){ MES.showToast(res.error || "Erro ao lançar pendência."); return; }
-    MES.showToast("Pendência lançada e e-mail enviado.");
+    if(!res.ok){ MES.showToast(res.error || t("Erro ao lançar pendência.")); return; }
+    MES.showToast(t("Pendência lançada e e-mail enviado."));
     updateOrderDetail(res.order);
   } finally {
-    btn.disabled = false; btn.textContent = "Lançar pendência";
+    btn.disabled = false; btn.textContent = t("Lançar pendência");
   }
 });
 
 document.getElementById("ordersTableBody").addEventListener("click", async (e) => {
   const btn = e.target.closest(".admin-resolve-pendencia-btn");
   if(!btn) return;
-  btn.disabled = true; btn.textContent = "Marcando...";
+  btn.disabled = true; btn.textContent = t("Marcando...");
   try{
     const res = await MES.apiPost(`/api/admin/orders/${btn.dataset.orderId}/pendencia/resolver`, {});
-    if(!res.ok){ MES.showToast(res.error || "Erro ao marcar pendência como resolvida."); return; }
-    MES.showToast("Pendência marcada como resolvida.");
+    if(!res.ok){ MES.showToast(res.error || t("Erro ao marcar pendência como resolvida.")); return; }
+    MES.showToast(t("Pendência marcada como resolvida."));
     updateOrderDetail(res.order);
   } finally {
-    btn.disabled = false; btn.textContent = "Marcar como resolvida";
+    btn.disabled = false; btn.textContent = t("Marcar como resolvida");
   }
 });
 
@@ -348,10 +349,10 @@ document.getElementById("ordersTableBody").addEventListener("change", async (e) 
   const newStatus = select.value;
   const res = await MES.apiPatch(`/api/admin/orders/${id}`, { status: newStatus });
   if(!res.ok){
-    MES.showToast(res.error || "Erro ao atualizar status.");
+    MES.showToast(res.error || t("Erro ao atualizar status."));
     return;
   }
-  MES.showToast("Status do pedido atualizado.");
+  MES.showToast(t("Status do pedido atualizado."));
   const idx = allOrders.findIndex(o => String(o.id) === String(id));
   if(idx > -1) allOrders[idx] = res.order;
   loadStats();
