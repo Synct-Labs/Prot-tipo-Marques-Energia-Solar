@@ -63,8 +63,8 @@ async function createPendingAdminLogin(adminId, email) {
   pendingAdminLogins.set(token, { adminId, expiresAt: Date.now() + ADMIN_2FA_TTL_MS, emailCode });
   await mailer.sendEmail({
     to: email,
-    subject: "Seu código de login — Painel Marques",
-    text: `Seu código de login é: ${emailCode}\nEle expira em 5 minutos. Se não foi você tentando entrar, ignore este e-mail.`,
+    subject: "Seu código de login — Painel Marques / Your login code — Marques Panel",
+    text: `Seu código de login é: ${emailCode}\nEle expira em 5 minutos. Se não foi você tentando entrar, ignore este e-mail.\n\nYour login code is: ${emailCode}\nIt expires in 5 minutes. If this wasn't you, ignore this email.`,
     html: mailer.verificationEmailHTML(emailCode),
   });
   return token;

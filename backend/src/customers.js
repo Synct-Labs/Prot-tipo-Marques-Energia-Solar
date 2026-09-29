@@ -217,8 +217,8 @@ async function start2FASetup(customerId, email) {
   pendingEmailSetups.set(customerId, { codeHash: auth.hashPassword(code), expiresAt: Date.now() + EMAIL_CODE_TTL_MS });
   await mailer.sendEmail({
     to: email,
-    subject: "Seu código de verificação Marques",
-    text: `Seu código de verificação é: ${code}\nEle expira em 10 minutos.`,
+    subject: "Seu código de verificação Marques / Your Marques verification code",
+    text: `Seu código de verificação é: ${code}\nEle expira em 10 minutos.\n\nYour verification code is: ${code}\nIt expires in 10 minutes.`,
     html: mailer.verificationEmailHTML(code),
   });
 }
@@ -269,8 +269,8 @@ async function startMethodSwitch(customerId, email, targetMethod) {
   });
   await mailer.sendEmail({
     to: email,
-    subject: "Código pra trocar o método de verificação — Marques",
-    text: `Seu código é: ${code}\nEle expira em 10 minutos.`,
+    subject: "Código pra trocar o método de verificação — Marques / Code to change verification method — Marques",
+    text: `Seu código é: ${code}\nEle expira em 10 minutos.\n\nYour code is: ${code}\nIt expires in 10 minutes.`,
     html: mailer.verificationEmailHTML(code),
   });
   return { method: "email" };
@@ -356,8 +356,8 @@ async function createPending2FALogin(customerId, method, email) {
     entry.emailCode = generateEmailCode();
     await mailer.sendEmail({
       to: email,
-      subject: "Seu código de login Marques",
-      text: `Seu código de login é: ${entry.emailCode}\nEle expira em 5 minutos.`,
+      subject: "Seu código de login Marques / Your Marques login code",
+      text: `Seu código de login é: ${entry.emailCode}\nEle expira em 5 minutos.\n\nYour login code is: ${entry.emailCode}\nIt expires in 5 minutes.`,
       html: mailer.verificationEmailHTML(entry.emailCode),
     });
   }

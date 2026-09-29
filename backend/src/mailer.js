@@ -6,6 +6,11 @@
    SMTP_USER/SMTP_PASS configurados (backend/.env), o e-mail não é
    enviado de verdade: o conteúdo só aparece no log do servidor, pra dar
    pra testar o fluxo sem precisar configurar nada primeiro.
+
+   Todo e-mail é bilíngue (PT + EN) no mesmo corpo — o backend não sabe
+   qual idioma o destinatário prefere (isso só existe no localStorage do
+   navegador), então em vez de rastrear preferência de idioma por conta,
+   cada e-mail já sai com as duas versões lado a lado.
    ===================================================================== */
 const nodemailer = require("nodemailer");
 const config = require("./config");
@@ -56,6 +61,12 @@ function escHtml(v) {
   return String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+// Junta um par PT/EN num único texto "PT / EN" — usado em títulos, botões
+// e assuntos, onde cabe tudo numa linha só.
+function bi(pt, en) {
+  return `${pt} / ${en}`;
+}
+
 /* ======================================================================
    CASCA VISUAL COMPARTILHADA
    ---------------------------------------------------------------------
@@ -67,7 +78,7 @@ function escHtml(v) {
 function emailShellHTML({ title, bodyHTML, ctaHref, ctaLabel, footerNote }) {
   const cta = ctaHref
     ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0 4px;"><tr><td style="background:#F7941E; border-radius:10px;">
-         <a href="${escHtml(ctaHref)}" style="display:inline-block; padding:13px 26px; font-family:Arial,Helvetica,sans-serif; font-size:15px; font-weight:bold; color:#1a1200; text-decoration:none;">${escHtml(ctaLabel || "Acessar")}</a>
+         <a href="${escHtml(ctaHref)}" style="display:inline-block; padding:13px 26px; font-family:Arial,Helvetica,sans-serif; font-size:15px; font-weight:bold; color:#1a1200; text-decoration:none;">${escHtml(ctaLabel || bi("Acessar", "Access"))}</a>
        </td></tr></table>`
     : "";
   return `
@@ -83,22 +94,24 @@ function emailShellHTML({ title, bodyHTML, ctaHref, ctaLabel, footerNote }) {
       ${cta}
     </td></tr>
     <tr><td style="background:#f7f6f3; padding:16px 28px; border-top:1px solid #ececec;">
-      <p style="margin:0; color:#93938f; font-size:12px; line-height:1.5;">${footerNote || "Marques Energia Solar &amp; Marques Promotora — e-mail automático, não é preciso responder."}</p>
+      <p style="margin:0; color:#93938f; font-size:12px; line-height:1.5;">${footerNote || "Marques Energia Solar &amp; Marques Promotora — e-mail automático, não é preciso responder.<br>Automatic email, no reply needed."}</p>
     </td></tr>
   </table>
 </div>`;
 }
 
-function paragraphsHTML(paragraphs) {
-  return paragraphs.map((p) => `<p style="margin:0 0 14px; color:#3a3a38; font-size:15px; line-height:1.6;">${p}</p>`).join("");
+// Renderiza pares [textoPT, textoEN] como parágrafos empilhados: PT normal
+// em cima, EN um pouco menor/acinzentado logo abaixo — dá pra ler os dois
+// sem duplicar o layout inteiro do e-mail.
+function biParagraphsHTML(pairs) {
+  return pairs.map(([pt, en]) => `<p style="margin:0 0 2px; color:#3a3a38; font-size:15px; line-height:1.6;">${pt}</p><p style="margin:0 0 14px; color:#8a8a86; font-size:13px; line-height:1.5; font-style:italic;">${en}</p>`).join("");
 }
 
-// Wrapper simples reaproveitado por todos os e-mails de notificação abaixo
-// (aviso pro admin de evento novo, aviso pro cliente de status) — mesma
-// assinatura de antes (title, paragraphs, {ctaHref, ctaLabel}), só o visual
-// por dentro que ficou bonito — nenhum call site precisa mudar.
-function simpleEmailHTML(title, paragraphs, { ctaHref, ctaLabel } = {}) {
-  return emailShellHTML({ title, bodyHTML: paragraphsHTML(paragraphs), ctaHref, ctaLabel });
+// Wrapper reaproveitado por todos os e-mails de notificação abaixo (aviso
+// pro admin de evento novo, aviso pro cliente de status) — recebe pares
+// [pt, en] de parágrafo e um título/cta já no formato bilíngue "PT / EN".
+function simpleEmailHTML(title, pairs, { ctaHref, ctaLabel } = {}) {
+  return emailShellHTML({ title, bodyHTML: biParagraphsHTML(pairs), ctaHref, ctaLabel });
 }
 
 function verificationEmailHTML(code) {
@@ -106,8 +119,8 @@ function verificationEmailHTML(code) {
     <span style="font-family:'Courier New',monospace; font-size:32px; font-weight:bold; letter-spacing:8px; color:#1a1200;">${escHtml(code)}</span>
   </div>`;
   return emailShellHTML({
-    title: "Seu código de verificação",
-    bodyHTML: `<p style="margin:0 0 6px; color:#3a3a38; font-size:15px; line-height:1.6;">Use o código abaixo para confirmar que é você:</p>${codeBlock}<p style="margin:0; color:#93938f; font-size:13px; line-height:1.5;">Esse código expira em alguns minutos. Se você não pediu esse código, pode ignorar este e-mail.</p>`,
+    title: bi("Seu código de verificação", "Your verification code"),
+    bodyHTML: `<p style="margin:0 0 2px; color:#3a3a38; font-size:15px; line-height:1.6;">Use o código abaixo para confirmar que é você:</p><p style="margin:0 0 6px; color:#8a8a86; font-size:13px; line-height:1.5; font-style:italic;">Use the code below to confirm it's you:</p>${codeBlock}<p style="margin:0; color:#93938f; font-size:13px; line-height:1.5;">Esse código expira em alguns minutos. Se você não pediu esse código, pode ignorar este e-mail.<br><em>This code expires in a few minutes. If you didn't request it, you can ignore this email.</em></p>`,
   });
 }
 
@@ -124,98 +137,116 @@ function passwordResetLink(kind, token) {
 function passwordResetEmailHTML(kind, token) {
   const link = passwordResetLink(kind, token);
   return simpleEmailHTML(
-    "Redefinir sua senha",
+    bi("Redefinir sua senha", "Reset your password"),
     [
-      "Recebemos um pedido para redefinir sua senha. Clique no botão abaixo para escolher uma nova.",
-      "O link expira em 1 hora. Se você não pediu essa redefinição, pode ignorar este e-mail — sua senha continua a mesma.",
+      [
+        "Recebemos um pedido para redefinir sua senha. Clique no botão abaixo para escolher uma nova.",
+        "We received a request to reset your password. Click the button below to choose a new one.",
+      ],
+      [
+        "O link expira em 1 hora. Se você não pediu essa redefinição, pode ignorar este e-mail — sua senha continua a mesma.",
+        "The link expires in 1 hour. If you didn't request this reset, you can ignore this email — your password stays the same.",
+      ],
     ],
-    { ctaHref: link, ctaLabel: "Redefinir senha" }
+    { ctaHref: link, ctaLabel: bi("Redefinir senha", "Reset password") }
   );
 }
 
 function adminLoginNotificationHTML({ ip, quando }) {
-  return simpleEmailHTML("Novo login no painel Marques", [
-    `Sua conta de administrador acabou de entrar no painel.`,
-    `Quando: <strong>${quando}</strong>.`,
-    `IP: <strong>${ip}</strong>.`,
-    `Se não foi você, troque sua senha agora e avise o dono da conta.`,
+  return simpleEmailHTML(bi("Novo login no painel Marques", "New login to the Marques panel"), [
+    ["Sua conta de administrador acabou de entrar no painel.", "Your administrator account just logged into the panel."],
+    [`Quando: <strong>${quando}</strong>.`, `When: <strong>${quando}</strong>.`],
+    [`IP: <strong>${ip}</strong>.`, `IP: <strong>${ip}</strong>.`],
+    ["Se não foi você, troque sua senha agora e avise o dono da conta.", "If this wasn't you, change your password now and tell the account owner."],
   ]);
 }
 
 /* ---------------------- AVISOS PRO ADMIN (evento novo) ---------------------- */
 function adminNovoPedidoHTML(order) {
-  return simpleEmailHTML("Novo pedido na loja", [
-    `Pedido <strong>${order.orderNumber}</strong> de <strong>${order.customer.nome}</strong>.`,
-    `Total: <strong>${Number(order.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>.`,
-  ], { ctaHref: "https://marquespromotora.com/admin/dashboard.html", ctaLabel: "Ver pedido" });
+  const total = Number(order.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return simpleEmailHTML(bi("Novo pedido na loja", "New order in the store"), [
+    [`Pedido <strong>${order.orderNumber}</strong> de <strong>${order.customer.nome}</strong>.`, `Order <strong>${order.orderNumber}</strong> from <strong>${order.customer.nome}</strong>.`],
+    [`Total: <strong>${total}</strong>.`, `Total: <strong>${total}</strong>.`],
+  ], { ctaHref: "https://marquespromotora.com/admin/dashboard.html", ctaLabel: bi("Ver pedido", "View order") });
 }
 
 function adminPendenciaRespostaHTML({ orderNumber, autor, texto }) {
-  return simpleEmailHTML(`Pedido ${escHtml(orderNumber)}: resposta à pendência`, [
-    `<strong>${escHtml(autor)}</strong> respondeu a pendência do pedido <strong>${escHtml(orderNumber)}</strong> com um novo anexo.`,
-    texto ? `Observação: ${escHtml(texto)}` : `Sem observação, só o anexo.`,
-  ], { ctaHref: "https://marquespromotora.com/admin/dashboard.html", ctaLabel: "Ver pedido" });
+  return simpleEmailHTML(bi(`Pedido ${escHtml(orderNumber)}: resposta à pendência`, `Order ${escHtml(orderNumber)}: pending issue reply`), [
+    [
+      `<strong>${escHtml(autor)}</strong> respondeu a pendência do pedido <strong>${escHtml(orderNumber)}</strong> com um novo anexo.`,
+      `<strong>${escHtml(autor)}</strong> replied to order <strong>${escHtml(orderNumber)}</strong>'s pending issue with a new attachment.`,
+    ],
+    texto
+      ? [`Observação: ${escHtml(texto)}`, `Note: ${escHtml(texto)}`]
+      : ["Sem observação, só o anexo.", "No note, just the attachment."],
+  ], { ctaHref: "https://marquespromotora.com/admin/dashboard.html", ctaLabel: bi("Ver pedido", "View order") });
 }
 
 function adminNovaSolicitacaoCreditoHTML(lead) {
-  return simpleEmailHTML("Nova solicitação de crédito", [
-    `Solicitação <strong>${lead.leadNumber}</strong> de <strong>${lead.dadosBasicos.nome}</strong>.`,
-    `Modalidade: <strong>${lead.modalidadeInteresse || "-"}</strong>.`,
-  ], { ctaHref: "https://marquespromotora.com/admin/credit-leads.html", ctaLabel: "Ver solicitação" });
+  return simpleEmailHTML(bi("Nova solicitação de crédito", "New credit request"), [
+    [`Solicitação <strong>${lead.leadNumber}</strong> de <strong>${lead.dadosBasicos.nome}</strong>.`, `Request <strong>${lead.leadNumber}</strong> from <strong>${lead.dadosBasicos.nome}</strong>.`],
+    [`Modalidade: <strong>${lead.modalidadeInteresse || "-"}</strong>.`, `Type: <strong>${lead.modalidadeInteresse || "-"}</strong>.`],
+  ], { ctaHref: "https://marquespromotora.com/admin/credit-leads.html", ctaLabel: bi("Ver solicitação", "View request") });
 }
 
 function adminNovaSolicitacaoContaHTML(customer) {
-  return simpleEmailHTML("Nova solicitação de análise de conta (Marques Pay)", [
-    `<strong>${customer.nome}</strong> (${customer.email}) enviou o cadastro pra análise.`,
-  ], { ctaHref: "https://marquespromotora.com/admin/marques-pay.html", ctaLabel: "Analisar cadastro" });
+  return simpleEmailHTML(bi("Nova solicitação de análise de conta (Marques Pay)", "New account review request (Marques Pay)"), [
+    [
+      `<strong>${customer.nome}</strong> (${customer.email}) enviou o cadastro pra análise.`,
+      `<strong>${customer.nome}</strong> (${customer.email}) submitted their application for review.`,
+    ],
+  ], { ctaHref: "https://marquespromotora.com/admin/marques-pay.html", ctaLabel: bi("Analisar cadastro", "Review application") });
 }
 
 /* ---------------------- AVISOS PRO CLIENTE ---------------------- */
 function contaAprovadaHTML() {
-  return simpleEmailHTML("Sua conta Marques Pay foi aprovada!", [
-    "Boa notícia: seu cadastro foi analisado e aprovado. Sua conta digital já está ativa.",
-  ], { ctaHref: "https://marquespromotora.com/conta-digital-dashboard.html", ctaLabel: "Acessar minha conta" });
+  return simpleEmailHTML(bi("Sua conta Marques Pay foi aprovada!", "Your Marques Pay account was approved!"), [
+    ["Boa notícia: seu cadastro foi analisado e aprovado. Sua conta digital já está ativa.", "Good news: your application was reviewed and approved. Your digital account is now active."],
+  ], { ctaHref: "https://marquespromotora.com/conta-digital-dashboard.html", ctaLabel: bi("Acessar minha conta", "Access my account") });
 }
 
 function contaRecusadaHTML(motivo) {
-  return simpleEmailHTML("Sua conta Marques Pay não foi aprovada", [
-    "Seu cadastro foi analisado e, por enquanto, não foi aprovado.",
-    `Motivo: ${motivo || "não informado"}.`,
-    "Você pode corrigir os dados/documentos e enviar de novo quando quiser.",
-  ], { ctaHref: "https://marquespromotora.com/conta-digital-abrir.html", ctaLabel: "Corrigir e reenviar" });
+  const motivoTxt = motivo || "não informado";
+  return simpleEmailHTML(bi("Sua conta Marques Pay não foi aprovada", "Your Marques Pay account was not approved"), [
+    ["Seu cadastro foi analisado e, por enquanto, não foi aprovado.", "Your application was reviewed and, for now, was not approved."],
+    [`Motivo: ${motivoTxt}.`, `Reason: ${motivoTxt}.`],
+    ["Você pode corrigir os dados/documentos e enviar de novo quando quiser.", "You can fix your details/documents and resubmit whenever you'd like."],
+  ], { ctaHref: "https://marquespromotora.com/conta-digital-abrir.html", ctaLabel: bi("Corrigir e reenviar", "Fix and resubmit") });
 }
 
 const ORDER_STATUS_LABELS = {
-  novo: "Recebido",
-  confirmado: "Confirmado",
-  em_preparacao: "Em preparação",
-  enviado: "Enviado",
-  entregue: "Entregue",
-  cancelado: "Cancelado",
+  novo: ["Recebido", "Received"],
+  confirmado: ["Confirmado", "Confirmed"],
+  em_preparacao: ["Em preparação", "In preparation"],
+  enviado: ["Enviado", "Shipped"],
+  entregue: ["Entregue", "Delivered"],
+  cancelado: ["Cancelado", "Canceled"],
 };
 
 function pedidoStatusHTML(order, status) {
-  const label = ORDER_STATUS_LABELS[status] || status;
-  const titulo = status === "confirmado" ? "Seu pedido foi confirmado!" : `Seu pedido está: ${label}`;
+  const [labelPt, labelEn] = ORDER_STATUS_LABELS[status] || [status, status];
+  const titulo = status === "confirmado"
+    ? bi("Seu pedido foi confirmado!", "Your order was confirmed!")
+    : bi(`Seu pedido está: ${labelPt}`, `Your order status: ${labelEn}`);
   return simpleEmailHTML(titulo, [
-    `O pedido <strong>${order.orderNumber}</strong> agora está com status <strong>${label}</strong>.`,
-  ], { ctaHref: "https://marquespromotora.com/loja.html", ctaLabel: "Ver na loja" });
+    [`O pedido <strong>${order.orderNumber}</strong> agora está com status <strong>${labelPt}</strong>.`, `Order <strong>${order.orderNumber}</strong> is now: <strong>${labelEn}</strong>.`],
+  ], { ctaHref: "https://marquespromotora.com/loja.html", ctaLabel: bi("Ver na loja", "View in store") });
 }
 
 const LEAD_STATUS_LABELS = {
-  novo: "Recebida",
-  em_analise: "Em análise",
-  contatado: "Contato feito",
-  proposta_enviada: "Proposta enviada",
-  convertido: "Aprovada/Convertida",
-  recusado: "Recusada",
+  novo: ["Recebida", "Received"],
+  em_analise: ["Em análise", "Under review"],
+  contatado: ["Contato feito", "Contacted"],
+  proposta_enviada: ["Proposta enviada", "Proposal sent"],
+  convertido: ["Aprovada/Convertida", "Approved/Converted"],
+  recusado: ["Recusada", "Declined"],
 };
 
 function leadStatusHTML(lead, status) {
-  const label = LEAD_STATUS_LABELS[status] || status;
-  return simpleEmailHTML(`Sua solicitação de crédito: ${label}`, [
-    `A solicitação <strong>${lead.leadNumber}</strong> agora está com status <strong>${label}</strong>.`,
-  ], { ctaHref: "https://marquespromotora.com/index.html", ctaLabel: "Ver simulação" });
+  const [labelPt, labelEn] = LEAD_STATUS_LABELS[status] || [status, status];
+  return simpleEmailHTML(bi(`Sua solicitação de crédito: ${labelPt}`, `Your credit request: ${labelEn}`), [
+    [`A solicitação <strong>${lead.leadNumber}</strong> agora está com status <strong>${labelPt}</strong>.`, `Request <strong>${lead.leadNumber}</strong> is now: <strong>${labelEn}</strong>.`],
+  ], { ctaHref: "https://marquespromotora.com/index.html", ctaLabel: bi("Ver simulação", "View simulation") });
 }
 
 /* ======================================================================
@@ -231,69 +262,81 @@ function isHttpUrl(v) {
 
 function pagamentoValorHTML(link) {
   if (isHttpUrl(link)) {
-    return `<p style="margin:14px 0 0; color:#93938f; font-size:12px; word-break:break-all;">Ou copie o link: ${escHtml(link)}</p>`;
+    return `<p style="margin:14px 0 0; color:#93938f; font-size:12px; word-break:break-all;">Ou copie o link: ${escHtml(link)}<br><em>Or copy the link:</em> ${escHtml(link)}</p>`;
   }
   return `<div style="background:#f7f6f3; border:1px dashed #F7941E; border-radius:12px; padding:14px 16px; margin:6px 0 4px; word-break:break-all; font-family:'Courier New',monospace; font-size:14px; color:#1a1200;">${escHtml(link)}</div>`;
 }
 
 function pagamentoLinkParaParceiroHTML({ orderNumber, clienteNome, link, pagamento }) {
-  const label = pagamento === "boleto" ? "boleto" : "link de pagamento";
+  const [labelPt, labelEn] = pagamento === "boleto" ? ["boleto", "invoice (boleto)"] : ["link de pagamento", "payment link"];
   return emailShellHTML({
-    title: `Pedido ${escHtml(orderNumber)}: ${label} pronto`,
-    bodyHTML: paragraphsHTML([
-      `O pedido <strong>${escHtml(orderNumber)}</strong> (cliente: <strong>${escHtml(clienteNome)}</strong>) já tem o ${label} pra fechar o pagamento.`,
-      `Repasse pro cliente:`,
+    title: bi(`Pedido ${escHtml(orderNumber)}: ${labelPt} pronto`, `Order ${escHtml(orderNumber)}: ${labelEn} ready`),
+    bodyHTML: biParagraphsHTML([
+      [
+        `O pedido <strong>${escHtml(orderNumber)}</strong> (cliente: <strong>${escHtml(clienteNome)}</strong>) já tem o ${labelPt} pra fechar o pagamento.`,
+        `Order <strong>${escHtml(orderNumber)}</strong> (customer: <strong>${escHtml(clienteNome)}</strong>) now has the ${labelEn} to complete payment.`,
+      ],
+      ["Repasse pro cliente:", "Pass it on to the customer:"],
     ]) + pagamentoValorHTML(link),
     ctaHref: isHttpUrl(link) ? link : undefined,
-    ctaLabel: pagamento === "boleto" ? "Ver boleto" : "Pagar agora",
+    ctaLabel: pagamento === "boleto" ? bi("Ver boleto", "View invoice") : bi("Pagar agora", "Pay now"),
   });
 }
 
 function pagamentoLinkParaClienteHTML({ orderNumber, link, pagamento }) {
-  const label = pagamento === "boleto" ? "boleto" : "link de pagamento";
+  const [labelPt, labelEn] = pagamento === "boleto" ? ["boleto", "invoice (boleto)"] : ["link de pagamento", "payment link"];
   return emailShellHTML({
-    title: `Seu pedido ${escHtml(orderNumber)}: ${label} pronto`,
-    bodyHTML: paragraphsHTML([
-      `Seu pedido <strong>${escHtml(orderNumber)}</strong> já tem o ${label} pra fechar o pagamento.`,
+    title: bi(`Seu pedido ${escHtml(orderNumber)}: ${labelPt} pronto`, `Your order ${escHtml(orderNumber)}: ${labelEn} ready`),
+    bodyHTML: biParagraphsHTML([
+      [
+        `Seu pedido <strong>${escHtml(orderNumber)}</strong> já tem o ${labelPt} pra fechar o pagamento.`,
+        `Your order <strong>${escHtml(orderNumber)}</strong> now has the ${labelEn} to complete payment.`,
+      ],
     ]) + pagamentoValorHTML(link),
     ctaHref: isHttpUrl(link) ? link : undefined,
-    ctaLabel: pagamento === "boleto" ? "Ver boleto" : "Pagar agora",
+    ctaLabel: pagamento === "boleto" ? bi("Ver boleto", "View invoice") : bi("Pagar agora", "Pay now"),
   });
 }
 
 function pagamentoLinkConsorcioHTML({ grupoNome, link }) {
   return emailShellHTML({
-    title: `Sua Compra Programada: pagamento liberado`,
-    bodyHTML: paragraphsHTML([
-      `Recebemos seus dados e documentos pra contratar o grupo <strong>${escHtml(grupoNome)}</strong>. Segue o link (ou chave PIX) pra fechar o pagamento da primeira parcela:`,
+    title: bi("Sua Compra Programada: pagamento liberado", "Your Compra Programada: payment released"),
+    bodyHTML: biParagraphsHTML([
+      [
+        `Recebemos seus dados e documentos pra contratar o grupo <strong>${escHtml(grupoNome)}</strong>. Segue o link (ou chave PIX) pra fechar o pagamento da primeira parcela:`,
+        `We received your details and documents to join group <strong>${escHtml(grupoNome)}</strong>. Here's the link (or PIX key) to complete the first installment payment:`,
+      ],
     ]) + pagamentoValorHTML(link),
     ctaHref: isHttpUrl(link) ? link : undefined,
-    ctaLabel: "Pagar agora",
+    ctaLabel: bi("Pagar agora", "Pay now"),
   });
 }
 
 function adminNovaAdesaoConsorcioHTML(adesao) {
-  return simpleEmailHTML("Nova adesão na Compra Programada", [
-    `<strong>${escHtml(adesao.nome)}</strong> contratou o grupo <strong>${escHtml(adesao.grupoNome)}</strong> e já anexou os documentos.`,
-    `Confira os documentos e lance o link de pagamento (ou chave PIX) pra ela.`,
-  ], { ctaHref: "https://marquespromotora.com/admin/compra-programada.html", ctaLabel: "Ver adesão" });
+  return simpleEmailHTML(bi("Nova adesão na Compra Programada", "New Compra Programada signup"), [
+    [
+      `<strong>${escHtml(adesao.nome)}</strong> contratou o grupo <strong>${escHtml(adesao.grupoNome)}</strong> e já anexou os documentos.`,
+      `<strong>${escHtml(adesao.nome)}</strong> joined group <strong>${escHtml(adesao.grupoNome)}</strong> and already attached the documents.`,
+    ],
+    ["Confira os documentos e lance o link de pagamento (ou chave PIX) pra ela.", "Check the documents and send them the payment link (or PIX key)."],
+  ], { ctaHref: "https://marquespromotora.com/admin/compra-programada.html", ctaLabel: bi("Ver adesão", "View signup") });
 }
 
 /* ======================================================================
    PENDÊNCIA NO PEDIDO (ex: comprovante de endereço ilegível)
    ====================================================================== */
 function pendenciaParaParceiroHTML({ orderNumber, clienteNome, texto }) {
-  return simpleEmailHTML(`Pedido ${orderNumber}: pendência`, [
-    `O pedido <strong>${escHtml(orderNumber)}</strong> (cliente: <strong>${escHtml(clienteNome)}</strong>) está com uma pendência.`,
-    `<strong>Pendência:</strong> ${escHtml(texto)}`,
-  ], { ctaHref: `${SITE_URL}/parceiros.html`, ctaLabel: "Ver no meu painel" });
+  return simpleEmailHTML(bi(`Pedido ${orderNumber}: pendência`, `Order ${orderNumber}: pending issue`), [
+    [`O pedido <strong>${escHtml(orderNumber)}</strong> (cliente: <strong>${escHtml(clienteNome)}</strong>) está com uma pendência.`, `Order <strong>${escHtml(orderNumber)}</strong> (customer: <strong>${escHtml(clienteNome)}</strong>) has a pending issue.`],
+    [`<strong>Pendência:</strong> ${escHtml(texto)}`, `<strong>Issue:</strong> ${escHtml(texto)}`],
+  ], { ctaHref: `${SITE_URL}/parceiros.html`, ctaLabel: bi("Ver no meu painel", "View in my panel") });
 }
 
 function pendenciaParaClienteHTML({ orderNumber, texto }) {
-  return simpleEmailHTML(`Seu pedido ${orderNumber}: pendência`, [
-    `Seu pedido <strong>${escHtml(orderNumber)}</strong> está com uma pendência.`,
-    `<strong>Pendência:</strong> ${escHtml(texto)}`,
-  ], { ctaHref: `${SITE_URL}/conta/minha-conta.html`, ctaLabel: "Ver meu pedido" });
+  return simpleEmailHTML(bi(`Seu pedido ${orderNumber}: pendência`, `Your order ${orderNumber}: pending issue`), [
+    [`Seu pedido <strong>${escHtml(orderNumber)}</strong> está com uma pendência.`, `Your order <strong>${escHtml(orderNumber)}</strong> has a pending issue.`],
+    [`<strong>Pendência:</strong> ${escHtml(texto)}`, `<strong>Issue:</strong> ${escHtml(texto)}`],
+  ], { ctaHref: `${SITE_URL}/conta/minha-conta.html`, ctaLabel: bi("Ver meu pedido", "View my order") });
 }
 
 module.exports = {

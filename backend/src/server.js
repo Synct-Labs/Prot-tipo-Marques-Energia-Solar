@@ -225,8 +225,8 @@ async function handleApi(req, res, pathname) {
     try {
       await mailer.sendEmail({
         to: record.email,
-        subject: "Novo login no painel Marques",
-        text: `Sua conta entrou no painel agora (IP ${ip}). Se não foi você, troque sua senha.`,
+        subject: "Novo login no painel Marques / New login to the Marques panel",
+        text: `Sua conta entrou no painel agora (IP ${ip}). Se não foi você, troque sua senha.\n\nYour account just logged into the panel (IP ${ip}). If this wasn't you, change your password.`,
         html: mailer.adminLoginNotificationHTML({ ip, quando: new Date().toLocaleString("pt-BR") }),
       });
     } catch (e) { console.error("[auth] falha ao avisar login do admin:", e.message); }
@@ -282,8 +282,8 @@ async function handleApi(req, res, pathname) {
       try {
         await mailer.sendEmail({
           to: record.email,
-          subject: "Redefinir sua senha — Painel Marques",
-          text: `Pediram a redefinição da sua senha. Acesse o link abaixo pra escolher uma nova (expira em 1 hora). Se não foi você, ignore este e-mail.\n${mailer.passwordResetLink("admin", token)}`,
+          subject: "Redefinir sua senha — Painel Marques / Reset your password — Marques Panel",
+          text: `Pediram a redefinição da sua senha. Acesse o link abaixo pra escolher uma nova (expira em 1 hora). Se não foi você, ignore este e-mail.\n${mailer.passwordResetLink("admin", token)}\n\nSomeone requested a password reset. Use the link below to choose a new one (expires in 1 hour). If this wasn't you, ignore this email.\n${mailer.passwordResetLink("admin", token)}`,
           html: mailer.passwordResetEmailHTML("admin", token),
         });
       } catch (e) { console.error("[auth] falha ao enviar e-mail de redefinição de senha:", e.message); }
@@ -400,8 +400,8 @@ async function handleApi(req, res, pathname) {
     try {
       const order = await orders.getOrderById(id);
       await notifications.notifyAdmins({
-        subject: `Novo pedido ${orderNumber} — Marques Energia Solar`,
-        text: `Pedido ${orderNumber} de ${order.customer.nome}, total ${order.total}.`,
+        subject: `Novo pedido ${orderNumber} — Marques Energia Solar / New order ${orderNumber}`,
+        text: `Pedido ${orderNumber} de ${order.customer.nome}, total ${order.total}.\n\nOrder ${orderNumber} from ${order.customer.nome}, total ${order.total}.`,
         html: mailer.adminNovoPedidoHTML(order),
       });
     } catch (e) { console.error("[notifications] falha ao avisar admins do pedido novo:", e.message); }
@@ -435,8 +435,8 @@ async function handleApi(req, res, pathname) {
     try {
       const lead = await creditLeads.getLeadById(id);
       await notifications.notifyAdmins({
-        subject: `Nova solicitação de crédito ${leadNumber} — Marques Promotora`,
-        text: `Solicitação ${leadNumber} de ${lead.dadosBasicos.nome}, modalidade ${lead.modalidadeInteresse}.`,
+        subject: `Nova solicitação de crédito ${leadNumber} — Marques Promotora / New credit request ${leadNumber}`,
+        text: `Solicitação ${leadNumber} de ${lead.dadosBasicos.nome}, modalidade ${lead.modalidadeInteresse}.\n\nRequest ${leadNumber} from ${lead.dadosBasicos.nome}, type ${lead.modalidadeInteresse}.`,
         html: mailer.adminNovaSolicitacaoCreditoHTML(lead),
       });
     } catch (e) { console.error("[notifications] falha ao avisar admins da solicitação nova:", e.message); }
@@ -486,8 +486,8 @@ async function handleApi(req, res, pathname) {
       try {
         await mailer.sendEmail({
           to: lead.dadosBasicos.email,
-          subject: `Solicitação ${lead.leadNumber}: ${body.status}`,
-          text: `Sua solicitação de crédito ${lead.leadNumber} agora está: ${body.status}.`,
+          subject: `Solicitação/Request ${lead.leadNumber}: ${body.status}`,
+          text: `Sua solicitação de crédito ${lead.leadNumber} agora está: ${body.status}.\n\nYour credit request ${lead.leadNumber} is now: ${body.status}.`,
           html: mailer.leadStatusHTML(lead, body.status),
         });
       } catch (e) { console.error("[notifications] falha ao avisar cliente do status da solicitação:", e.message); }
@@ -562,8 +562,8 @@ async function handleApi(req, res, pathname) {
       try {
         await mailer.sendEmail({
           to: order.customer.email,
-          subject: `Pedido ${order.orderNumber}: ${body.status}`,
-          text: `Seu pedido ${order.orderNumber} agora está: ${body.status}.`,
+          subject: `Pedido/Order ${order.orderNumber}: ${body.status}`,
+          text: `Seu pedido ${order.orderNumber} agora está: ${body.status}.\n\nYour order ${order.orderNumber} is now: ${body.status}.`,
           html: mailer.pedidoStatusHTML(order, body.status),
         });
       } catch (e) { console.error("[notifications] falha ao avisar cliente do status do pedido:", e.message); }
@@ -634,15 +634,15 @@ async function handleApi(req, res, pathname) {
       const contact = await partners.getContactById(order.partnerId);
       await mailer.sendEmail({
         to: contact.email,
-        subject: `Pedido ${order.orderNumber}: ${label} pronto`,
-        text: `O pedido ${order.orderNumber} (cliente: ${order.customer.nome}) já tem o ${label}: ${link}`,
+        subject: `Pedido ${order.orderNumber}: ${label} pronto / ready`,
+        text: `O pedido ${order.orderNumber} (cliente: ${order.customer.nome}) já tem o ${label}: ${link}\n\nOrder ${order.orderNumber} (customer: ${order.customer.nome}) now has the ${label}: ${link}`,
         html: mailer.pagamentoLinkParaParceiroHTML({ orderNumber: order.orderNumber, clienteNome: order.customer.nome, link, pagamento: order.pagamento }),
       });
     } else {
       await mailer.sendEmail({
         to: order.customer.email,
-        subject: `Seu pedido ${order.orderNumber}: ${label} pronto`,
-        text: `Seu pedido ${order.orderNumber} já tem o ${label}: ${link}`,
+        subject: `Seu pedido ${order.orderNumber}: ${label} pronto / ready`,
+        text: `Seu pedido ${order.orderNumber} já tem o ${label}: ${link}\n\nYour order ${order.orderNumber} now has the ${label}: ${link}`,
         html: mailer.pagamentoLinkParaClienteHTML({ orderNumber: order.orderNumber, link, pagamento: order.pagamento }),
       });
     }
@@ -669,15 +669,15 @@ async function handleApi(req, res, pathname) {
       const contact = await partners.getContactById(order.partnerId);
       await mailer.sendEmail({
         to: contact.email,
-        subject: `Pedido ${order.orderNumber}: pendência`,
-        text: `O pedido ${order.orderNumber} (cliente: ${order.customer.nome}) está com uma pendência: ${texto}`,
+        subject: `Pedido ${order.orderNumber}: pendência / pending issue`,
+        text: `O pedido ${order.orderNumber} (cliente: ${order.customer.nome}) está com uma pendência: ${texto}\n\nOrder ${order.orderNumber} (customer: ${order.customer.nome}) has a pending issue: ${texto}`,
         html: mailer.pendenciaParaParceiroHTML({ orderNumber: order.orderNumber, clienteNome: order.customer.nome, texto }),
       });
     } else {
       await mailer.sendEmail({
         to: order.customer.email,
-        subject: `Seu pedido ${order.orderNumber}: pendência`,
-        text: `Seu pedido ${order.orderNumber} está com uma pendência: ${texto}`,
+        subject: `Seu pedido ${order.orderNumber}: pendência / pending issue`,
+        text: `Seu pedido ${order.orderNumber} está com uma pendência: ${texto}\n\nYour order ${order.orderNumber} has a pending issue: ${texto}`,
         html: mailer.pendenciaParaClienteHTML({ orderNumber: order.orderNumber, texto }),
       });
     }
@@ -1233,8 +1233,8 @@ async function handleApi(req, res, pathname) {
       try {
         await mailer.sendEmail({
           to: record.email,
-          subject: "Redefinir sua senha — Marques",
-          text: `Pediram a redefinição da sua senha. Acesse o link abaixo pra escolher uma nova (expira em 1 hora). Se não foi você, ignore este e-mail.\n${mailer.passwordResetLink("customer", token)}`,
+          subject: "Redefinir sua senha — Marques / Reset your password — Marques",
+          text: `Pediram a redefinição da sua senha. Acesse o link abaixo pra escolher uma nova (expira em 1 hora). Se não foi você, ignore este e-mail.\n${mailer.passwordResetLink("customer", token)}\n\nSomeone requested a password reset. Use the link below to choose a new one (expires in 1 hour). If this wasn't you, ignore this email.\n${mailer.passwordResetLink("customer", token)}`,
           html: mailer.passwordResetEmailHTML("customer", token),
         });
       } catch (e) { console.error("[customers] falha ao enviar e-mail de redefinição de senha:", e.message); }
@@ -1346,8 +1346,8 @@ async function handleApi(req, res, pathname) {
       });
       try {
         await notifications.notifyAdmins({
-          subject: `Nova adesão na Compra Programada — ${adesao.grupoNome}`,
-          text: `${adesao.nome} contratou o grupo ${adesao.grupoNome} e já anexou os documentos.`,
+          subject: `Nova adesão na Compra Programada — ${adesao.grupoNome} / New Compra Programada signup`,
+          text: `${adesao.nome} contratou o grupo ${adesao.grupoNome} e já anexou os documentos.\n\n${adesao.nome} joined group ${adesao.grupoNome} and already attached the documents.`,
           html: mailer.adminNovaAdesaoConsorcioHTML(adesao),
         });
       } catch (e) { console.error("[notifications] falha ao avisar admins da nova adesão:", e.message); }
@@ -1459,8 +1459,8 @@ async function handleApi(req, res, pathname) {
       if (adesao.email) {
         await mailer.sendEmail({
           to: adesao.email,
-          subject: `Sua Compra Programada: pagamento liberado`,
-          text: `Segue o link (ou chave PIX) pra fechar o pagamento do grupo ${adesao.grupoNome}: ${link}`,
+          subject: `Sua Compra Programada: pagamento liberado / Your Compra Programada: payment released`,
+          text: `Segue o link (ou chave PIX) pra fechar o pagamento do grupo ${adesao.grupoNome}: ${link}\n\nHere's the link (or PIX key) to complete the payment for group ${adesao.grupoNome}: ${link}`,
           html: mailer.pagamentoLinkConsorcioHTML({ grupoNome: adesao.grupoNome, link }),
         });
       }
@@ -1533,8 +1533,8 @@ async function handleApi(req, res, pathname) {
       try { await payPartner.onKycSubmitted(row.id); } catch (err) { console.error("[payPartner] falha ao enviar KYC:", err.message); }
       try {
         await notifications.notifyAdmins({
-          subject: `Nova solicitação de análise de conta — ${customer.nome}`,
-          text: `${customer.nome} (${customer.email}) enviou o cadastro Marques Pay pra análise.`,
+          subject: `Nova solicitação de análise de conta — ${customer.nome} / New account review request`,
+          text: `${customer.nome} (${customer.email}) enviou o cadastro Marques Pay pra análise.\n\n${customer.nome} (${customer.email}) submitted their Marques Pay application for review.`,
           html: mailer.adminNovaSolicitacaoContaHTML(customer),
         });
       } catch (err) { console.error("[notifications] falha ao avisar admins da solicitação de conta:", err.message); }
@@ -1574,7 +1574,7 @@ async function handleApi(req, res, pathname) {
         await payKyc.approve(id, autor);
         const item = await payKyc.getForAdmin(id);
         try {
-          await mailer.sendEmail({ to: item.email, subject: "Sua conta Marques Pay foi aprovada!", text: "Seu cadastro foi aprovado. Sua conta digital já está ativa.", html: mailer.contaAprovadaHTML() });
+          await mailer.sendEmail({ to: item.email, subject: "Sua conta Marques Pay foi aprovada! / Your Marques Pay account was approved!", text: "Seu cadastro foi aprovado. Sua conta digital já está ativa.\n\nYour application was approved. Your digital account is now active.", html: mailer.contaAprovadaHTML() });
         } catch (e) { console.error("[notifications] falha ao avisar cliente da aprovação:", e.message); }
         return sendJSON(res, 200, { ok: true, item });
       });
@@ -1585,7 +1585,7 @@ async function handleApi(req, res, pathname) {
         await payKyc.reject(id, autor, body.motivo);
         const item = await payKyc.getForAdmin(id);
         try {
-          await mailer.sendEmail({ to: item.email, subject: "Sua conta Marques Pay não foi aprovada", text: `Seu cadastro não foi aprovado. Motivo: ${body.motivo || "não informado"}.`, html: mailer.contaRecusadaHTML(body.motivo) });
+          await mailer.sendEmail({ to: item.email, subject: "Sua conta Marques Pay não foi aprovada / Your Marques Pay account was not approved", text: `Seu cadastro não foi aprovado. Motivo: ${body.motivo || "não informado"}.\n\nYour application was not approved. Reason: ${body.motivo || "not informed"}.`, html: mailer.contaRecusadaHTML(body.motivo) });
         } catch (e) { console.error("[notifications] falha ao avisar cliente da recusa:", e.message); }
         return sendJSON(res, 200, { ok: true, item });
       });
@@ -1673,8 +1673,8 @@ async function handleApi(req, res, pathname) {
     await orders.setPendenciaResposta(id, { buffer, tipo: body.arquivoTipo, nome: body.arquivoNome, texto });
     try {
       await notifications.notifyAdmins({
-        subject: `Pedido ${order.orderNumber}: resposta à pendência`,
-        text: `${customer.nome} respondeu a pendência do pedido ${order.orderNumber}${texto ? ": " + texto : "."}`,
+        subject: `Pedido ${order.orderNumber}: resposta à pendência / pending issue reply`,
+        text: `${customer.nome} respondeu a pendência do pedido ${order.orderNumber}${texto ? ": " + texto : "."}\n\n${customer.nome} replied to order ${order.orderNumber}'s pending issue${texto ? ": " + texto : "."}`,
         html: mailer.adminPendenciaRespostaHTML({ orderNumber: order.orderNumber, autor: `parceiro:${customer.email}`, texto }),
       });
     } catch (e) { console.error("[notifications] falha ao avisar admins da resposta de pendência:", e.message); }
