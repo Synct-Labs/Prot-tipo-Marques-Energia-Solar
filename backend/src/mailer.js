@@ -1,11 +1,13 @@
 /* =====================================================================
-   ENVIO DE E-MAIL (verificação em duas etapas por e-mail)
+   ENVIO DE E-MAIL (verificação em duas etapas, redefinição de senha,
+   notificações de pedido/crédito/Marques Pay)
    ---------------------------------------------------------------------
-   Envia via SMTP do Gmail/Google Workspace (nodemailer), usando a mesma
-   conta contato@marquespromotora.com já configurada pro site. Sem
-   SMTP_USER/SMTP_PASS configurados (backend/.env), o e-mail não é
-   enviado de verdade: o conteúdo só aparece no log do servidor, pra dar
-   pra testar o fluxo sem precisar configurar nada primeiro.
+   Dois jeitos de enviar de verdade, nessa ordem de prioridade: Resend
+   (RESEND_API_KEY, via API HTTP) ou SMTP do Gmail/Google Workspace
+   (SMTP_USER/SMTP_PASS, via nodemailer). Sem nenhum dos dois configurado
+   em backend/.env, o e-mail não é enviado de verdade: o conteúdo só
+   aparece no log do servidor, pra dar pra testar o fluxo sem precisar
+   configurar nada primeiro.
 
    Todo e-mail é bilíngue (PT + EN) no mesmo corpo — o backend não sabe
    qual idioma o destinatário prefere (isso só existe no localStorage do
@@ -28,28 +30,56 @@ function getTransporter() {
   return transporter;
 }
 
+// Envia via API HTTP do Resend (https://resend.com) — não depende de porta
+// SMTP liberada no servidor, o que costuma ser mais simples de configurar
+// numa VPS. Usa o fetch nativo do Node 18+, sem dependência extra.
+async function sendViaResend({ to, subject, text, html }) {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ from: config.MAIL_FROM, to, subject, text, html: html || `<p>${text}</p>` }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Resend respondeu ${res.status}: ${body}`);
+  }
+}
+
 async function sendEmail({ to, subject, text, html }) {
-  if (!config.SMTP_USER || !config.SMTP_PASS) {
-    console.log(
-      `\n[e-mail simulado — configure SMTP_USER/SMTP_PASS em backend/.env pra enviar de verdade]\n` +
-      `Para: ${to}\nAssunto: ${subject}\n${text}\n`
-    );
-    return { simulated: true };
+  if (config.RESEND_API_KEY) {
+    try {
+      await sendViaResend({ to, subject, text, html });
+    } catch (err) {
+      console.error("[mailer] Falha ao enviar e-mail via Resend:", err.message);
+      throw new Error("Não foi possível enviar o e-mail agora. Tente novamente em instantes.");
+    }
+    return { simulated: false };
   }
 
-  try {
-    await getTransporter().sendMail({
-      from: config.MAIL_FROM,
-      to,
-      subject,
-      text,
-      html: html || `<p>${text}</p>`,
-    });
-  } catch (err) {
-    console.error("[mailer] Falha ao enviar e-mail via SMTP:", err.message);
-    throw new Error("Não foi possível enviar o e-mail agora. Tente novamente em instantes.");
+  if (config.SMTP_USER && config.SMTP_PASS) {
+    try {
+      await getTransporter().sendMail({
+        from: config.MAIL_FROM,
+        to,
+        subject,
+        text,
+        html: html || `<p>${text}</p>`,
+      });
+    } catch (err) {
+      console.error("[mailer] Falha ao enviar e-mail via SMTP:", err.message);
+      throw new Error("Não foi possível enviar o e-mail agora. Tente novamente em instantes.");
+    }
+    return { simulated: false };
   }
-  return { simulated: false };
+
+  console.log(
+    `\n[e-mail simulado — configure RESEND_API_KEY ou SMTP_USER/SMTP_PASS em backend/.env pra enviar de verdade]\n` +
+    `Para: ${to}\nAssunto: ${subject}\n${text}\n`
+  );
+  return { simulated: true };
 }
 
 // Domínio "de verdade" do site (usado nos links/CTA e na imagem do logo,
