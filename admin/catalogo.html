@@ -85,25 +85,26 @@
 <script src="admin.js"></script>
 <script>
 let allProducts = [];
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
 
 /* ---------------------- CONFIG DE CATEGORIAS (espelha app.js) ---------------------- */
 const CATEGORY_LABELS = {
-  kits: "Kits Prontos",
-  paineis: "Painéis Solares",
-  inversores: "Inversores",
-  cabos: "Cabos e Conectores",
-  estrutura: "Parafusos e Estrutura",
-  baterias: "Baterias",
-  controlador: "Controlador de Carga",
+  kits: t("Kits Prontos"),
+  paineis: t("Painéis Solares"),
+  inversores: t("Inversores"),
+  cabos: t("Cabos e Conectores"),
+  estrutura: t("Parafusos e Estrutura"),
+  baterias: t("Baterias"),
+  controlador: t("Controlador de Carga"),
 };
 const CATEGORY_SPEC_FIELDS = {
-  kits: [["potencia","Potência do sistema"],["modulos","Módulos"],["inversor","Inversor"],["entradaMax","Potência máx. de entrada"],["saidaMax","Potência máx. de saída"],["consumoAlvo","Consumo médio estimado"]],
-  paineis: [["potencia","Potência"],["tipo","Tipo de célula"],["eficiencia","Eficiência"],["tensaoMax","Tensão máxima"],["correnteMax","Corrente máxima"],["dimensoes","Dimensões"],["peso","Peso"],["garantia","Garantia"]],
-  inversores: [["potencia","Potência"],["mppt","Entradas MPPT"],["tensaoSaida","Tensão de saída"],["eficiencia","Eficiência máxima"],["comunicacao","Comunicação"],["protecao","Grau de proteção"],["garantia","Garantia"]],
-  cabos: [["bitola","Bitola"],["comprimento","Comprimento"],["isolacao","Isolação"],["tensaoMax","Tensão máxima"],["resistencia","Resistência"]],
-  estrutura: [["material","Material"],["capacidade","Capacidade/Uso"],["fixacao","Tipo de fixação"],["resistencia","Resistência"],["garantia","Garantia"]],
-  baterias: [["tensao","Tensão"],["capacidade","Capacidade"],["tecnologia","Tecnologia"],["ciclos","Vida útil"],["dimensoes","Dimensões"],["peso","Peso"],["garantia","Garantia"]],
-  controlador: [["tipo","Tipo de carregamento"],["corrente","Corrente nominal"],["tensaoSistema","Tensão do sistema"],["eficiencia","Eficiência"],["protecoes","Proteções"],["dimensoes","Dimensões"],["garantia","Garantia"]],
+  kits: [["potencia",t("Potência do sistema")],["modulos",t("Módulos")],["inversor",t("Inversor")],["entradaMax",t("Potência máx. de entrada")],["saidaMax",t("Potência máx. de saída")],["consumoAlvo",t("Consumo médio estimado")]],
+  paineis: [["potencia",t("Potência")],["tipo",t("Tipo de célula")],["eficiencia",t("Eficiência")],["tensaoMax",t("Tensão máxima")],["correnteMax",t("Corrente máxima")],["dimensoes",t("Dimensões")],["peso",t("Peso")],["garantia",t("Garantia")]],
+  inversores: [["potencia",t("Potência")],["mppt",t("Entradas MPPT")],["tensaoSaida",t("Tensão de saída")],["eficiencia",t("Eficiência máxima")],["comunicacao",t("Comunicação")],["protecao",t("Grau de proteção")],["garantia",t("Garantia")]],
+  cabos: [["bitola",t("Bitola")],["comprimento",t("Comprimento")],["isolacao",t("Isolação")],["tensaoMax",t("Tensão máxima")],["resistencia",t("Resistência")]],
+  estrutura: [["material",t("Material")],["capacidade",t("Capacidade/Uso")],["fixacao",t("Tipo de fixação")],["resistencia",t("Resistência")],["garantia",t("Garantia")]],
+  baterias: [["tensao",t("Tensão")],["capacidade",t("Capacidade")],["tecnologia",t("Tecnologia")],["ciclos",t("Vida útil")],["dimensoes",t("Dimensões")],["peso",t("Peso")],["garantia",t("Garantia")]],
+  controlador: [["tipo",t("Tipo de carregamento")],["corrente",t("Corrente nominal")],["tensaoSistema",t("Tensão do sistema")],["eficiencia",t("Eficiência")],["protecoes",t("Proteções")],["dimensoes",t("Dimensões")],["garantia",t("Garantia")]],
 };
 const CATEGORY_FACETS = {
   kits: ["Até 400 kWh/mês", "400–700 kWh/mês", "700–1000 kWh/mês", "Acima de 1000 kWh/mês"],
@@ -131,7 +132,7 @@ function categoryOptionsHTML(selected){
 function facetOptionsHTML(cat, selected){
   const opts = CATEGORY_FACETS[cat] || [];
   return `<option value="">—</option>` + opts.map(v =>
-    `<option value="${v}" ${v === selected ? "selected" : ""}>${v}</option>`).join("");
+    `<option value="${v}" ${v === selected ? "selected" : ""}>${t(v)}</option>`).join("");
 }
 function specFieldsHTML(cat, specs = {}){
   const fields = CATEGORY_SPEC_FIELDS[cat] || [];
@@ -142,12 +143,12 @@ function specFieldsHTML(cat, specs = {}){
 }
 function bundleItemRowHTML(it = {}){
   return `<div class="admin-bundle-item-row">
-    <input type="text" class="bi-brand" placeholder="Marca" value="${esc(it.brand)}">
-    <input type="text" class="bi-name" placeholder="Nome do item" value="${esc(it.name)}">
+    <input type="text" class="bi-brand" placeholder="${t("Marca")}" value="${esc(it.brand)}">
+    <input type="text" class="bi-name" placeholder="${t("Nome do item")}" value="${esc(it.name)}">
     <input type="text" class="bi-sku" placeholder="SKU" value="${esc(it.sku)}">
-    <input type="number" class="bi-qty" placeholder="Qtd" min="1" value="${it.qty || 1}">
-    <input type="text" class="bi-image" placeholder="URL da imagem" value="${esc(it.image)}">
-    <button type="button" class="admin-btn admin-btn-ghost remove-bundle-item-btn" title="Remover item">✕</button>
+    <input type="number" class="bi-qty" placeholder="${t("Qtd")}" min="1" value="${it.qty || 1}">
+    <input type="text" class="bi-image" placeholder="${t("URL da imagem")}" value="${esc(it.image)}">
+    <button type="button" class="admin-btn admin-btn-ghost remove-bundle-item-btn" title="${t("Remover item")}">✕</button>
   </div>`;
 }
 
@@ -155,52 +156,52 @@ function productFormHTML(p = {}){
   const cat = p.cat || "kits";
   const isKit = cat === "kits";
   return `
-    <label class="admin-field">Categoria
+    <label class="admin-field">${t("Categoria")}
       <select class="pf-cat">${categoryOptionsHTML(cat)}</select>
     </label>
-    <label class="admin-field">Nome do produto
+    <label class="admin-field">${t("Nome do produto")}
       <input type="text" class="pf-name" value="${esc(p.name)}" required>
     </label>
-    <label class="admin-field">Marca
+    <label class="admin-field">${t("Marca")}
       <input type="text" class="pf-brand" value="${esc(p.brand)}">
     </label>
     <label class="admin-field">SKU
       <input type="text" class="pf-sku" value="${esc(p.sku)}">
     </label>
-    <label class="admin-field">Preço (R$)
+    <label class="admin-field">${t("Preço (R$)")}
       <input type="number" class="pf-price" min="0.01" step="0.01" value="${p.price ?? ""}" required>
     </label>
-    <label class="admin-field">Preço promocional (opcional)
+    <label class="admin-field">${t("Preço promocional (opcional)")}
       <input type="number" class="pf-promo-price" min="0.01" step="0.01" value="${p.promoPrice ?? ""}">
     </label>
-    <label class="admin-field">Rótulo da promoção
-      <input type="text" class="pf-promo-label" value="${esc(p.promoLabel)}" placeholder="Ex: Oferta de lançamento">
+    <label class="admin-field">${t("Rótulo da promoção")}
+      <input type="text" class="pf-promo-label" value="${esc(p.promoLabel)}" placeholder="${t("Ex: Oferta de lançamento")}">
     </label>
-    <label class="admin-field">Embalagem de venda
-      <input type="text" class="pf-emb" value="${esc(p.embVenda)}" placeholder="Ex: 1 unidade">
+    <label class="admin-field">${t("Embalagem de venda")}
+      <input type="text" class="pf-emb" value="${esc(p.embVenda)}" placeholder="${t("Ex: 1 unidade")}">
     </label>
-    <label class="admin-field">Subcategoria
+    <label class="admin-field">${t("Subcategoria")}
       <input type="text" class="pf-subcat" value="${esc(p.subcategoria)}">
     </label>
-    <label class="admin-field">Faixa do filtro (facet)
+    <label class="admin-field">${t("Faixa do filtro (facet)")}
       <select class="pf-facet">${facetOptionsHTML(cat, p.facetValue)}</select>
     </label>
-    <label class="admin-field col-span-2">URL da imagem
-      <input type="text" class="pf-image" value="${esc(p.image)}" placeholder="assets/products/arquivo.jpg ou URL completa">
+    <label class="admin-field col-span-2">${t("URL da imagem")}
+      <input type="text" class="pf-image" value="${esc(p.image)}" placeholder="${t("assets/products/arquivo.jpg ou URL completa")}">
     </label>
     <label class="admin-checkbox-row col-span-2">
-      <input type="checkbox" class="pf-launch" ${p.isLaunch ? "checked" : ""}> Marcar como "Lançamento"
+      <input type="checkbox" class="pf-launch" ${p.isLaunch ? "checked" : ""}> ${t('Marcar como "Lançamento"')}
     </label>
 
     <div class="col-span-2">
-      <h4 class="admin-form-section-title">Especificações</h4>
+      <h4 class="admin-form-section-title">${t("Especificações")}</h4>
       <div class="admin-product-form-grid" id="pfSpecsGrid">${specFieldsHTML(cat, p.specs)}</div>
     </div>
 
     <div class="col-span-2 admin-kit-block" id="pfKitBlock" ${isKit ? "" : 'style="display:none;"'}>
-      <h4 class="admin-form-section-title">Itens do kit (painéis, inversor...)</h4>
+      <h4 class="admin-form-section-title">${t("Itens do kit (painéis, inversor...)")}</h4>
       <div id="pfBundleItems">${(p.bundleItems || []).map(bundleItemRowHTML).join("")}</div>
-      <button type="button" class="admin-btn admin-btn-ghost" id="pfAddBundleItemBtn" style="width:auto; margin-top:8px;">+ Item do kit</button>
+      <button type="button" class="admin-btn admin-btn-ghost" id="pfAddBundleItemBtn" style="width:auto; margin-top:8px;">${t("+ Item do kit")}</button>
     </div>
   `;
 }
@@ -276,22 +277,22 @@ document.getElementById("newProductForm").addEventListener("submit", async (e) =
   const errorBox = document.getElementById("newProductError");
   const btn = document.getElementById("newProductSubmitBtn");
   errorBox.classList.remove("show");
-  btn.disabled = true; btn.textContent = "Criando...";
+  btn.disabled = true; btn.textContent = t("Criando...");
   try{
     const payload = readProductForm(document.getElementById("newProductForm"));
     const res = await MES.apiPost("/api/admin/products", payload);
     if(!res.ok){
-      errorBox.textContent = res.error || "Não foi possível criar o produto.";
+      errorBox.textContent = res.error || t("Não foi possível criar o produto.");
       errorBox.classList.add("show");
       return;
     }
     document.getElementById("newProductCard").style.display = "none";
     newProductFieldsBox.innerHTML = productFormHTML({});
     wireProductForm(document.getElementById("newProductForm"));
-    MES.showToast("Produto criado.");
+    MES.showToast(t("Produto criado."));
     loadProducts();
   } finally {
-    btn.disabled = false; btn.textContent = "Criar produto";
+    btn.disabled = false; btn.textContent = t("Criar produto");
   }
 });
 
@@ -302,8 +303,8 @@ function productDetailHTML(p){
       <div class="admin-product-form-grid">${productFormHTML(p)}</div>
       <div class="admin-error" data-edit-error="${p.id}"></div>
       <div style="display:flex; gap:10px; margin-top:16px;">
-        <button type="button" class="admin-btn save-product-btn" style="width:auto;" data-id="${p.id}">Salvar alterações</button>
-        <button type="button" class="admin-btn admin-btn-ghost delete-product-btn" style="width:auto;" data-id="${p.id}">Excluir produto</button>
+        <button type="button" class="admin-btn save-product-btn" style="width:auto;" data-id="${p.id}">${t("Salvar alterações")}</button>
+        <button type="button" class="admin-btn admin-btn-ghost delete-product-btn" style="width:auto;" data-id="${p.id}">${t("Excluir produto")}</button>
       </div>
     </div>`;
 }
@@ -319,13 +320,13 @@ function priceCellHTML(p){
 function renderProducts(list){
   const tbody = document.getElementById("productsTableBody");
   if(list.length === 0){
-    tbody.innerHTML = `<tr><td colspan="6" class="admin-empty">Nenhum produto encontrado.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="admin-empty">${t("Nenhum produto encontrado.")}</td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(p => `
     <tr class="admin-order-row" data-id="${p.id}">
       <td data-label="" style="width:44px;">${p.image ? `<img src="${resolveImageUrl(p.image)}" alt="" style="width:36px;height:36px;object-fit:contain;border-radius:6px;background:#fff;">` : ""}</td>
-      <td data-label="Produto">${p.name}${p.isLaunch ? ' <span class="status-badge status-novo">Lançamento</span>' : ""}${p.promoPrice ? ` <span class="status-badge status-cancelado">${p.promoLabel || "Promoção"}</span>` : ""}</td>
+      <td data-label="Produto">${p.name}${p.isLaunch ? ` <span class="status-badge status-novo">${t("Lançamento")}</span>` : ""}${p.promoPrice ? ` <span class="status-badge status-cancelado">${p.promoLabel || t("Promoção")}</span>` : ""}</td>
       <td data-label="Categoria">${CATEGORY_LABELS[p.cat] || p.cat}</td>
       <td data-label="Marca">${p.brand || "-"}</td>
       <td data-label="Preço">${priceCellHTML(p)}</td>
@@ -352,9 +353,9 @@ function applyFilters(){
 }
 
 async function loadProducts(){
-  document.getElementById("productsTableBody").innerHTML = `<tr><td colspan="6" class="admin-loading">Carregando catálogo...</td></tr>`;
+  document.getElementById("productsTableBody").innerHTML = `<tr><td colspan="6" class="admin-loading">${t("Carregando catálogo...")}</td></tr>`;
   const res = await MES.apiGet("/api/products");
-  if(!res.ok){ MES.showToast(res.error || "Erro ao carregar catálogo."); return; }
+  if(!res.ok){ MES.showToast(res.error || t("Erro ao carregar catálogo.")); return; }
   allProducts = res.products;
   applyFilters();
 }
@@ -374,11 +375,11 @@ document.getElementById("productsTableBody").addEventListener("click", async (e)
     const payload = readProductForm(root);
     const res = await MES.apiPatch(`/api/admin/products/${encodeURIComponent(id)}`, payload);
     if(!res.ok){
-      errorBox.textContent = res.error || "Não foi possível salvar.";
+      errorBox.textContent = res.error || t("Não foi possível salvar.");
       errorBox.classList.add("show");
       return;
     }
-    MES.showToast("Produto atualizado.");
+    MES.showToast(t("Produto atualizado."));
     loadProducts();
     return;
   }
@@ -386,10 +387,10 @@ document.getElementById("productsTableBody").addEventListener("click", async (e)
   if(deleteBtn){
     const id = deleteBtn.dataset.id;
     const p = allProducts.find(x => x.id === id);
-    if(!confirm(`Excluir "${p ? p.name : id}" do catálogo? Essa ação não pode ser desfeita.`)) return;
+    if(!confirm(`${t("Excluir")} "${p ? p.name : id}" ${t('do catálogo? Essa ação não pode ser desfeita.')}`)) return;
     const res = await MES.apiDelete(`/api/admin/products/${encodeURIComponent(id)}`);
-    if(!res.ok){ MES.showToast(res.error || "Erro ao excluir."); return; }
-    MES.showToast("Produto excluído.");
+    if(!res.ok){ MES.showToast(res.error || t("Erro ao excluir.")); return; }
+    MES.showToast(t("Produto excluído."));
     loadProducts();
     return;
   }
