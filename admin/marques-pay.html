@@ -172,7 +172,7 @@
               <th>Contrato</th>
               <th>Investido</th>
               <th>Percentual</th>
-              <th>Início</th>
+              <th>Data de início</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -261,6 +261,7 @@
 <script src="admin.js"></script>
 <script>
 const API_BASE = window.MES_API_BASE || "";
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
 let allLoanContracts = [];
 let allPsContracts = [];
 const openLoanDetails = {};   // contractId -> installments[] já carregadas
@@ -294,7 +295,7 @@ function attachCustomerPicker(searchInput, resultsBox, hiddenIdInput, pickedLabe
     timer = setTimeout(async () => {
       const res = await MES.apiGet(`/api/admin/customers/search?q=${encodeURIComponent(q)}`);
       if(!res.ok || !res.customers.length){
-        resultsBox.innerHTML = `<div class="admin-customer-result-item" style="cursor:default;">Nenhum cliente encontrado.</div>`;
+        resultsBox.innerHTML = `<div class="admin-customer-result-item" style="cursor:default;">${t("Nenhum cliente encontrado.")}</div>`;
         resultsBox.classList.add("show");
         return;
       }
@@ -311,7 +312,7 @@ function attachCustomerPicker(searchInput, resultsBox, hiddenIdInput, pickedLabe
     if(!item) return;
     hiddenIdInput.value = item.dataset.id;
     searchInput.value = item.dataset.nome;
-    pickedLabel.textContent = `Selecionado: ${item.dataset.nome} (${item.dataset.email})`;
+    pickedLabel.textContent = `${t("Selecionado:")} ${item.dataset.nome} (${item.dataset.email})`;
     pickedLabel.classList.add("show");
     resultsBox.classList.remove("show");
   });
@@ -352,18 +353,18 @@ function loanContractStatusSelectHTML(currentStatus, contractId){
 
 function loanInstallmentsTableHTML(contractId){
   const list = openLoanDetails[contractId];
-  if(!list) return `<p class="admin-loading">Carregando parcelas...</p>`;
+  if(!list) return `<p class="admin-loading">${t("Carregando parcelas...")}</p>`;
   return `
     <table class="admin-mini-table">
-      <thead><tr><th>Parcela</th><th>Vencimento</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>${t("Parcela")}</th><th>${t("Vencimento")}</th><th>${t("Valor")}</th><th>${t("Status")}</th><th></th></tr></thead>
       <tbody>
         ${list.map(inst => `
           <tr>
             <td>${inst.numero}/${list.length}</td>
             <td>${inst.vencimento.split("-").reverse().join("/")}</td>
             <td>${MES.formatBRL(inst.valor)}</td>
-            <td><span class="status-badge status-${inst.status}">${MES.LOAN_INSTALLMENT_STATUS_LABELS[inst.status]}</span>${inst.pagoEm ? ` <span class="admin-note" style="display:inline;">em ${inst.pagoEm.split("-").reverse().join("/")}</span>` : ""}</td>
-            <td><button type="button" class="admin-btn admin-btn-ghost toggle-installment-btn" style="width:auto; padding:5px 10px; font-size:.76rem;" data-id="${inst.id}" data-status="${inst.status}">${inst.status === "pago" ? "Marcar pendente" : "Marcar pago"}</button></td>
+            <td><span class="status-badge status-${inst.status}">${MES.LOAN_INSTALLMENT_STATUS_LABELS[inst.status]}</span>${inst.pagoEm ? ` <span class="admin-note" style="display:inline;">${t("em (data)")} ${inst.pagoEm.split("-").reverse().join("/")}</span>` : ""}</td>
+            <td><button type="button" class="admin-btn admin-btn-ghost toggle-installment-btn" style="width:auto; padding:5px 10px; font-size:.76rem;" data-id="${inst.id}" data-status="${inst.status}">${inst.status === "pago" ? t("Marcar pendente") : t("Marcar pago")}</button></td>
           </tr>`).join("")}
       </tbody>
     </table>`;
@@ -372,11 +373,11 @@ function loanInstallmentsTableHTML(contractId){
 function loanDetailHTML(contract){
   return `
     <div class="admin-detail-block" style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
-      <div><h4>Status do contrato</h4>${loanContractStatusSelectHTML(contract.status, contract.id)}</div>
-      ${contract.temContrato ? `<div><h4>Contrato anexado</h4><a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/loans/contracts/${contract.id}/contrato" target="_blank" rel="noopener">Baixar contrato</a></div>` : ""}
+      <div><h4>${t("Status do contrato")}</h4>${loanContractStatusSelectHTML(contract.status, contract.id)}</div>
+      ${contract.temContrato ? `<div><h4>${t("Contrato anexado")}</h4><a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/loans/contracts/${contract.id}/contrato" target="_blank" rel="noopener">${t("Baixar contrato")}</a></div>` : ""}
     </div>
     <div class="admin-detail-block" style="grid-column: 1 / -1;" data-installments-for="${contract.id}">
-      <h4>Parcelas</h4>
+      <h4>${t("Parcelas")}</h4>
       ${loanInstallmentsTableHTML(contract.id)}
     </div>`;
 }
@@ -384,7 +385,7 @@ function loanDetailHTML(contract){
 function renderLoanContracts(list){
   const tbody = document.getElementById("loanContractsTableBody");
   if(list.length === 0){
-    tbody.innerHTML = `<tr><td colspan="6" class="admin-empty">Nenhum empréstimo cadastrado ainda.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="admin-empty">${t("Nenhum empréstimo cadastrado ainda.")}</td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(c => `
@@ -415,9 +416,9 @@ function applyLoanFilters(){
 }
 
 async function loadLoanContracts(){
-  document.getElementById("loanContractsTableBody").innerHTML = `<tr><td colspan="6" class="admin-loading">Carregando...</td></tr>`;
+  document.getElementById("loanContractsTableBody").innerHTML = `<tr><td colspan="6" class="admin-loading">${t("Carregando...")}</td></tr>`;
   const res = await MES.apiGet("/api/admin/loans/contracts");
-  if(!res.ok){ MES.showToast(res.error || "Erro ao carregar empréstimos."); return; }
+  if(!res.ok){ MES.showToast(res.error || t("Erro ao carregar empréstimos.")); return; }
   allLoanContracts = res.contracts;
   applyLoanFilters();
 }
@@ -437,12 +438,12 @@ document.getElementById("newLoanForm").addEventListener("submit", async (e) => {
 
   const customerId = document.getElementById("nlCustomerId").value;
   if(!customerId){
-    errorBox.textContent = "Busque e selecione o cliente na lista.";
+    errorBox.textContent = t("Busque e selecione o cliente na lista.");
     errorBox.classList.add("show");
     return;
   }
 
-  btn.disabled = true; btn.textContent = "Criando...";
+  btn.disabled = true; btn.textContent = t("Criando...");
   try{
     const payload = {
       customerId: Number(customerId),
@@ -454,7 +455,7 @@ document.getElementById("newLoanForm").addEventListener("submit", async (e) => {
     const contratoFile = document.getElementById("nlContratoFile").files[0];
     if(contratoFile){
       if(contratoFile.size > 8 * 1024 * 1024){
-        errorBox.textContent = "Contrato muito grande (máximo 8MB).";
+        errorBox.textContent = t("Contrato muito grande (máximo 8MB).");
         errorBox.classList.add("show");
         return;
       }
@@ -464,17 +465,17 @@ document.getElementById("newLoanForm").addEventListener("submit", async (e) => {
     }
     const res = await MES.apiPost("/api/admin/loans/contracts", payload);
     if(!res.ok){
-      errorBox.textContent = res.error || "Não foi possível criar o contrato.";
+      errorBox.textContent = res.error || t("Não foi possível criar o contrato.");
       errorBox.classList.add("show");
       return;
     }
     document.getElementById("newLoanForm").reset();
     document.getElementById("newLoanCard").style.display = "none";
     document.getElementById("nlCustomerPicked").classList.remove("show");
-    MES.showToast("Contrato de empréstimo criado.");
+    MES.showToast(t("Contrato de empréstimo criado."));
     loadLoanContracts();
   } finally {
-    btn.disabled = false; btn.textContent = "Criar contrato";
+    btn.disabled = false; btn.textContent = t("Criar contrato");
   }
 });
 
@@ -486,16 +487,16 @@ document.getElementById("loanContractsTableBody").addEventListener("click", asyn
     const id = toggleBtn.dataset.id;
     const newStatus = toggleBtn.dataset.status === "pago" ? "pendente" : "pago";
     const res = await MES.apiPatch(`/api/admin/loans/installments/${id}`, { status: newStatus });
-    if(!res.ok){ MES.showToast(res.error || "Erro ao atualizar parcela."); return; }
+    if(!res.ok){ MES.showToast(res.error || t("Erro ao atualizar parcela.")); return; }
     const contractRow = toggleBtn.closest(".admin-order-detail-inner");
     const contractId = contractRow.id.replace("loanDetailInner-", "");
     const detailRes = await MES.apiGet(`/api/admin/loans/contracts/${contractId}`);
     if(detailRes.ok){
       openLoanDetails[contractId] = detailRes.installments;
       document.querySelector(`[data-installments-for="${contractId}"]`).innerHTML =
-        `<h4>Parcelas</h4>${loanInstallmentsTableHTML(contractId)}`;
+        `<h4>${t("Parcelas")}</h4>${loanInstallmentsTableHTML(contractId)}`;
     }
-    MES.showToast("Parcela atualizada.");
+    MES.showToast(t("Parcela atualizada."));
     return;
   }
 
@@ -512,7 +513,7 @@ document.getElementById("loanContractsTableBody").addEventListener("click", asyn
     if(res.ok){
       openLoanDetails[id] = res.installments;
       const box = detail.querySelector(`[data-installments-for="${id}"]`);
-      if(box) box.innerHTML = `<h4>Parcelas</h4>${loanInstallmentsTableHTML(id)}`;
+      if(box) box.innerHTML = `<h4>${t("Parcelas")}</h4>${loanInstallmentsTableHTML(id)}`;
     }
   }
 });
@@ -522,8 +523,8 @@ document.getElementById("loanContractsTableBody").addEventListener("change", asy
   if(!select) return;
   const id = select.dataset.contractId;
   const res = await MES.apiPatch(`/api/admin/loans/contracts/${id}`, { status: select.value });
-  if(!res.ok){ MES.showToast(res.error || "Erro ao atualizar status."); return; }
-  MES.showToast("Status do contrato atualizado.");
+  if(!res.ok){ MES.showToast(res.error || t("Erro ao atualizar status.")); return; }
+  MES.showToast(t("Status do contrato atualizado."));
   const idx = allLoanContracts.findIndex(c => String(c.id) === String(id));
   if(idx > -1) allLoanContracts[idx] = res.contract;
   applyLoanFilters();
@@ -541,18 +542,18 @@ function psContractStatusSelectHTML(currentStatus, contractId){
 
 function psPaymentsTableHTML(contractId){
   const list = openPsDetails[contractId];
-  if(!list) return `<p class="admin-loading">Carregando repasses...</p>`;
-  if(list.length === 0) return `<p class="admin-note" style="margin:8px 0 0;">Nenhum repasse lançado ainda.</p>`;
+  if(!list) return `<p class="admin-loading">${t("Carregando repasses...")}</p>`;
+  if(list.length === 0) return `<p class="admin-note" style="margin:8px 0 0;">${t("Nenhum repasse lançado ainda.")}</p>`;
   return `
     <table class="admin-mini-table">
-      <thead><tr><th>Data</th><th>Valor</th><th>Observação</th><th>Comprovante</th></tr></thead>
+      <thead><tr><th>${t("Data")}</th><th>${t("Valor")}</th><th>${t("Observação")}</th><th>${t("Comprovante")}</th></tr></thead>
       <tbody>
         ${list.map(p => `
           <tr>
             <td>${p.dataPagamento.split("-").reverse().join("/")}</td>
             <td>${MES.formatBRL(p.valor)}</td>
             <td>${p.observacao || "-"}</td>
-            <td>${p.temComprovante ? `<a href="${API_BASE}/api/admin/profit-share/payments/${p.id}/comprovante" target="_blank" rel="noopener">Ver</a>` : "-"}</td>
+            <td>${p.temComprovante ? `<a href="${API_BASE}/api/admin/profit-share/payments/${p.id}/comprovante" target="_blank" rel="noopener">${t("Ver")}</a>` : "-"}</td>
           </tr>`).join("")}
       </tbody>
     </table>`;
@@ -561,38 +562,38 @@ function psPaymentsTableHTML(contractId){
 function psDetailHTML(contract){
   return `
     <div class="admin-detail-block" style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
-      <div><h4>Status do contrato</h4>${psContractStatusSelectHTML(contract.status, contract.id)}</div>
-      <div><h4>Periodicidade</h4><p style="margin:0;">${contract.periodicidade || "-"}</p></div>
+      <div><h4>${t("Status do contrato")}</h4>${psContractStatusSelectHTML(contract.status, contract.id)}</div>
+      <div><h4>${t("Periodicidade")}</h4><p style="margin:0;">${contract.periodicidade || "-"}</p></div>
       <div>
-        <h4>Visibilidade</h4>
+        <h4>${t("Visibilidade")}</h4>
         <label class="admin-checkbox-row" style="margin:0;">
           <input type="checkbox" class="ps-contract-visivel-toggle" data-contract-id="${contract.id}" ${contract.visivelCliente !== false ? "checked" : ""}>
-          Visível pro cliente no Marques Pay
+          ${t("Visível pro cliente no Marques Pay")}
         </label>
       </div>
-      ${contract.temContrato ? `<div><h4>Contrato anexado</h4><a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/profit-share/contracts/${contract.id}/contrato" target="_blank" rel="noopener">Baixar contrato</a></div>` : ""}
+      ${contract.temContrato ? `<div><h4>${t("Contrato anexado")}</h4><a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/profit-share/contracts/${contract.id}/contrato" target="_blank" rel="noopener">${t("Baixar contrato")}</a></div>` : ""}
     </div>
     <div class="admin-detail-block" style="grid-column: 1 / -1;" data-payments-for="${contract.id}">
-      <h4>Repasses lançados</h4>
+      <h4>${t("Repasses lançados")}</h4>
       ${psPaymentsTableHTML(contract.id)}
       <form class="admin-payment-form" data-contract-id="${contract.id}">
         <div class="admin-field">
-          <label>Valor (R$)</label>
+          <label>${t("Valor (R$)")}</label>
           <input type="number" class="ps-pay-valor" min="0.01" step="0.01" required style="width:110px;">
         </div>
         <div class="admin-field">
-          <label>Data do repasse</label>
+          <label>${t("Data do repasse")}</label>
           <input type="date" class="ps-pay-data" value="${new Date().toISOString().slice(0, 10)}" required>
         </div>
         <div class="admin-field">
-          <label>Observação (opcional)</label>
-          <input type="text" class="ps-pay-obs" placeholder="Ex: referente a agosto/2026" style="width:200px;">
+          <label>${t("Observação (opcional)")}</label>
+          <input type="text" class="ps-pay-obs" placeholder="${t("Ex: referente a agosto/2026")}" style="width:200px;">
         </div>
         <div class="admin-field">
-          <label>Comprovante (opcional)</label>
+          <label>${t("Comprovante (opcional)")}</label>
           <input type="file" class="ps-pay-file" accept="image/*,application/pdf">
         </div>
-        <button type="submit" class="admin-btn" style="width:auto;">Lançar repasse</button>
+        <button type="submit" class="admin-btn" style="width:auto;">${t("Lançar repasse")}</button>
       </form>
       <div class="admin-error ps-pay-error" data-contract-id="${contract.id}"></div>
     </div>`;
@@ -601,7 +602,7 @@ function psDetailHTML(contract){
 function renderPsContracts(list){
   const tbody = document.getElementById("psContractsTableBody");
   if(list.length === 0){
-    tbody.innerHTML = `<tr><td colspan="6" class="admin-empty">Nenhum contrato de participação nos lucros cadastrado ainda.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="admin-empty">${t("Nenhum contrato de participação nos lucros cadastrado ainda.")}</td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(c => `
@@ -610,8 +611,8 @@ function renderPsContracts(list){
       <td data-label="Contrato">${c.numeroContrato}</td>
       <td data-label="Investido">${c.valorInvestido != null ? brlMoney(c.valorInvestido) : "-"}</td>
       <td data-label="Percentual">${String(c.percentual).replace(".", ",")}%</td>
-      <td data-label="Início">${c.dataInicio.split("-").reverse().join("/")}</td>
-      <td data-label="Status"><span class="status-badge status-${c.status}">${MES.PROFIT_SHARE_STATUS_LABELS[c.status]}</span>${c.visivelCliente === false ? ' <span class="status-badge">Oculto</span>' : ""}</td>
+      <td data-label="Data de início">${c.dataInicio.split("-").reverse().join("/")}</td>
+      <td data-label="Status"><span class="status-badge status-${c.status}">${MES.PROFIT_SHARE_STATUS_LABELS[c.status]}</span>${c.visivelCliente === false ? ` <span class="status-badge">${t("Oculto")}</span>` : ""}</td>
     </tr>
     <tr class="admin-order-detail" data-detail-for="ps-${c.id}">
       <td colspan="6"><div class="admin-order-detail-inner" id="psDetailInner-${c.id}">${psDetailHTML(c)}</div></td>
@@ -632,9 +633,9 @@ function applyPsFilters(){
 }
 
 async function loadPsContracts(){
-  document.getElementById("psContractsTableBody").innerHTML = `<tr><td colspan="6" class="admin-loading">Carregando...</td></tr>`;
+  document.getElementById("psContractsTableBody").innerHTML = `<tr><td colspan="6" class="admin-loading">${t("Carregando...")}</td></tr>`;
   const res = await MES.apiGet("/api/admin/profit-share/contracts");
-  if(!res.ok){ MES.showToast(res.error || "Erro ao carregar contratos."); return; }
+  if(!res.ok){ MES.showToast(res.error || t("Erro ao carregar contratos.")); return; }
   allPsContracts = res.contracts;
   applyPsFilters();
 }
@@ -654,12 +655,12 @@ document.getElementById("newPsForm").addEventListener("submit", async (e) => {
 
   const customerId = document.getElementById("npCustomerId").value;
   if(!customerId){
-    errorBox.textContent = "Busque e selecione o cliente na lista.";
+    errorBox.textContent = t("Busque e selecione o cliente na lista.");
     errorBox.classList.add("show");
     return;
   }
 
-  btn.disabled = true; btn.textContent = "Criando...";
+  btn.disabled = true; btn.textContent = t("Criando...");
   try{
     const payload = {
       customerId: Number(customerId),
@@ -672,7 +673,7 @@ document.getElementById("newPsForm").addEventListener("submit", async (e) => {
     const contratoFile = document.getElementById("npContratoFile").files[0];
     if(contratoFile){
       if(contratoFile.size > 8 * 1024 * 1024){
-        errorBox.textContent = "Contrato muito grande (máximo 8MB).";
+        errorBox.textContent = t("Contrato muito grande (máximo 8MB).");
         errorBox.classList.add("show");
         return;
       }
@@ -682,17 +683,17 @@ document.getElementById("newPsForm").addEventListener("submit", async (e) => {
     }
     const res = await MES.apiPost("/api/admin/profit-share/contracts", payload);
     if(!res.ok){
-      errorBox.textContent = res.error || "Não foi possível criar o contrato.";
+      errorBox.textContent = res.error || t("Não foi possível criar o contrato.");
       errorBox.classList.add("show");
       return;
     }
     document.getElementById("newPsForm").reset();
     document.getElementById("newPsCard").style.display = "none";
     document.getElementById("npCustomerPicked").classList.remove("show");
-    MES.showToast("Contrato de participação nos lucros criado.");
+    MES.showToast(t("Contrato de participação nos lucros criado."));
     loadPsContracts();
   } finally {
-    btn.disabled = false; btn.textContent = "Criar contrato";
+    btn.disabled = false; btn.textContent = t("Criar contrato");
   }
 });
 
@@ -723,7 +724,7 @@ document.getElementById("psContractsTableBody").addEventListener("submit", async
   };
   if(file){
     if(file.size > 4 * 1024 * 1024){
-      errorBox.textContent = "Comprovante muito grande (máximo 4MB).";
+      errorBox.textContent = t("Comprovante muito grande (máximo 4MB).");
       errorBox.classList.add("show");
       return;
     }
@@ -733,11 +734,11 @@ document.getElementById("psContractsTableBody").addEventListener("submit", async
   }
 
   const submitBtn = form.querySelector("button[type=submit]");
-  submitBtn.disabled = true; submitBtn.textContent = "Lançando...";
+  submitBtn.disabled = true; submitBtn.textContent = t("Lançando...");
   try{
     const res = await MES.apiPost(`/api/admin/profit-share/contracts/${contractId}/payments`, payload);
     if(!res.ok){
-      errorBox.textContent = res.error || "Não foi possível lançar o repasse.";
+      errorBox.textContent = res.error || t("Não foi possível lançar o repasse.");
       errorBox.classList.add("show");
       return;
     }
@@ -746,9 +747,9 @@ document.getElementById("psContractsTableBody").addEventListener("submit", async
     const contract = allPsContracts.find(c => String(c.id) === String(contractId));
     document.getElementById(`psDetailInner-${contractId}`).innerHTML = psDetailHTML(contract);
     document.querySelector(`.admin-order-detail[data-detail-for="ps-${contractId}"] .admin-order-detail-inner`).classList.add("open");
-    MES.showToast("Repasse lançado.");
+    MES.showToast(t("Repasse lançado."));
   } finally {
-    submitBtn.disabled = false; submitBtn.textContent = "Lançar repasse";
+    submitBtn.disabled = false; submitBtn.textContent = t("Lançar repasse");
   }
 });
 
@@ -783,8 +784,8 @@ document.getElementById("psContractsTableBody").addEventListener("change", async
   const id = (select || visivelToggle).dataset.contractId;
   const body = select ? { status: select.value } : { visivelCliente: visivelToggle.checked };
   const res = await MES.apiPatch(`/api/admin/profit-share/contracts/${id}`, body);
-  if(!res.ok){ MES.showToast(res.error || "Erro ao atualizar."); return; }
-  MES.showToast(select ? "Status do contrato atualizado." : (visivelToggle.checked ? "Contrato visível pro cliente." : "Contrato ocultado do cliente."));
+  if(!res.ok){ MES.showToast(res.error || t("Erro ao atualizar.")); return; }
+  MES.showToast(select ? t("Status do contrato atualizado.") : (visivelToggle.checked ? t("Contrato visível pro cliente.") : t("Contrato ocultado do cliente.")));
   const idx = allPsContracts.findIndex(c => String(c.id) === String(id));
   if(idx > -1) allPsContracts[idx] = res.contract;
   applyPsFilters();
@@ -796,7 +797,7 @@ document.getElementById("psContractsTableBody").addEventListener("change", async
 function renderBalanceEntries(list){
   const tbody = document.getElementById("balanceEntriesTableBody");
   if(list.length === 0){
-    tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">Nenhum lançamento de saldo ainda.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">${t("Nenhum lançamento de saldo ainda.")}</td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(e => `
@@ -810,9 +811,9 @@ function renderBalanceEntries(list){
 }
 
 async function loadBalanceEntries(){
-  document.getElementById("balanceEntriesTableBody").innerHTML = `<tr><td colspan="5" class="admin-loading">Carregando...</td></tr>`;
+  document.getElementById("balanceEntriesTableBody").innerHTML = `<tr><td colspan="5" class="admin-loading">${t("Carregando...")}</td></tr>`;
   const res = await MES.apiGet("/api/admin/pay/balance-entries");
-  if(!res.ok){ MES.showToast(res.error || "Erro ao carregar lançamentos."); return; }
+  if(!res.ok){ MES.showToast(res.error || t("Erro ao carregar lançamentos.")); return; }
   renderBalanceEntries(res.entries);
 }
 
@@ -831,12 +832,12 @@ document.getElementById("newBalanceForm").addEventListener("submit", async (e) =
 
   const customerId = document.getElementById("nbCustomerId").value;
   if(!customerId){
-    errorBox.textContent = "Busque e selecione o cliente na lista.";
+    errorBox.textContent = t("Busque e selecione o cliente na lista.");
     errorBox.classList.add("show");
     return;
   }
 
-  btn.disabled = true; btn.textContent = "Lançando...";
+  btn.disabled = true; btn.textContent = t("Lançando...");
   try{
     const payload = {
       customerId: Number(customerId),
@@ -845,23 +846,23 @@ document.getElementById("newBalanceForm").addEventListener("submit", async (e) =
     };
     const res = await MES.apiPost("/api/admin/pay/balance-entries", payload);
     if(!res.ok){
-      errorBox.textContent = res.error || "Não foi possível lançar o saldo.";
+      errorBox.textContent = res.error || t("Não foi possível lançar o saldo.");
       errorBox.classList.add("show");
       return;
     }
     document.getElementById("newBalanceForm").reset();
     document.getElementById("newBalanceCard").style.display = "none";
     document.getElementById("nbCustomerPicked").classList.remove("show");
-    MES.showToast("Saldo lançado.");
+    MES.showToast(t("Saldo lançado."));
     loadBalanceEntries();
   } finally {
-    btn.disabled = false; btn.textContent = "Lançar";
+    btn.disabled = false; btn.textContent = t("Lançar");
   }
 });
 
 /* ---------------------- CONTAS (KYC) ---------------------- */
-const KYC_STATUS = { em_analise: "Em análise", aprovado: "Aprovada", reprovado: "Reprovada" };
-const DOC_NAMES = { doc_frente: "Documento (frente)", doc_verso: "Documento (verso)", selfie: "Selfie com documento", comprovante_endereco: "Comprovante de endereço" };
+const KYC_STATUS = { em_analise: t("Em análise"), aprovado: t("Aprovada"), reprovado: t("Reprovada") };
+const DOC_NAMES = { doc_frente: t("Documento (frente)"), doc_verso: t("Documento (verso)"), selfie: t("Selfie com documento"), comprovante_endereco: t("Comprovante de endereço") };
 function esc(v){ return String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function fmtCpf(c){ const d = String(c||"").replace(/\D/g,""); return d.length === 11 ? d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : esc(c); }
 
@@ -869,15 +870,15 @@ async function loadKyc(){
   const status = document.getElementById("kycStatusFilter").value;
   const res = await MES.apiGet(`/api/admin/pay/kyc${status ? "?status=" + status : ""}`);
   const box = document.getElementById("kycList");
-  if(!res.ok){ box.innerHTML = `<p class="admin-empty">${esc(res.error || "Erro ao carregar cadastros.")}</p>`; return; }
-  if(!res.items.length){ box.innerHTML = `<p class="admin-empty">Nenhum cadastro nesta lista.</p>`; return; }
+  if(!res.ok){ box.innerHTML = `<p class="admin-empty">${esc(res.error || t("Erro ao carregar cadastros."))}</p>`; return; }
+  if(!res.items.length){ box.innerHTML = `<p class="admin-empty">${t("Nenhum cadastro nesta lista.")}</p>`; return; }
   box.innerHTML = res.items.map(i => `
     <div class="admin-table-wrap" style="padding:16px 20px; margin-bottom:12px;" data-kyc="${i.id}">
       <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:space-between;">
-        <div><strong>${esc(i.nome)}</strong><br><small>${esc(i.email)} · CPF ${fmtCpf(i.cpf)} · enviado em ${i.enviadoEm ? MES.formatDate(i.enviadoEm) : "-"}</small></div>
+        <div><strong>${esc(i.nome)}</strong><br><small>${esc(i.email)} · CPF ${fmtCpf(i.cpf)} · ${t("enviado em")} ${i.enviadoEm ? MES.formatDate(i.enviadoEm) : "-"}</small></div>
         <div style="display:flex; gap:10px; align-items:center;">
           <span class="status-badge status-${i.status === "aprovado" ? "ativo" : i.status === "reprovado" ? "encerrado" : "pendente"}">${KYC_STATUS[i.status] || esc(i.status)}</span>
-          <button type="button" class="admin-btn admin-btn-ghost" data-open-kyc="${i.id}">Ver cadastro</button>
+          <button type="button" class="admin-btn admin-btn-ghost" data-open-kyc="${i.id}">${t("Ver cadastro")}</button>
         </div>
       </div>
       <div class="kyc-detail" style="display:none; margin-top:16px;"></div>
@@ -890,25 +891,25 @@ function kycDetailHTML(k){
   const canDecide = k.status === "em_analise";
   return `
     <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px;">
-      ${row("Nome", k.nome_completo)}${row("CPF", fmtCpf(k.cpf))}${row("Nascimento", k.data_nascimento)}
-      ${row("Mãe", k.nome_mae)}${row("Pai", k.nome_pai)}${row("Nacionalidade", k.nacionalidade)}
-      ${row("Naturalidade", k.naturalidade)}${row("Estado civil", k.estado_civil)}${row("Telefone", k.telefone)}
-      ${row("Documento", `${(k.doc_tipo||"").toUpperCase()} ${k.doc_numero} · ${k.doc_orgao}/${k.doc_uf} · emitido ${k.doc_emissao}`)}
-      ${row("Endereço", `${k.end_rua}, ${k.end_numero} ${k.end_complemento} · ${k.end_bairro} · ${k.end_cidade}/${k.end_uf} · CEP ${k.end_cep}`)}
-      ${row("Ocupação", k.ocupacao)}${row("Renda mensal", k.renda_mensal !== "" ? "R$ " + k.renda_mensal : "")}
-      ${row("Origem dos recursos", k.origem_recursos)}${row("Finalidade", k.finalidade)}
-      ${row("PEP", k.pep === true ? "SIM — " + ({propria: "o próprio cliente", familiar: "familiar", proximo: "pessoa próxima"}[k.pep_relacao] || "") + " · " + k.pep_cargo + " · " + k.pep_orgao + " · " + k.pep_periodo + (k.pep_relacao !== "propria" ? ` · ${k.pep_nome} (CPF ${fmtCpf(k.pep_cpf)}) · ${k.pep_grau}` : "") : "Não")}
-      ${row("Consentimento", `${k.consentimento.versao || "-"} · ${k.consentimento.em ? MES.formatDate(k.consentimento.em) : "-"} · IP ${k.consentimento.ip || "-"}`)}
+      ${row(t("Nome"), k.nome_completo)}${row("CPF", fmtCpf(k.cpf))}${row(t("Nascimento"), k.data_nascimento)}
+      ${row(t("Mãe"), k.nome_mae)}${row(t("Pai"), k.nome_pai)}${row(t("Nacionalidade"), k.nacionalidade)}
+      ${row(t("Naturalidade"), k.naturalidade)}${row(t("Estado civil"), k.estado_civil)}${row(t("Telefone"), k.telefone)}
+      ${row(t("Documento"), `${(k.doc_tipo||"").toUpperCase()} ${k.doc_numero} · ${k.doc_orgao}/${k.doc_uf} · ${t("emitido")} ${k.doc_emissao}`)}
+      ${row(t("Endereço"), `${k.end_rua}, ${k.end_numero} ${k.end_complemento} · ${k.end_bairro} · ${k.end_cidade}/${k.end_uf} · ${t("CEP")} ${k.end_cep}`)}
+      ${row(t("Ocupação"), k.ocupacao)}${row(t("Renda mensal"), k.renda_mensal !== "" ? "R$ " + k.renda_mensal : "")}
+      ${row(t("Origem dos recursos"), k.origem_recursos)}${row(t("Finalidade"), k.finalidade)}
+      ${row(t("PEP"), k.pep === true ? t("SIM —") + " " + ({propria: t("o próprio cliente"), familiar: t("familiar"), proximo: t("pessoa próxima")}[k.pep_relacao] || "") + " · " + k.pep_cargo + " · " + k.pep_orgao + " · " + k.pep_periodo + (k.pep_relacao !== "propria" ? ` · ${k.pep_nome} (CPF ${fmtCpf(k.pep_cpf)}) · ${k.pep_grau}` : "") : t("Não"))}
+      ${row(t("Consentimento"), `${k.consentimento.versao || "-"} · ${k.consentimento.em ? MES.formatDate(k.consentimento.em) : "-"} · IP ${k.consentimento.ip || "-"}`)}
     </div>
-    <div style="margin:16px 0; display:flex; gap:8px; flex-wrap:wrap;">${docs || "<em>Nenhum documento enviado.</em>"}</div>
-    ${k.motivoReprovacao ? `<p class="admin-error show">Motivo da reprovação: ${esc(k.motivoReprovacao)}</p>` : ""}
+    <div style="margin:16px 0; display:flex; gap:8px; flex-wrap:wrap;">${docs || `<em>${t("Nenhum documento enviado.")}</em>`}</div>
+    ${k.motivoReprovacao ? `<p class="admin-error show">${t("Motivo da reprovação:")} ${esc(k.motivoReprovacao)}</p>` : ""}
     ${canDecide ? `
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-        <button type="button" class="admin-btn" data-approve-kyc="${k.id}">Aprovar e abrir conta</button>
-        <input type="text" data-reject-reason="${k.id}" placeholder="Motivo (obrigatório para reprovar)" style="flex:1; min-width:220px;">
-        <button type="button" class="admin-btn admin-btn-ghost" data-reject-kyc="${k.id}">Reprovar</button>
+        <button type="button" class="admin-btn" data-approve-kyc="${k.id}">${t("Aprovar e abrir conta")}</button>
+        <input type="text" data-reject-reason="${k.id}" placeholder="${t("Motivo (obrigatório para reprovar)")}" style="flex:1; min-width:220px;">
+        <button type="button" class="admin-btn admin-btn-ghost" data-reject-kyc="${k.id}">${t("Reprovar")}</button>
       </div>` : ""}
-    <details style="margin-top:14px;"><summary>Histórico (${k.eventos.length})</summary>
+    <details style="margin-top:14px;"><summary>${t("Histórico")} (${k.eventos.length})</summary>
       ${k.eventos.map(e => `<p style="margin:6px 0;font-size:.85rem;">${MES.formatDate(e.em)} · ${esc(e.evento)} · ${esc(e.autor)}${e.detalhe ? " · " + esc(e.detalhe) : ""}</p>`).join("")}
     </details>`;
 }
@@ -918,7 +919,7 @@ async function openKyc(id){
   const detail = card.querySelector(".kyc-detail");
   if(detail.style.display === "block"){ detail.style.display = "none"; return; }
   const res = await MES.apiGet(`/api/admin/pay/kyc/${id}`);
-  if(!res.ok){ MES.showToast(res.error || "Erro ao abrir cadastro."); return; }
+  if(!res.ok){ MES.showToast(res.error || t("Erro ao abrir cadastro.")); return; }
   detail.innerHTML = kycDetailHTML(res.item);
   detail.style.display = "block";
 }
@@ -931,16 +932,16 @@ document.getElementById("kycList").addEventListener("click", async (e) => {
   if(!approve && !reject) return;
   const id = approve ? approve.dataset.approveKyc : reject.dataset.rejectKyc;
   if(approve){
-    if(!confirm("Aprovar este cadastro e abrir a conta Marques Pay do cliente?")) return;
+    if(!confirm(t("Aprovar este cadastro e abrir a conta Marques Pay do cliente?"))) return;
     const res = await MES.apiPost(`/api/admin/pay/kyc/${id}/approve`, {});
-    if(!res.ok){ MES.showToast(res.error || "Erro ao aprovar."); return; }
-    MES.showToast("Cadastro aprovado. Conta aberta.");
+    if(!res.ok){ MES.showToast(res.error || t("Erro ao aprovar.")); return; }
+    MES.showToast(t("Cadastro aprovado. Conta aberta."));
   } else {
     const motivo = document.querySelector(`[data-reject-reason="${id}"]`).value.trim();
-    if(!motivo){ MES.showToast("Informe o motivo da reprovação."); return; }
+    if(!motivo){ MES.showToast(t("Informe o motivo da reprovação.")); return; }
     const res = await MES.apiPost(`/api/admin/pay/kyc/${id}/reject`, { motivo });
-    if(!res.ok){ MES.showToast(res.error || "Erro ao reprovar."); return; }
-    MES.showToast("Cadastro reprovado.");
+    if(!res.ok){ MES.showToast(res.error || t("Erro ao reprovar.")); return; }
+    MES.showToast(t("Cadastro reprovado."));
   }
   loadKyc();
 });
