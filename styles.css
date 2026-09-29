@@ -42,6 +42,39 @@
   --shadow-orange: 0 10px 30px -6px rgba(247,148,30,0.35);
 
   --ease: cubic-bezier(.22,1,.36,1);
+
+  /* fundos semi-transparentes que não dá pra fazer só trocando --bg (header
+     grudado no topo com blur, menu mobile por cima do conteúdo) — cada
+     tema define o próprio valor, ver bloco do tema claro logo abaixo. */
+  --header-bg: rgba(8,9,10,0.72);
+  --nav-overlay-bg: rgba(10,11,12,0.98);
+  --cart-bar-bg: rgba(19,21,22,0.95);
+}
+
+/* ===================== TEMA CLARO =====================
+   Ativado via [data-theme="light"] no <html> (ver theme-toggle.js) —
+   troca só as cores/sombras, o resto do design system (fontes, forma,
+   espaçamento) é o mesmo dos dois temas. Sem ativação explícita (clique
+   no botão, guardado no localStorage), o site continua escuro por
+   padrão, igual sempre foi. */
+:root[data-theme="light"]{
+  --bg: #f8f6f2;
+  --bg-alt: #f1eee7;
+  --surface: #ffffff;
+  --surface-2: #f2f0ea;
+  --glass: rgba(20,15,5,0.03);
+  --glass-strong: rgba(20,15,5,0.05);
+  --border: rgba(20,15,5,0.12);
+  --border-soft: rgba(20,15,5,0.08);
+  --border-orange: rgba(180,89,10,0.3);
+
+  --white: #1a1200;
+  --muted: #5c574e;
+  --muted-2: #8a8478;
+
+  --header-bg: rgba(248,246,242,0.82);
+  --nav-overlay-bg: rgba(255,253,249,0.98);
+  --cart-bar-bg: rgba(255,255,255,0.95);
 }
 
 *{ box-sizing: border-box; margin:0; padding:0; }
@@ -163,7 +196,7 @@ input, select{ font-family: inherit; }
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(8,9,10,0.72);
+  background: var(--header-bg);
   backdrop-filter: blur(14px) saturate(140%);
   border-bottom: 1px solid var(--border-soft);
 }
@@ -286,6 +319,26 @@ input, select{ font-family: inherit; }
   color: var(--white);
 }
 
+/* Botão de alternar tema — montado sozinho pelo theme-toggle.js dentro
+   do primeiro container que achar (.header-actions no site,
+   .admin-topbar-right no painel). */
+.theme-toggle-btn{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--white);
+  border: 1px solid var(--border);
+  background: var(--glass);
+  transition: border-color .2s ease, background .2s ease, transform .2s ease;
+}
+.theme-toggle-btn:hover{ border-color: var(--border-orange); background: var(--glass-strong); transform: translateY(-1px); }
+.theme-toggle-btn .icon{ width: 18px; height: 18px; }
+.admin-topbar-right .theme-toggle-btn{ margin-right: 4px; }
+
 @media (min-width: 900px){
   .main-nav{ display: flex; }
   .hamburger{ display: none; }
@@ -298,7 +351,7 @@ input, select{ font-family: inherit; }
   top: 100%;
   left: 0;
   right: 0;
-  background: rgba(10,11,12,0.98);
+  background: var(--nav-overlay-bg);
   backdrop-filter: blur(16px);
   padding: 22px 24px;
   border-bottom: 1px solid var(--border);
@@ -1985,7 +2038,7 @@ input, select{ font-family: inherit; }
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(19,21,22,0.95);
+  background: var(--cart-bar-bg);
   backdrop-filter: blur(14px);
   border-top: 1px solid var(--border-orange);
   padding: 12px 18px;
