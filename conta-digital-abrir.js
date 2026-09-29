@@ -9,7 +9,7 @@ const form = document.getElementById("kycForm");
 const $err = document.getElementById("formError");
 const MAX_BYTES = 15 * 1024 * 1024;
 function t(text) { return window.MES_I18N ? window.MES_I18N.t(text) : text; }
-const DOC_LABEL_OK = t("Enviado");
+const DOC_LABEL_OK = t("Anexado");
 
 async function api(method, path, body) {
   const res = await fetch(`${API_BASE}${path}`, {

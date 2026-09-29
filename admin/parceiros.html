@@ -199,7 +199,7 @@ async function loadPartners(){
       <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:space-between;">
         <div><strong>${esc(p.nome)}</strong> <small>(${esc(p.codigo)})</small><br>
           <small>${esc(p.email)} · ${esc(p.telefone)} · CPF ${esc(p.cpf)}</small><br>
-          <small>PIX ${esc(PIX_TIPO[p.pixTipo] || p.pixTipo)}: ${esc(p.pixChave)} · ${t("aceite")} ${esc(p.termos.versao)} ${t("em")} ${p.termos.em ? MES.formatDate(p.termos.em) : "-"} (IP ${esc(p.termos.ip)})</small><br>
+          <small>PIX ${esc(PIX_TIPO[p.pixTipo] || p.pixTipo)}: ${esc(p.pixChave)} · ${t("aceite")} ${esc(p.termos.versao)} ${t("em (data)")} ${p.termos.em ? MES.formatDate(p.termos.em) : "-"} (IP ${esc(p.termos.ip)})</small><br>
           <small>${p.vendas} ${t("venda(s) ·")} ${t("a pagar")} ${brl(p.aPagar)} · ${t("já pago")} ${brl(p.pago)}</small>${p.motivo ? `<br><small>${t("Motivo:")} ${esc(p.motivo)}</small>` : ""}</div>
         <span class="status-badge status-${p.status === "ativo" ? "ativo" : p.status === "pendente" ? "pendente" : "encerrado"}">${PARTNER_STATUS[p.status]}</span>
       </div>

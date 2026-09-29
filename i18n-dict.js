@@ -1298,7 +1298,7 @@ window.MES_I18N_DICT = {
   "Enviar para análise": "Submit for review",
 
   /* ---------- conta-digital-abrir.js ---------- */
-  "Enviado": "Uploaded",
+  "Anexado": "Attached",
   "Não foi possível enviar. Verifique sua conexão e tente de novo.": "Couldn't submit. Check your connection and try again.",
   "Buscando endereço...": "Looking up address...",
   "CEP não encontrado. Preencha o endereço manualmente.": "ZIP code not found. Please fill in the address manually.",
@@ -1575,7 +1575,7 @@ window.MES_I18N_DICT = {
   "Pagamento registrado.": "Payment registered.",
   "Nenhum parceiro nesta lista.": "No partners in this list.",
   "aceite": "accepted",
-  "em": "on",
+  "em (data)": "on",
   "vendas)": "sales)",
   "venda(s) ·": "sale(s) ·",
   "a pagar": "to pay",
