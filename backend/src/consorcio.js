@@ -6,9 +6,11 @@
      2) Admin libera "visivel_site" -> aparece no catálogo público.
      3) Admin libera "visivel_parceiro" -> parceiro vê o grupo e pode
         lançar uma venda pra um cliente.
-     4a) Cliente contrata direto pelo catálogo -> adesão nasce já
-         'confirmada' (comissão de parceiro criada na hora, se veio de
-         indicação — mesma lógica das outras modalidades de crédito).
+     4a) Cliente contrata direto pelo catálogo -> preenche CPF e anexa
+         comprovante de endereço + documento com foto -> adesão nasce
+         'aguardando_pagamento' (partner_id já gravado se veio de
+         indicação, mas a comissão só nasce quando o admin confirma o
+         pagamento — ver confirmarPagamento).
      4b) Parceiro lança a venda -> adesão nasce 'aguardando_cliente'
          (SEM comissão ainda). O cliente precisa entrar e confirmar; só
          nesse momento a comissão do parceiro é criada.
@@ -16,7 +18,10 @@
 const { pool } = require("./db");
 const partners = require("./partners");
 
-const ADESAO_STATUS = ["aguardando_cliente", "confirmada", "cancelada"];
+const ADESAO_STATUS = ["aguardando_cliente", "aguardando_pagamento", "confirmada", "cancelada"];
+// Comprovante de endereço + documento com foto: mesmo limite usado no
+// checkout da loja.
+const MAX_DOC_BYTES = 5 * 1024 * 1024;
 
 function err(status, message) { return Object.assign(new Error(message), { statusCode: status }); }
 
@@ -134,11 +139,15 @@ function rowToAdesao(row) {
     parceiroCodigo: row.parceiro_codigo,
     origem: row.origem,
     nome: row.nome,
+    cpf: row.cpf || "",
     telefone: row.telefone || "",
     email: row.email || "",
     valorCota: row.valor_cota,
     prazoMeses: row.prazo_meses,
     status: row.status,
+    temDocEndereco: !!row.doc_endereco_dados,
+    temDocFoto: !!row.doc_foto_dados,
+    paymentLink: row.payment_link || null,
     confirmadaEm: row.confirmada_em,
     createdAt: row.created_at,
   };
@@ -162,22 +171,86 @@ async function assertVagaDisponivel(grupoId) {
   return grupo;
 }
 
-// Cliente contrata direto pelo catálogo do site: adesão já nasce confirmada
-// e, se veio de indicação de parceiro, a comissão é criada na hora (mesma
-// lógica das outras modalidades de crédito).
-async function contratarComoCliente(customerId, grupoId, { nome, telefone, email, refCode }) {
+// Cliente contrata direto pelo catálogo do site: precisa de CPF e dos dois
+// documentos (mesmo padrão do checkout da loja) — a adesão nasce
+// 'aguardando_pagamento', não confirmada na hora. Se veio de indicação de
+// parceiro, o partner_id já fica gravado, mas a comissão só nasce quando o
+// admin confirmar que o pagamento caiu (ver confirmarPagamento) — não faz
+// sentido gerar comissão prevista antes de saber se a pessoa vai pagar.
+async function contratarComoCliente(customerId, grupoId, {
+  nome, cpf, telefone, email, refCode,
+  docEnderecoBuffer, docEnderecoTipo, docEnderecoNome,
+  docFotoBuffer, docFotoTipo, docFotoNome,
+}) {
   await assertVagaDisponivel(grupoId);
+  const partner = await partners.resolveAttribution(refCode, customerId);
   const now = new Date().toISOString();
   const insert = await pool.query(
-    `INSERT INTO consorcio_adesoes (grupo_id, customer_id, origem, nome, telefone, email, status, confirmada_em, created_at, updated_at)
-     VALUES ($1,$2,'cliente',$3,$4,$5,'confirmada',$6,$6,$6) RETURNING id`,
-    [grupoId, customerId, String(nome || "").trim(), String(telefone || "").trim(), String(email || "").trim(), now]
+    `INSERT INTO consorcio_adesoes (
+      grupo_id, customer_id, partner_id, origem, nome, cpf, telefone, email,
+      doc_endereco_dados, doc_endereco_tipo, doc_endereco_nome,
+      doc_foto_dados, doc_foto_tipo, doc_foto_nome,
+      status, created_at, updated_at
+    ) VALUES ($1,$2,$3,'cliente',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'aguardando_pagamento',$14,$14)
+    RETURNING id`,
+    [
+      grupoId, customerId, partner ? partner.id : null,
+      String(nome || "").trim(), String(cpf || "").trim(), String(telefone || "").trim(), String(email || "").trim(),
+      docEnderecoBuffer, docEnderecoTipo || null, String(docEnderecoNome || "").slice(0, 120) || null,
+      docFotoBuffer, docFotoTipo || null, String(docFotoNome || "").slice(0, 120) || null,
+      now,
+    ]
   );
-  const adesaoId = insert.rows[0].id;
+  return getAdesaoById(insert.rows[0].id);
+}
 
-  const partner = await partners.resolveAttribution(refCode, customerId);
-  if (partner) await registrarComissao(adesaoId, partner);
-  return getAdesaoById(adesaoId);
+// Admin lança o link de pagamento (ou chave PIX) e avisa o cliente por e-mail.
+async function setPaymentLink(id, link) {
+  const result = await pool.query(
+    "UPDATE consorcio_adesoes SET payment_link = $1, updated_at = $2 WHERE id = $3",
+    [link, new Date().toISOString(), id]
+  );
+  return result.rowCount > 0;
+}
+
+// Admin confirma que o pagamento caiu: só aqui a adesão vira 'confirmada' e,
+// se houver parceiro, a comissão nasce (status 'prevista').
+async function confirmarPagamento(id) {
+  const { rows } = await pool.query("SELECT * FROM consorcio_adesoes WHERE id = $1", [id]);
+  const row = rows[0];
+  if (!row) throw err(404, "Adesão não encontrada.");
+  if (row.status !== "aguardando_pagamento") throw err(409, "Essa adesão não está aguardando pagamento.");
+
+  const now = new Date().toISOString();
+  await pool.query(
+    "UPDATE consorcio_adesoes SET status = 'confirmada', confirmada_em = $1, updated_at = $1 WHERE id = $2",
+    [now, id]
+  );
+  if (row.partner_id) {
+    const { rows: prows } = await pool.query("SELECT * FROM partners WHERE id = $1", [row.partner_id]);
+    if (prows[0]) await registrarComissao(id, prows[0]);
+  }
+  return getAdesaoById(id);
+}
+
+async function getDocEndereco(id) {
+  const { rows } = await pool.query(
+    "SELECT doc_endereco_dados, doc_endereco_tipo, doc_endereco_nome FROM consorcio_adesoes WHERE id = $1",
+    [id]
+  );
+  const row = rows[0];
+  if (!row || !row.doc_endereco_dados) return null;
+  return { data: row.doc_endereco_dados, tipo: row.doc_endereco_tipo, nome: row.doc_endereco_nome };
+}
+
+async function getDocFoto(id) {
+  const { rows } = await pool.query(
+    "SELECT doc_foto_dados, doc_foto_tipo, doc_foto_nome FROM consorcio_adesoes WHERE id = $1",
+    [id]
+  );
+  const row = rows[0];
+  if (!row || !row.doc_foto_dados) return null;
+  return { data: row.doc_foto_dados, tipo: row.doc_foto_tipo, nome: row.doc_foto_nome };
 }
 
 // Parceiro lança a venda pro cliente: adesão nasce 'aguardando_cliente',
@@ -272,8 +345,9 @@ async function cancelarAdesao(id) {
 }
 
 module.exports = {
-  ADESAO_STATUS,
+  ADESAO_STATUS, MAX_DOC_BYTES,
   createGrupo, updateGrupo, getGrupoById, listGruposAdmin, listGruposPublicos, listGruposParceiro,
   contratarComoCliente, lancarComoParceiro, getAdesaoById, listAdesoesByCustomer,
   listAdesoesPendentesPorEmail, listAdesoesAdmin, confirmarAdesao, cancelarAdesao,
+  setPaymentLink, confirmarPagamento, getDocEndereco, getDocFoto,
 };

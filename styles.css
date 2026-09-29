@@ -2552,6 +2552,31 @@ input, select{ font-family: inherit; }
 .credit-sim-form input:focus, .credit-sim-form select:focus{ border-color: var(--border-orange); }
 .credit-field-hint{ font-size: 0.74rem; color: var(--muted-2); font-weight: 400; line-height: 1.4; }
 
+/* Cartão de grupo da Compra Programada — bloco simples (não grid), porque
+   reaproveitar .credit-sim-form aqui esticava o botão "Contratar" (único
+   filho sobrando na 2ª coluna do grid) até virar uma elipse gigante. */
+.consorcio-grupo-card{
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+/* [hidden] tem a mesma especificidade da classe — sem essa regra, o
+   display:flex abaixo vence o [hidden]{display:none} do navegador e o
+   formulário fica visível o tempo todo, mesmo com o atributo "hidden". */
+.consorcio-contratar-form[hidden]{ display: none; }
+.consorcio-contratar-form{ display: flex; flex-direction: column; gap: 14px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-soft); }
+.consorcio-contratar-form label{ display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; color: var(--muted); }
+.consorcio-contratar-form input{
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  color: var(--white);
+  font-size: 0.95rem;
+}
+.consorcio-contratar-form input:focus{ border-color: var(--border-orange); }
+
 .credit-sim-cta{
   display: flex;
   flex-direction: column;

@@ -289,14 +289,27 @@ function escConsorcio(v){
 function grupoCardHTML(g){
   const semVaga = g.vagasRestantes <= 0;
   return `
-    <div class="credit-sim-form consorcio-grupo-card" style="border:1px solid var(--border-soft); border-radius:var(--radius-sm); padding:16px; margin-bottom:12px;">
+    <div class="consorcio-grupo-card" data-grupo-id="${g.id}">
       <strong>${escConsorcio(g.nome)}</strong>
       <p style="color:var(--muted); font-size:0.88rem; margin:6px 0 10px;">
         ${formatBRL(g.valorCota)}/cota · ${g.prazoMeses}x · taxa adm. ${String(g.taxaAdministracaoPct).replace(".", ",")}%
-        · ${semVaga ? "sem vagas no momento" : g.vagasRestantes + " vaga(s) disponível(is)"}
       </p>
       ${g.regras ? `<p style="color:var(--muted); font-size:0.82rem; margin:0 0 10px;">${escConsorcio(g.regras)}</p>` : ""}
       <button type="button" class="btn btn-primary" data-contratar-grupo="${g.id}" ${semVaga ? "disabled" : ""}>${semVaga ? "Sem vagas" : "Contratar"}</button>
+      <form class="consorcio-contratar-form" data-grupo-id="${g.id}" hidden>
+        <p style="color:var(--muted); font-size:0.82rem; margin:0 0 12px;">Preencha seus dados e anexe os documentos pra reservar a cota. Depois de conferir, mandamos o link de pagamento (ou a chave PIX) pro seu e-mail.</p>
+        <label>Nome completo<input type="text" name="nome" required></label>
+        <label>CPF<input type="text" name="cpf" required inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label>
+        <label>Telefone / WhatsApp<input type="tel" name="telefone" required></label>
+        <label>E-mail<input type="email" name="email" required></label>
+        <label>Comprovante de endereço<input type="file" name="docEndereco" accept="image/jpeg,image/png,application/pdf" required></label>
+        <label>Documento com foto (RG, CNH...)<input type="file" name="docFoto" accept="image/jpeg,image/png,application/pdf" required></label>
+        <div style="display:flex; gap:10px; margin-top:4px;">
+          <button type="submit" class="btn btn-primary" style="width:auto;">Enviar e reservar cota</button>
+          <button type="button" class="btn btn-ghost consorcio-cancelar-form" style="width:auto;">Cancelar</button>
+        </div>
+        <small class="consorcio-form-error" style="color:var(--danger); display:none; margin-top:8px;"></small>
+      </form>
     </div>
   `;
 }
@@ -315,6 +328,9 @@ async function loadConsorcioGrupos(){
   }
 }
 
+// Antes contratava na hora com um clique; agora só abre o formulário (dados
+// + documentos) — quem efetivamente cria a adesão é enviarContratacao(),
+// no submit do form.
 async function contratarGrupo(grupoId){
   const customer = window.MES_ACCOUNT ? await window.MES_ACCOUNT.getCustomer() : null;
   if(!customer){
@@ -322,15 +338,76 @@ async function contratarGrupo(grupoId){
     window.location.href = "conta/entrar.html?redirect=" + encodeURIComponent("index.html#simulacao-credito");
     return;
   }
+  const form = document.querySelector(`.consorcio-contratar-form[data-grupo-id="${grupoId}"]`);
+  if(!form) return;
+  form.hidden = !form.hidden;
+  if(!form.hidden){
+    form.querySelector('[name="nome"]').value = customer.nome || "";
+    form.querySelector('[name="cpf"]').value = customer.cpf || "";
+    form.querySelector('[name="telefone"]').value = customer.telefone || "";
+    form.querySelector('[name="email"]').value = customer.email || "";
+    form.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+function fileToBase64Consorcio(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function enviarContratacao(form){
+  const grupoId = form.dataset.grupoId;
+  const errorBox = form.querySelector(".consorcio-form-error");
+  errorBox.style.display = "none";
+
+  const docEnderecoFile = form.querySelector('[name="docEndereco"]').files[0];
+  const docFotoFile = form.querySelector('[name="docFoto"]').files[0];
+  if(!docEnderecoFile || !docFotoFile){
+    errorBox.textContent = "Anexe o comprovante de endereço e um documento com foto.";
+    errorBox.style.display = "block";
+    return;
+  }
+  const MAX_DOC_BYTES = 5 * 1024 * 1024;
+  if(docEnderecoFile.size > MAX_DOC_BYTES || docFotoFile.size > MAX_DOC_BYTES){
+    errorBox.textContent = "Cada documento deve ter no máximo 5MB.";
+    errorBox.style.display = "block";
+    return;
+  }
+
+  const btn = form.querySelector("button[type=submit]");
+  btn.disabled = true; btn.textContent = "Enviando...";
   try {
     const res = await CONTA_apiPost(`/api/consorcio/grupos/${grupoId}/contratar`, {
+      nome: form.querySelector('[name="nome"]').value.trim(),
+      cpf: form.querySelector('[name="cpf"]').value.trim(),
+      telefone: form.querySelector('[name="telefone"]').value.trim(),
+      email: form.querySelector('[name="email"]').value.trim(),
+      docEnderecoBase64: await fileToBase64Consorcio(docEnderecoFile),
+      docEnderecoTipo: docEnderecoFile.type,
+      docEnderecoNome: docEnderecoFile.name,
+      docFotoBase64: await fileToBase64Consorcio(docFotoFile),
+      docFotoTipo: docFotoFile.type,
+      docFotoNome: docFotoFile.name,
       ref: window.MES_REF ? window.MES_REF.get() : "",
     });
-    if(!res.ok){ showToast(res.error || "Não foi possível contratar esse grupo."); return; }
-    showToast("Cota reservada! Sua adesão já está confirmada.");
+    if(!res.ok){
+      errorBox.textContent = res.error || "Não foi possível contratar esse grupo.";
+      errorBox.style.display = "block";
+      return;
+    }
+    showToast("Dados recebidos! Em breve você recebe o link de pagamento por e-mail.");
+    form.reset();
+    form.hidden = true;
     loadConsorcioGrupos();
   } catch(e) {
-    showToast("Erro de conexão. Tente novamente.");
+    errorBox.textContent = "Erro de conexão. Tente novamente.";
+    errorBox.style.display = "block";
+  } finally {
+    btn.disabled = false; btn.textContent = "Enviar e reservar cota";
   }
 }
 
@@ -624,13 +701,27 @@ $("#creditLeadForm")?.addEventListener("submit", async (e) => {
 
 document.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-contratar-grupo]");
-  if(!btn || btn.disabled) return;
-  contratarGrupo(parseInt(btn.dataset.contratarGrupo, 10));
+  if(btn && !btn.disabled){
+    contratarGrupo(parseInt(btn.dataset.contratarGrupo, 10));
+    return;
+  }
+  if(e.target.closest(".consorcio-cancelar-form")){
+    const form = e.target.closest(".consorcio-contratar-form");
+    if(form){ form.reset(); form.hidden = true; }
+  }
+});
+
+document.addEventListener("submit", (e) => {
+  const form = e.target.closest(".consorcio-contratar-form");
+  if(!form) return;
+  e.preventDefault();
+  enviarContratacao(form);
 });
 
 /* Se a pessoa clicou "Contratar" num grupo, foi mandada pra login/cadastro
-   e voltou logada, retoma a contratação sozinha em vez de pedir pra
-   escolher o grupo de novo. */
+   e voltou logada, reabre o formulário já preenchido em vez de pedir pra
+   escolher o grupo de novo (ela ainda precisa anexar os documentos e
+   enviar — não dá pra reter arquivo escolhido através do redirecionamento). */
 async function restorePendingConsorcio(){
   const pendingId = localStorage.getItem("mes_pending_consorcio_grupo");
   if(!pendingId) return;

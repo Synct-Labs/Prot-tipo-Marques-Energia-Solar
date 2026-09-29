@@ -87,8 +87,9 @@
 <script src="../api-config.js"></script>
 <script src="admin.js"></script>
 <script>
+const API_BASE = window.MES_API_BASE || "";
 const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const ADESAO_STATUS = { aguardando_cliente: "Aguardando cliente", confirmada: "Confirmada", cancelada: "Cancelada" };
+const ADESAO_STATUS = { aguardando_cliente: "Aguardando cliente", aguardando_pagamento: "Aguardando pagamento", confirmada: "Confirmada", cancelada: "Cancelada" };
 
 document.querySelectorAll(".admin-subtab").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -170,38 +171,88 @@ document.getElementById("gruposList").addEventListener("change", async (e) => {
 });
 
 /* ---------------------- ADESÕES ---------------------- */
+function adesaoRowHTML(a){
+  const temDocs = a.temDocEndereco || a.temDocFoto;
+  return `
+    <div class="admin-table-wrap" style="padding:16px 20px; margin-bottom:12px;" data-adesao="${a.id}">
+      <div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; justify-content:space-between;">
+        <div>
+          <strong>${esc(a.nome)}</strong> <small>${a.cpf ? esc(a.cpf) + " · " : ""}${esc(a.telefone)} ${a.email ? "· " + esc(a.email) : ""}</small><br>
+          <small>${esc(a.grupoNome)} · origem ${a.origem === "parceiro" ? "parceiro" : "cliente (catálogo)"}${a.parceiroNome ? ` · parceiro ${esc(a.parceiroNome)} (${esc(a.parceiroCodigo)})` : ""}</small><br>
+          <small>${MES.formatDate(a.createdAt)}${a.confirmadaEm ? " · confirmada em " + MES.formatDate(a.confirmadaEm) : ""}</small>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <span class="status-badge status-${a.status === "confirmada" ? "ativo" : a.status === "cancelada" ? "encerrado" : "pendente"}">${ADESAO_STATUS[a.status] || a.status}</span>
+          ${a.status !== "confirmada" && a.status !== "cancelada" ? `<button type="button" class="admin-btn admin-btn-ghost" data-cancel="${a.id}">Cancelar</button>` : ""}
+        </div>
+      </div>
+      ${temDocs ? `
+        <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+          ${a.temDocEndereco ? `<a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/consorcio/adesoes/${a.id}/doc-endereco" target="_blank" rel="noopener">Comprovante de endereço</a>` : ""}
+          ${a.temDocFoto ? `<a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/consorcio/adesoes/${a.id}/doc-foto" target="_blank" rel="noopener">Documento com foto</a>` : ""}
+        </div>
+      ` : ""}
+      ${a.status === "aguardando_pagamento" ? `
+        <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border-soft);">
+          ${a.paymentLink ? `<p class="admin-muted" style="word-break:break-all; margin:0 0 8px;">Último link/chave enviado: ${esc(a.paymentLink)}</p>` : ""}
+          <form class="admin-consorcio-payment-link-form" data-adesao-id="${a.id}" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <input type="text" name="link" placeholder="Link de pagamento ou chave PIX" style="flex:1; min-width:220px;" required>
+            <button type="submit" class="admin-btn admin-btn-ghost" style="width:auto;">Enviar</button>
+            <button type="button" class="admin-btn" style="width:auto;" data-confirmar-pagamento="${a.id}">Confirmar pagamento recebido</button>
+          </form>
+        </div>
+      ` : ""}
+    </div>`;
+}
+
 async function loadAdesoes(){
   const grupoId = document.getElementById("adesaoGrupoFilter").value;
   const res = await MES.apiGet(`/api/admin/consorcio/adesoes${grupoId ? "?grupoId=" + grupoId : ""}`);
   const box = document.getElementById("adesoesList");
   if(!res.ok){ box.innerHTML = `<p class="admin-empty">${esc(res.error || "Erro ao carregar.")}</p>`; return; }
   if(!res.adesoes.length){ box.innerHTML = `<p class="admin-empty">Nenhuma adesão ainda.</p>`; return; }
-  box.innerHTML = res.adesoes.map(a => `
-    <div class="admin-table-wrap" style="padding:16px 20px; margin-bottom:12px;" data-adesao="${a.id}">
-      <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:space-between;">
-        <div>
-          <strong>${esc(a.nome)}</strong> <small>${esc(a.telefone)} ${a.email ? "· " + esc(a.email) : ""}</small><br>
-          <small>${esc(a.grupoNome)} · origem ${a.origem === "parceiro" ? "parceiro" : "cliente (catálogo)"}${a.parceiroNome ? ` · parceiro ${esc(a.parceiroNome)} (${esc(a.parceiroCodigo)})` : ""}</small><br>
-          <small>${MES.formatDate(a.createdAt)}${a.confirmadaEm ? " · confirmada em " + MES.formatDate(a.confirmadaEm) : ""}</small>
-        </div>
-        <div style="display:flex; gap:10px; align-items:center;">
-          <span class="status-badge status-${a.status === "confirmada" ? "ativo" : a.status === "cancelada" ? "encerrado" : "pendente"}">${ADESAO_STATUS[a.status] || a.status}</span>
-          ${a.status === "aguardando_cliente" ? `<button type="button" class="admin-btn admin-btn-ghost" data-cancel="${a.id}">Cancelar</button>` : ""}
-        </div>
-      </div>
-    </div>`).join("");
+  box.innerHTML = res.adesoes.map(adesaoRowHTML).join("");
 }
 
 document.getElementById("adesoesList").addEventListener("click", async (e) => {
-  const btn = e.target.closest("[data-cancel]");
-  if(!btn) return;
-  if(!confirm("Cancelar essa adesão? Ela deixa de reservar a cota no grupo.")) return;
-  const res = await MES.apiPost(`/api/admin/consorcio/adesoes/${btn.dataset.cancel}/cancelar`, {});
-  if(!res.ok){ MES.showToast(res.error || "Erro ao cancelar."); return; }
-  MES.showToast("Adesão cancelada.");
-  loadAdesoes();
-  loadGrupos();
+  const cancelBtn = e.target.closest("[data-cancel]");
+  if(cancelBtn){
+    if(!confirm("Cancelar essa adesão? Ela deixa de reservar a cota no grupo.")) return;
+    const res = await MES.apiPost(`/api/admin/consorcio/adesoes/${cancelBtn.dataset.cancel}/cancelar`, {});
+    if(!res.ok){ MES.showToast(res.error || "Erro ao cancelar."); return; }
+    MES.showToast("Adesão cancelada.");
+    loadAdesoes();
+    loadGrupos();
+    return;
+  }
+  const confirmarBtn = e.target.closest("[data-confirmar-pagamento]");
+  if(confirmarBtn){
+    if(!confirm("Confirmar que o pagamento dessa adesão caiu? Isso libera a cota e gera a comissão do parceiro, se houver.")) return;
+    const res = await MES.apiPost(`/api/admin/consorcio/adesoes/${confirmarBtn.dataset.confirmarPagamento}/confirmar-pagamento`, {});
+    if(!res.ok){ MES.showToast(res.error || "Erro ao confirmar pagamento."); return; }
+    MES.showToast("Pagamento confirmado.");
+    loadAdesoes();
+  }
 });
+
+document.getElementById("adesoesList").addEventListener("submit", async (e) => {
+  const form = e.target.closest(".admin-consorcio-payment-link-form");
+  if(!form) return;
+  e.preventDefault();
+  const link = form.querySelector('[name="link"]').value.trim();
+  if(!link) return;
+  const btn = form.querySelector("button[type=submit]");
+  btn.disabled = true; btn.textContent = "Enviando...";
+  try{
+    const res = await MES.apiPost(`/api/admin/consorcio/adesoes/${form.dataset.adesaoId}/payment-link`, { link });
+    if(!res.ok){ MES.showToast(res.error || "Erro ao enviar link."); return; }
+    MES.showToast("Link enviado por e-mail.");
+    loadAdesoes();
+  } finally {
+    btn.disabled = false; btn.textContent = "Enviar";
+  }
+});
+
 document.getElementById("adesaoGrupoFilter").addEventListener("change", loadAdesoes);
 document.getElementById("adesaoRefresh").addEventListener("click", loadAdesoes);
 

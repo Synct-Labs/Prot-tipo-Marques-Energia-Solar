@@ -239,6 +239,24 @@ function pagamentoLinkParaClienteHTML({ orderNumber, link, pagamento }) {
   });
 }
 
+function pagamentoLinkConsorcioHTML({ grupoNome, link }) {
+  return emailShellHTML({
+    title: `Sua Compra Programada: pagamento liberado`,
+    bodyHTML: paragraphsHTML([
+      `Recebemos seus dados e documentos pra contratar o grupo <strong>${escHtml(grupoNome)}</strong>. Segue o link (ou chave PIX) pra fechar o pagamento da primeira parcela:`,
+    ]) + pagamentoValorHTML(link),
+    ctaHref: isHttpUrl(link) ? link : undefined,
+    ctaLabel: "Pagar agora",
+  });
+}
+
+function adminNovaAdesaoConsorcioHTML(adesao) {
+  return simpleEmailHTML("Nova adesão na Compra Programada", [
+    `<strong>${escHtml(adesao.nome)}</strong> contratou o grupo <strong>${escHtml(adesao.grupoNome)}</strong> e já anexou os documentos.`,
+    `Confira os documentos e lance o link de pagamento (ou chave PIX) pra ela.`,
+  ], { ctaHref: "https://marquespromotora.com/admin/compra-programada.html", ctaLabel: "Ver adesão" });
+}
+
 /* ======================================================================
    PENDÊNCIA NO PEDIDO (ex: comprovante de endereço ilegível)
    ====================================================================== */
@@ -264,4 +282,5 @@ module.exports = {
   pagamentoLinkParaParceiroHTML, pagamentoLinkParaClienteHTML,
   pendenciaParaParceiroHTML, pendenciaParaClienteHTML,
   adminPendenciaRespostaHTML,
+  pagamentoLinkConsorcioHTML, adminNovaAdesaoConsorcioHTML,
 };

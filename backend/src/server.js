@@ -1222,15 +1222,46 @@ async function handleApi(req, res, pathname) {
   }
 
   // ---- COMPRA PROGRAMADA: CLIENTE CONTRATA DIRETO PELO CATÁLOGO ----
+  // Exige CPF + comprovante de endereço + documento com foto (mesmo padrão
+  // do checkout da loja) — a adesão nasce "aguardando_pagamento", o admin
+  // confere os documentos e manda o link/PIX depois.
   const consorcioContratarMatch = pathname.match(/^\/api\/consorcio\/grupos\/(\d+)\/contratar$/);
   if (consorcioContratarMatch && req.method === "POST") {
     const customer = await requireCustomer(req, res);
     if (!customer) return;
-    const body = await parseJSONBody(req);
+    const body = await parseJSONBody(req, Math.ceil(consorcio.MAX_DOC_BYTES * 2 * 1.4));
+
+    const cpf = String(body.cpf || "").trim();
+    if (!cpf) return sendJSON(res, 400, { ok: false, error: "Informe seu CPF." });
+    let docEnderecoBuffer, docFotoBuffer;
+    try {
+      docEnderecoBuffer = Buffer.from(String(body.docEnderecoBase64 || ""), "base64");
+      docFotoBuffer = Buffer.from(String(body.docFotoBase64 || ""), "base64");
+    } catch (e) {
+      return sendJSON(res, 400, { ok: false, error: "Documentos inválidos." });
+    }
+    if (!docEnderecoBuffer.length) return sendJSON(res, 400, { ok: false, error: "Anexe o comprovante de endereço." });
+    if (!docFotoBuffer.length) return sendJSON(res, 400, { ok: false, error: "Anexe um documento com foto." });
+    if (docEnderecoBuffer.length > consorcio.MAX_DOC_BYTES || docFotoBuffer.length > consorcio.MAX_DOC_BYTES) {
+      return sendJSON(res, 413, { ok: false, error: "Cada documento deve ter no máximo 5MB." });
+    }
+    if (!isAllowedFileMime(body.docEnderecoTipo) || !isAllowedFileMime(body.docFotoTipo)) {
+      return sendJSON(res, 400, { ok: false, error: `Os documentos devem ser um de: ${ALLOWED_FILE_MIMES.join(", ")}.` });
+    }
+
     return kycGuard(async () => {
       const adesao = await consorcio.contratarComoCliente(customer.id, parseInt(consorcioContratarMatch[1], 10), {
-        nome: body.nome || customer.nome, telefone: body.telefone || customer.telefone, email: body.email || customer.email, refCode: body.ref,
+        nome: body.nome || customer.nome, cpf, telefone: body.telefone || customer.telefone, email: body.email || customer.email, refCode: body.ref,
+        docEnderecoBuffer, docEnderecoTipo: body.docEnderecoTipo, docEnderecoNome: body.docEnderecoNome,
+        docFotoBuffer, docFotoTipo: body.docFotoTipo, docFotoNome: body.docFotoNome,
       });
+      try {
+        await notifications.notifyAdmins({
+          subject: `Nova adesão na Compra Programada — ${adesao.grupoNome}`,
+          text: `${adesao.nome} contratou o grupo ${adesao.grupoNome} e já anexou os documentos.`,
+          html: mailer.adminNovaAdesaoConsorcioHTML(adesao),
+        });
+      } catch (e) { console.error("[notifications] falha ao avisar admins da nova adesão:", e.message); }
       return sendJSON(res, 201, { ok: true, adesao });
     });
   }
@@ -1306,6 +1337,52 @@ async function handleApi(req, res, pathname) {
       return kycGuard(async () => {
         await consorcio.cancelarAdesao(parseInt(adesaoCancelarMatch[1], 10));
         return sendJSON(res, 200, { ok: true });
+      });
+    }
+
+    const adesaoDocEnderecoMatch = pathname.match(/^\/api\/admin\/consorcio\/adesoes\/(\d+)\/doc-endereco$/);
+    if (adesaoDocEnderecoMatch && req.method === "GET") {
+      const c = await consorcio.getDocEndereco(parseInt(adesaoDocEnderecoMatch[1], 10));
+      if (!c) return sendJSON(res, 404, { ok: false, error: "Documento não encontrado." });
+      return sendBinary(res, 200, c.data, c.tipo, c.nome);
+    }
+
+    const adesaoDocFotoMatch = pathname.match(/^\/api\/admin\/consorcio\/adesoes\/(\d+)\/doc-foto$/);
+    if (adesaoDocFotoMatch && req.method === "GET") {
+      const c = await consorcio.getDocFoto(parseInt(adesaoDocFotoMatch[1], 10));
+      if (!c) return sendJSON(res, 404, { ok: false, error: "Documento não encontrado." });
+      return sendBinary(res, 200, c.data, c.tipo, c.nome);
+    }
+
+    // Link de pagamento (ou chave PIX): salva na adesão e avisa o cliente
+    // por e-mail — aqui não tem parceiro pra repassar, é sempre o próprio
+    // cliente que contratou direto pelo catálogo.
+    const adesaoPaymentLinkMatch = pathname.match(/^\/api\/admin\/consorcio\/adesoes\/(\d+)\/payment-link$/);
+    if (adesaoPaymentLinkMatch && req.method === "POST") {
+      const id = parseInt(adesaoPaymentLinkMatch[1], 10);
+      const adesao = await consorcio.getAdesaoById(id);
+      if (!adesao) return sendJSON(res, 404, { ok: false, error: "Adesão não encontrada." });
+      const body = await parseJSONBody(req);
+      const link = String(body.link || "").trim();
+      if (!link) return sendJSON(res, 400, { ok: false, error: "Informe o link de pagamento (ou a chave PIX)." });
+      if (link.length > 1000) return sendJSON(res, 400, { ok: false, error: "Link/chave muito longo (máximo 1000 caracteres)." });
+      await consorcio.setPaymentLink(id, link);
+      if (adesao.email) {
+        await mailer.sendEmail({
+          to: adesao.email,
+          subject: `Sua Compra Programada: pagamento liberado`,
+          text: `Segue o link (ou chave PIX) pra fechar o pagamento do grupo ${adesao.grupoNome}: ${link}`,
+          html: mailer.pagamentoLinkConsorcioHTML({ grupoNome: adesao.grupoNome, link }),
+        });
+      }
+      return sendJSON(res, 200, { ok: true, adesao: await consorcio.getAdesaoById(id) });
+    }
+
+    const adesaoConfirmarPagamentoMatch = pathname.match(/^\/api\/admin\/consorcio\/adesoes\/(\d+)\/confirmar-pagamento$/);
+    if (adesaoConfirmarPagamentoMatch && req.method === "POST") {
+      return kycGuard(async () => {
+        const adesao = await consorcio.confirmarPagamento(parseInt(adesaoConfirmarPagamentoMatch[1], 10));
+        return sendJSON(res, 200, { ok: true, adesao });
       });
     }
   }

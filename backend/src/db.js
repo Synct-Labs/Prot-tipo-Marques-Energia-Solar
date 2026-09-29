@@ -531,6 +531,19 @@ async function initSchema() {
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS pendencia_resposta_texto TEXT;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS pendencia_resposta_em TEXT;
 
+    -- Compra Programada: contratar direto pelo catálogo deixou de confirmar
+    -- a cota na hora — agora exige CPF + comprovante de endereço + documento
+    -- com foto (mesmo padrão do checkout da loja), fica "aguardando_pagamento"
+    -- até o admin lançar o link de pagamento/PIX e confirmar que caiu.
+    ALTER TABLE consorcio_adesoes ADD COLUMN IF NOT EXISTS cpf TEXT;
+    ALTER TABLE consorcio_adesoes ADD COLUMN IF NOT EXISTS doc_endereco_dados BYTEA;
+    ALTER TABLE consorcio_adesoes ADD COLUMN IF NOT EXISTS doc_endereco_tipo TEXT;
+    ALTER TABLE consorcio_adesoes ADD COLUMN IF NOT EXISTS doc_endereco_nome TEXT;
+    ALTER TABLE consorcio_adesoes ADD COLUMN IF NOT EXISTS doc_foto_dados BYTEA;
+    ALTER TABLE consorcio_adesoes ADD COLUMN IF NOT EXISTS doc_foto_tipo TEXT;
+    ALTER TABLE consorcio_adesoes ADD COLUMN IF NOT EXISTS doc_foto_nome TEXT;
+    ALTER TABLE consorcio_adesoes ADD COLUMN IF NOT EXISTS payment_link TEXT;
+
     -- E-mails do dono/equipe que recebem aviso de evento novo (pedido,
     -- solicitação de crédito, solicitação de análise de conta Marques Pay).
     -- Configurável pelo próprio admin (aba "Notificações", só dono).
