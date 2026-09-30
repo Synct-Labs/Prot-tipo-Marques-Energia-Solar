@@ -137,6 +137,8 @@ window.MES = (function(){
     if(staffLink)  staffLink.style.display  = admin.role === "owner" ? "" : "none";
     const partnersLink = document.querySelector('.admin-nav-link[href="parceiros.html"]');
     if(partnersLink) partnersLink.style.display = admin.role === "owner" ? "" : "none";
+    const foldersLink = document.querySelector('.admin-nav-link[href="pastas.html"]');
+    if(foldersLink) foldersLink.style.display = admin.role === "owner" ? "" : "none";
 
     const label = document.getElementById("adminUserLabel");
     if(label){

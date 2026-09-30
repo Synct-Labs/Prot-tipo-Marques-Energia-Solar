@@ -45,7 +45,7 @@ async function listEntriesByAccount(accountId) {
 async function listRecentForAdmin(limit = 100) {
   const { rows } = await pool.query(
     `SELECT e.id, e.valor, e.descricao, e.autor, e.created_at, e.account_id,
-            c.nome AS customer_nome, c.email AS customer_email
+            c.nome AS customer_nome, c.email AS customer_email, c.cpf AS customer_cpf
      FROM pay_balance_entries e
      JOIN pay_accounts a ON a.id = e.account_id
      JOIN customers c ON c.id = a.customer_id
@@ -54,7 +54,7 @@ async function listRecentForAdmin(limit = 100) {
   );
   return rows.map((r) => ({
     id: r.id, valor: r.valor, descricao: r.descricao, autor: r.autor, createdAt: r.created_at,
-    customer: { nome: r.customer_nome, email: r.customer_email },
+    customer: { nome: r.customer_nome, email: r.customer_email, cpf: r.customer_cpf },
   }));
 }
 

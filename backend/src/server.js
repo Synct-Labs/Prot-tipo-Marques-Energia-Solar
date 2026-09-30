@@ -24,6 +24,7 @@ const payKyc = require("./payKyc");
 const payBalance = require("./payBalance");
 const partners = require("./partners");
 const consorcio = require("./consorcio");
+const folders = require("./folders");
 const notifications = require("./notifications");
 const mailer = require("./mailer");
 const payPartner = require("./payPartner");
@@ -1920,6 +1921,98 @@ async function handleApi(req, res, pathname) {
       await auth.deleteAdmin(id);
       return sendJSON(res, 200, { ok: true });
     }
+  }
+
+  // ---- ADMIN: PASTAS DO CLIENTE (documentos/contratos, só "owner") ----
+  if (pathname === "/api/admin/pastas/buscar" && req.method === "GET") {
+    const admin = await requireOwner(req, res);
+    if (!admin) return;
+    const url = new URL(req.url, "http://localhost");
+    const results = await folders.searchFolders(url.searchParams.get("q"));
+    return sendJSON(res, 200, { ok: true, results });
+  }
+
+  // Documento "automático" (já existente em outra parte do sistema) — um
+  // único dispatcher genérico em vez de replicar rota por rota; delega pro
+  // getter já usado nas telas originais, então mantém o mesmo comportamento
+  // (inclusive o log de auditoria de visualização do KYC).
+  const pastasAutoMatch = pathname.match(/^\/api\/admin\/pastas\/(\d+)\/auto\/([a-z_]+)\/(\d+)$/);
+  if (pastasAutoMatch && req.method === "GET") {
+    const admin = await requireOwner(req, res);
+    if (!admin) return;
+    const refOrigem = pastasAutoMatch[2];
+    const refId = parseInt(pastasAutoMatch[3], 10);
+    const autor = `admin:${admin.email}`;
+    let doc = null;
+    switch (refOrigem) {
+      case "kyc": {
+        const url = new URL(req.url, "http://localhost");
+        doc = await payKyc.getDocumentForAdmin(refId, url.searchParams.get("tipo"), autor);
+        break;
+      }
+      case "order_contrato": doc = await orders.getContrato(refId); break;
+      case "order_doc_endereco": doc = await orders.getDocEndereco(refId); break;
+      case "order_doc_foto": doc = await orders.getDocFoto(refId); break;
+      case "order_pendencia_resposta": doc = await orders.getPendenciaResposta(refId); break;
+      case "credit_lead_contrato": doc = await creditLeads.getContrato(refId); break;
+      case "loan_contrato": doc = await loans.getContrato(refId); break;
+      case "profit_share_contrato": doc = await profitShare.getContrato(refId); break;
+      case "profit_share_comprovante": doc = await profitShare.getPaymentComprovante(refId); break;
+      case "consorcio_doc_endereco": doc = await consorcio.getDocEndereco(refId); break;
+      case "consorcio_doc_foto": doc = await consorcio.getDocFoto(refId); break;
+      default: return sendJSON(res, 400, { ok: false, error: "Origem inválida." });
+    }
+    if (!doc) return sendJSON(res, 404, { ok: false, error: "Documento não encontrado." });
+    return sendBinary(res, 200, doc.data, doc.mime || doc.tipo, doc.nome);
+  }
+
+  const pastasDocsMatch = pathname.match(/^\/api\/admin\/pastas\/(\d+)\/documentos$/);
+  if (pastasDocsMatch && req.method === "POST") {
+    const admin = await requireOwner(req, res);
+    if (!admin) return;
+    const customerId = parseInt(pastasDocsMatch[1], 10);
+    const body = await parseJSONBody(req, Math.ceil(folders.MAX_DOC_BYTES * 1.4));
+    let buffer = null;
+    try { buffer = Buffer.from(String(body.arquivoBase64 || ""), "base64"); } catch { buffer = null; }
+    if (!buffer || !buffer.length) return sendJSON(res, 400, { ok: false, error: "Anexe um arquivo." });
+    if (!isAllowedFileMime(body.arquivoTipo)) {
+      return sendJSON(res, 400, { ok: false, error: `Arquivo deve ser um de: ${ALLOWED_FILE_MIMES.join(", ")}.` });
+    }
+    try {
+      await folders.addDocument(customerId, {
+        categoria: body.categoria, buffer, mime: body.arquivoTipo, nome: body.arquivoNome,
+        autor: `admin:${admin.email}`,
+      });
+    } catch (e) {
+      return sendJSON(res, e.statusCode || 400, { ok: false, error: e.message });
+    }
+    const folder = await folders.getFolder(customerId);
+    if (!folder) return sendJSON(res, 404, { ok: false, error: "Cliente não encontrado." });
+    return sendJSON(res, 201, { ok: true, folder });
+  }
+
+  const pastasDocMatch = pathname.match(/^\/api\/admin\/pastas\/(\d+)\/documentos\/(\d+)$/);
+  if (pastasDocMatch && (req.method === "GET" || req.method === "DELETE")) {
+    const admin = await requireOwner(req, res);
+    if (!admin) return;
+    const customerId = parseInt(pastasDocMatch[1], 10);
+    const docId = parseInt(pastasDocMatch[2], 10);
+    const doc = await folders.getManualDocument(docId);
+    if (!doc || doc.customerId !== customerId) return sendJSON(res, 404, { ok: false, error: "Documento não encontrado." });
+
+    if (req.method === "GET") return sendBinary(res, 200, doc.data, doc.tipo, doc.nome);
+
+    await folders.deleteManualDocument(docId);
+    return sendJSON(res, 200, { ok: true, folder: await folders.getFolder(customerId) });
+  }
+
+  const pastasCustomerMatch = pathname.match(/^\/api\/admin\/pastas\/(\d+)$/);
+  if (pastasCustomerMatch && req.method === "GET") {
+    const admin = await requireOwner(req, res);
+    if (!admin) return;
+    const folder = await folders.getFolder(parseInt(pastasCustomerMatch[1], 10));
+    if (!folder) return sendJSON(res, 404, { ok: false, error: "Cliente não encontrado." });
+    return sendJSON(res, 200, { ok: true, folder });
   }
 
   sendJSON(res, 404, { ok: false, error: "Rota de API não encontrada." });

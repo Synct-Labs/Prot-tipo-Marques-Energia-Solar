@@ -28,14 +28,43 @@ async function findById(id) {
   return rows[0] || null;
 }
 
-// Busca usada pelo admin pra encontrar o cliente ao cadastrar um contrato
-// de empréstimo/participação nos lucros — por nome ou e-mail, resultado
-// enxuto (sem senha/2FA/endereço).
+// Busca usada pelo admin pra encontrar o cliente (formulários de contrato,
+// lançamento de saldo, Pastas etc.) — por nome, e-mail ou CPF, resultado
+// enxuto (sem senha/2FA/endereço). O CPF do cliente pode estar só em
+// customers.cpf, ou só ter sido informado depois no KYC do Marques Pay, num
+// pedido da loja ou numa solicitação de crédito — por isso cruza as quatro
+// fontes (COALESCE pega a primeira não nula) tanto pra exibir quanto pra
+// casar a busca.
 async function searchCustomers(q) {
-  const like = `%${String(q || "").trim()}%`;
+  const raw = String(q || "").trim();
+  const like = `%${raw}%`;
+  const digits = raw.replace(/\D/g, "");
+  const cpfLike = digits ? `%${digits}%` : null;
   const { rows } = await pool.query(
-    "SELECT id, nome, email, cpf FROM customers WHERE nome ILIKE $1 OR email ILIKE $1 ORDER BY nome LIMIT 15",
-    [like]
+    `SELECT c.id, c.nome, c.email,
+            COALESCE(c.cpf, k.cpf, o.cpf, cl.cpf) AS cpf
+     FROM customers c
+     LEFT JOIN pay_kyc k ON k.customer_id = c.id
+     LEFT JOIN LATERAL (
+       SELECT customer_cpf AS cpf FROM orders
+       WHERE customer_id = c.id AND customer_cpf IS NOT NULL
+       ORDER BY id DESC LIMIT 1
+     ) o ON true
+     LEFT JOIN LATERAL (
+       SELECT cpf FROM credit_leads
+       WHERE customer_id = c.id AND cpf IS NOT NULL
+       ORDER BY id DESC LIMIT 1
+     ) cl ON true
+     WHERE c.nome ILIKE $1
+        OR c.email ILIKE $1
+        OR ($2::text IS NOT NULL AND (
+             regexp_replace(COALESCE(c.cpf,''), '\D', '', 'g') LIKE $2
+          OR regexp_replace(COALESCE(k.cpf,''), '\D', '', 'g') LIKE $2
+          OR regexp_replace(COALESCE(o.cpf,''), '\D', '', 'g') LIKE $2
+          OR regexp_replace(COALESCE(cl.cpf,''), '\D', '', 'g') LIKE $2
+        ))
+     ORDER BY c.nome LIMIT 15`,
+    [like, cpfLike]
   );
   return rows;
 }

@@ -25,6 +25,7 @@
     <a href="catalogo.html" class="admin-nav-link">Catálogo</a>
     <a href="parceiros.html" class="admin-nav-link">Parceiros</a>
     <a href="compra-programada.html" class="admin-nav-link">Compra Programada</a>
+    <a href="pastas.html" class="admin-nav-link">Pastas</a>
     <a href="equipe.html" class="admin-nav-link">Equipe</a>
     <a href="notificacoes.html" class="admin-nav-link">Notificações</a>
   </nav>
@@ -207,6 +208,9 @@
       <div class="admin-toolbar">
         <h2 style="font-size:1.15rem;">Saldo das contas Marques Pay</h2>
         <div class="admin-toolbar-filters">
+          <input type="text" id="balanceSearchInput" placeholder="Buscar por nome ou CPF">
+          <input type="date" id="balanceDateInput" title="Filtrar por data">
+          <button class="admin-btn admin-btn-ghost" id="clearBalanceFiltersBtn">Limpar filtros</button>
           <button class="admin-btn admin-btn-ghost" id="newBalanceBtn">+ Lançar saldo</button>
         </div>
       </div>
@@ -241,6 +245,7 @@
           <thead>
             <tr>
               <th>Cliente</th>
+              <th>CPF</th>
               <th>Valor</th>
               <th>Descrição</th>
               <th>Lançado por</th>
@@ -248,7 +253,7 @@
             </tr>
           </thead>
           <tbody id="balanceEntriesTableBody">
-            <tr><td colspan="5" class="admin-loading">Carregando...</td></tr>
+            <tr><td colspan="6" class="admin-loading">Carregando...</td></tr>
           </tbody>
         </table>
       </div>
@@ -794,15 +799,18 @@ document.getElementById("psContractsTableBody").addEventListener("change", async
 /* ========================================================================
    SALDO (lançamento manual, representativo)
    ======================================================================== */
+let allBalanceEntries = [];
+
 function renderBalanceEntries(list){
   const tbody = document.getElementById("balanceEntriesTableBody");
   if(list.length === 0){
-    tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">${t("Nenhum lançamento de saldo ainda.")}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="admin-empty">${t("Nenhum lançamento de saldo ainda.")}</td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(e => `
     <tr>
       <td data-label="Cliente">${e.customer.nome}</td>
+      <td data-label="CPF">${e.customer.cpf ? fmtCpf(e.customer.cpf) : "—"}</td>
       <td data-label="Valor">${brlMoney(e.valor)}</td>
       <td data-label="Descrição">${e.descricao}</td>
       <td data-label="Lançado por">${e.autor}</td>
@@ -810,12 +818,48 @@ function renderBalanceEntries(list){
     </tr>`).join("");
 }
 
+// Data do lançamento no fuso local, formato "AAAA-MM-DD" — pra comparar
+// direto com o valor de um <input type="date"> (que já vem nesse formato).
+function localDateKey(isoString){
+  const d = new Date(isoString);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function applyBalanceFilters(){
+  const q = document.getElementById("balanceSearchInput").value.trim().toLowerCase();
+  const qDigits = q.replace(/\D/g, "");
+  const dateFilter = document.getElementById("balanceDateInput").value;
+  let list = allBalanceEntries;
+  if(q){
+    list = list.filter(e =>
+      e.customer.nome.toLowerCase().includes(q) ||
+      (qDigits && String(e.customer.cpf || "").replace(/\D/g, "").includes(qDigits))
+    );
+  }
+  if(dateFilter){
+    list = list.filter(e => localDateKey(e.createdAt) === dateFilter);
+  }
+  renderBalanceEntries(list);
+}
+
 async function loadBalanceEntries(){
-  document.getElementById("balanceEntriesTableBody").innerHTML = `<tr><td colspan="5" class="admin-loading">${t("Carregando...")}</td></tr>`;
+  document.getElementById("balanceEntriesTableBody").innerHTML = `<tr><td colspan="6" class="admin-loading">${t("Carregando...")}</td></tr>`;
   const res = await MES.apiGet("/api/admin/pay/balance-entries");
   if(!res.ok){ MES.showToast(res.error || t("Erro ao carregar lançamentos.")); return; }
-  renderBalanceEntries(res.entries);
+  allBalanceEntries = res.entries;
+  applyBalanceFilters();
 }
+
+document.getElementById("balanceSearchInput").addEventListener("input", applyBalanceFilters);
+document.getElementById("balanceDateInput").addEventListener("input", applyBalanceFilters);
+document.getElementById("clearBalanceFiltersBtn").addEventListener("click", () => {
+  document.getElementById("balanceSearchInput").value = "";
+  document.getElementById("balanceDateInput").value = "";
+  applyBalanceFilters();
+});
 
 document.getElementById("newBalanceBtn").addEventListener("click", () => document.getElementById("newBalanceCard").style.display = "block");
 document.getElementById("cancelNewBalanceBtn").addEventListener("click", () => {

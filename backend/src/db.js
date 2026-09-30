@@ -380,6 +380,21 @@ async function initSchema() {
       comprovante_nome  TEXT,
       created_at        TEXT NOT NULL
     );
+
+    -- Pastas do cliente (aba "Pastas", só dono): documentos anexados à mão
+    -- pelo admin — além disso, na busca também aparecem (sem duplicar aqui)
+    -- os documentos que o cliente já enviou em outras partes do sistema
+    -- (KYC, pedidos, contratos), lidos direto das tabelas originais.
+    CREATE TABLE IF NOT EXISTS folder_documents (
+      id          SERIAL PRIMARY KEY,
+      customer_id INTEGER NOT NULL REFERENCES customers(id),
+      categoria   TEXT NOT NULL,
+      mime        TEXT NOT NULL,
+      nome        TEXT NOT NULL,
+      dados       BYTEA NOT NULL,
+      autor       TEXT NOT NULL,
+      created_at  TEXT NOT NULL
+    );
   `);
 
   // Colunas novas em bancos que já existiam antes desta versão (o

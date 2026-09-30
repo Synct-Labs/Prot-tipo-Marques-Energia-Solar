@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Pastas | Painel de Administrador | Marques</title>
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="admin.css">
+<script src="../theme-toggle.js"></script>
+<script src="../i18n-dict.js"></script>
+<script src="../i18n.js"></script>
+</head>
+<body class="admin-body">
+
+<header class="admin-topbar">
+  <div class="admin-brand">
+    <img src="../logo-mark-128.png" alt="Marques">
+    <span>Painel de Administrador</span>
+  </div>
+  <nav class="admin-nav">
+    <a href="dashboard.html" class="admin-nav-link">Pedidos</a>
+    <a href="credit-leads.html" class="admin-nav-link">Solicitações de Crédito</a>
+    <a href="marques-pay.html" class="admin-nav-link">Marques Pay</a>
+    <a href="catalogo.html" class="admin-nav-link">Catálogo</a>
+    <a href="parceiros.html" class="admin-nav-link">Parceiros</a>
+    <a href="compra-programada.html" class="admin-nav-link">Compra Programada</a>
+    <a href="pastas.html" class="admin-nav-link active">Pastas</a>
+    <a href="equipe.html" class="admin-nav-link">Equipe</a>
+    <a href="notificacoes.html" class="admin-nav-link">Notificações</a>
+  </nav>
+  <div class="admin-topbar-right">
+    <span class="admin-user" id="adminUserLabel"></span>
+    <button class="admin-btn admin-btn-ghost" id="logoutBtn">Sair</button>
+  </div>
+</header>
+
+<main class="admin-main">
+  <div class="admin-container">
+
+    <!-- ========================= BUSCA ========================= -->
+    <div class="admin-toolbar">
+      <h2 style="font-size:1.15rem;">Pastas do cliente</h2>
+    </div>
+
+    <div class="admin-table-wrap" style="padding:22px; margin-bottom:20px; position:relative;">
+      <div class="admin-field admin-customer-picker" style="margin-bottom:0;">
+        <label for="pastaSearchInput">Buscar cliente por nome ou CPF</label>
+        <input type="text" id="pastaSearchInput" autocomplete="off" placeholder="Digite pra buscar...">
+        <div class="admin-customer-results" id="pastaSearchResults"></div>
+      </div>
+    </div>
+
+    <!-- ========================= PASTA ========================= -->
+    <div id="folderView" style="display:none;">
+
+      <div class="admin-table-wrap" style="padding:22px; margin-bottom:20px;">
+        <button type="button" class="admin-btn admin-btn-ghost" id="backToSearchBtn" style="width:auto; margin-bottom:16px;">← Trocar cliente</button>
+        <h2 id="folderNome" style="font-size:1.25rem; margin:0 0 6px;"></h2>
+        <p style="margin:0; color:var(--muted);">
+          <span id="folderCpf"></span> · <span id="folderEmail"></span> · <span id="folderTelefone"></span>
+        </p>
+      </div>
+
+      <div class="admin-toolbar">
+        <h2 style="font-size:1.15rem;">Documentos anexados</h2>
+        <div class="admin-toolbar-filters">
+          <button class="admin-btn admin-btn-ghost" id="newDocBtn">+ Anexar documento</button>
+        </div>
+      </div>
+
+      <div class="admin-table-wrap" id="newDocCard" style="display:none; padding:22px; margin-bottom:20px;">
+        <div class="admin-error" id="newDocError"></div>
+        <form id="newDocForm">
+          <div class="admin-field">
+            <label for="ndCategoria">Categoria</label>
+            <input type="text" id="ndCategoria" required placeholder="Ex: RG, Contrato social, Comprovante de renda...">
+          </div>
+          <div class="admin-field">
+            <label for="ndArquivo">Arquivo (PDF, JPG ou PNG)</label>
+            <input type="file" id="ndArquivo" accept=".pdf,.jpg,.jpeg,.png" required>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button type="submit" class="admin-btn" id="newDocSubmitBtn" style="width:auto;">Anexar</button>
+            <button type="button" class="admin-btn admin-btn-ghost" id="cancelNewDocBtn">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-table-wrap" style="margin-bottom:28px;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Categoria</th>
+              <th>Arquivo</th>
+              <th>Anexado por</th>
+              <th>Data</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="manualDocsTableBody">
+            <tr><td colspan="5" class="admin-empty">Nenhum documento anexado ainda.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="admin-toolbar">
+        <h2 style="font-size:1.15rem;">Documentos já no sistema</h2>
+      </div>
+      <p style="margin:-10px 0 16px; color:var(--muted); font-size:0.9rem;">
+        Puxados automaticamente do cadastro — KYC, pedidos, contratos e comprovantes que o cliente já enviou em outras telas.
+      </p>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Origem</th>
+              <th>Tipo</th>
+              <th>Arquivo</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="autoDocsTableBody">
+            <tr><td colspan="4" class="admin-empty">Nenhum documento encontrado.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </div>
+</main>
+
+<script src="../api-config.js"></script>
+<script src="admin.js"></script>
+<script>
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
+const API_BASE = window.MES_API_BASE || "";
+let currentCustomerId = null;
+
+/* ---------------------- BUSCA ---------------------- */
+const searchInput = document.getElementById("pastaSearchInput");
+const resultsBox = document.getElementById("pastaSearchResults");
+let searchTimer = null;
+
+searchInput.addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  const q = searchInput.value.trim();
+  if(q.length < 2){ resultsBox.classList.remove("show"); return; }
+  searchTimer = setTimeout(async () => {
+    const res = await MES.apiGet(`/api/admin/pastas/buscar?q=${encodeURIComponent(q)}`);
+    if(!res.ok || !res.results.length){
+      resultsBox.innerHTML = `<div class="admin-customer-result-item" style="cursor:default;">${t("Nenhum cliente encontrado.")}</div>`;
+      resultsBox.classList.add("show");
+      return;
+    }
+    resultsBox.innerHTML = res.results.map(c => `
+      <div class="admin-customer-result-item" data-id="${c.id}">
+        ${c.nome}<span>${c.cpf ? fmtCpf(c.cpf) : c.email}</span>
+      </div>`).join("");
+    resultsBox.classList.add("show");
+  }, 300);
+});
+
+resultsBox.addEventListener("click", (e) => {
+  const item = e.target.closest(".admin-customer-result-item[data-id]");
+  if(!item) return;
+  resultsBox.classList.remove("show");
+  loadFolder(Number(item.dataset.id));
+});
+
+document.addEventListener("click", (e) => {
+  if(!resultsBox.contains(e.target) && e.target !== searchInput) resultsBox.classList.remove("show");
+});
+
+document.getElementById("backToSearchBtn").addEventListener("click", () => {
+  currentCustomerId = null;
+  document.getElementById("folderView").style.display = "none";
+  searchInput.value = "";
+  searchInput.focus();
+});
+
+/* ---------------------- CPF ---------------------- */
+function fmtCpf(c){ const d = String(c||"").replace(/\D/g,""); return d.length === 11 ? d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : (c || ""); }
+
+/* ---------------------- PASTA ---------------------- */
+function renderManualDocs(list){
+  const tbody = document.getElementById("manualDocsTableBody");
+  if(list.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">${t("Nenhum documento anexado ainda.")}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(d => `
+    <tr>
+      <td data-label="Categoria">${d.categoria}</td>
+      <td data-label="Arquivo">${d.nome}</td>
+      <td data-label="Anexado por">${d.autor}</td>
+      <td data-label="Data">${MES.formatDate(d.createdAt)}</td>
+      <td data-label="" style="white-space:nowrap;">
+        <a class="admin-btn admin-btn-ghost" style="width:auto; padding:6px 12px; display:inline-block;" href="${API_BASE}/api/admin/pastas/${currentCustomerId}/documentos/${d.id}" target="_blank" rel="noopener">${t("Ver")}</a>
+        <button type="button" class="admin-btn admin-btn-ghost delete-manual-doc-btn" style="width:auto; padding:6px 12px;" data-id="${d.id}">${t("Remover")}</button>
+      </td>
+    </tr>`).join("");
+}
+
+function renderAutoDocs(list){
+  const tbody = document.getElementById("autoDocsTableBody");
+  if(list.length === 0){
+    tbody.innerHTML = `<tr><td colspan="4" class="admin-empty">${t("Nenhum documento encontrado.")}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(d => {
+    const tipoParam = d.refTipo ? `?tipo=${encodeURIComponent(d.refTipo)}` : "";
+    const href = `${API_BASE}/api/admin/pastas/${currentCustomerId}/auto/${d.refOrigem}/${d.refId}${tipoParam}`;
+    return `
+    <tr>
+      <td data-label="Origem">${d.origem}</td>
+      <td data-label="Tipo">${d.tipo}</td>
+      <td data-label="Arquivo">${d.nome || "—"}</td>
+      <td data-label="" style="white-space:nowrap;">
+        <a class="admin-btn admin-btn-ghost" style="width:auto; padding:6px 12px; display:inline-block;" href="${href}" target="_blank" rel="noopener">${t("Ver")}</a>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+async function loadFolder(customerId){
+  currentCustomerId = customerId;
+  document.getElementById("folderView").style.display = "block";
+  document.getElementById("folderNome").textContent = t("Carregando...");
+  document.getElementById("folderCpf").textContent = "";
+  document.getElementById("folderEmail").textContent = "";
+  document.getElementById("folderTelefone").textContent = "";
+  renderManualDocs([]);
+  renderAutoDocs([]);
+
+  const res = await MES.apiGet(`/api/admin/pastas/${customerId}`);
+  if(!res.ok){
+    MES.showToast(res.error || t("Erro ao carregar a pasta."));
+    document.getElementById("folderView").style.display = "none";
+    return;
+  }
+  const { customer, manuais, automaticos } = res.folder;
+  document.getElementById("folderNome").textContent = customer.nome;
+  document.getElementById("folderCpf").textContent = customer.cpf ? fmtCpf(customer.cpf) : t("CPF não informado");
+  document.getElementById("folderEmail").textContent = customer.email;
+  document.getElementById("folderTelefone").textContent = customer.telefone || "";
+  renderManualDocs(manuais);
+  renderAutoDocs(automaticos);
+}
+
+/* ---------------------- ANEXAR ---------------------- */
+document.getElementById("newDocBtn").addEventListener("click", () => document.getElementById("newDocCard").style.display = "block");
+document.getElementById("cancelNewDocBtn").addEventListener("click", () => {
+  document.getElementById("newDocCard").style.display = "none";
+  document.getElementById("newDocForm").reset();
+});
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById("newDocForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorBox = document.getElementById("newDocError");
+  const btn = document.getElementById("newDocSubmitBtn");
+  errorBox.classList.remove("show");
+
+  const file = document.getElementById("ndArquivo").files[0];
+  if(!file){
+    errorBox.textContent = t("Escolha um arquivo.");
+    errorBox.classList.add("show");
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = t("Anexando...");
+  try{
+    const arquivoBase64 = await fileToBase64(file);
+    const res = await MES.apiPost(`/api/admin/pastas/${currentCustomerId}/documentos`, {
+      categoria: document.getElementById("ndCategoria").value.trim(),
+      arquivoBase64,
+      arquivoTipo: file.type,
+      arquivoNome: file.name,
+    });
+    if(!res.ok){
+      errorBox.textContent = res.error || t("Não foi possível anexar o documento.");
+      errorBox.classList.add("show");
+      return;
+    }
+    document.getElementById("newDocForm").reset();
+    document.getElementById("newDocCard").style.display = "none";
+    MES.showToast(t("Documento anexado."));
+    renderManualDocs(res.folder.manuais);
+  } finally {
+    btn.disabled = false; btn.textContent = t("Anexar");
+  }
+});
+
+document.getElementById("manualDocsTableBody").addEventListener("click", async (e) => {
+  const delBtn = e.target.closest(".delete-manual-doc-btn");
+  if(!delBtn) return;
+  if(!confirm(t("Remover este documento? Não tem como desfazer."))) return;
+  const res = await MES.apiDelete(`/api/admin/pastas/${currentCustomerId}/documentos/${delBtn.dataset.id}`);
+  if(!res.ok){
+    MES.showToast(res.error || t("Erro ao remover."));
+    return;
+  }
+  MES.showToast(t("Documento removido."));
+  renderManualDocs(res.folder.manuais);
+});
+
+/* ---------------------- INIT ---------------------- */
+async function init(){
+  const admin = await MES.requireAuth();
+  if(!admin) return;
+  if(admin.role !== "owner"){
+    window.location.href = MES.landingPageFor(admin);
+    return;
+  }
+  searchInput.focus();
+}
+
+document.getElementById("logoutBtn").addEventListener("click", () => MES.logout());
+
+init();
+</script>
+</body>
+</html>
