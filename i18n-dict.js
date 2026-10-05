@@ -1529,6 +1529,7 @@ window.MES_I18N_DICT = {
   "Todos os grupos": "All groups",
   '"Aguardando cliente" = o parceiro lançou a venda e o cliente ainda não aceitou. "Aguardando pagamento" = o cliente quer a cota: confira o PIX recebido (QR code do grupo ou link enviado) antes de clicar em "Confirmar pagamento recebido". "Confirmada" = pagamento conferido por você; a cota vale e a comissão do parceiro (se houver) fica prevista.':
     '"Awaiting customer" = the partner entered the sale and the customer hasn\'t accepted yet. "Awaiting payment" = the customer wants the share: check the PIX received (the group\'s QR code or the link sent) before clicking "Confirm payment received". "Confirmed" = payment verified by you; the share is valid and the partner\'s commission (if any) is projected.',
+  "Só o dono da conta confirma o pagamento.": "Only the account owner confirms the payment.",
   "Confira no seu banco o PIX deste cliente antes de confirmar. Valor da cota:": "Check this customer's PIX in your bank before confirming. Share value:",
   "cotas ocupadas (": "shares taken (",
   "vaga(s)) ·": "spot(s)) ·",

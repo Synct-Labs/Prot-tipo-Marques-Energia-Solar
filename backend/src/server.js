@@ -1545,6 +1545,11 @@ async function handleApi(req, res, pathname) {
 
     const adesaoConfirmarPagamentoMatch = pathname.match(/^\/api\/admin\/consorcio\/adesoes\/(\d+)\/confirmar-pagamento$/);
     if (adesaoConfirmarPagamentoMatch && req.method === "POST") {
+      // Confirmar o PIX libera a cota e gera comissão: só o dono da conta
+      // (quem tem acesso ao banco) aprova — funcionário não.
+      if (admin.role !== "owner") {
+        return sendJSON(res, 403, { ok: false, error: "Só o dono da conta pode confirmar o pagamento de uma adesão." });
+      }
       return kycGuard(async () => {
         const adesao = await consorcio.confirmarPagamento(parseInt(adesaoConfirmarPagamentoMatch[1], 10));
         return sendJSON(res, 200, { ok: true, adesao });

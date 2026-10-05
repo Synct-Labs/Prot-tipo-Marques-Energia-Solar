@@ -391,7 +391,9 @@ function adesaoRowHTML(a){
           <form class="admin-consorcio-payment-link-form" data-adesao-id="${a.id}" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
             <input type="text" name="link" placeholder="${t("Link de pagamento ou chave PIX")}" style="flex:1; min-width:220px;" required>
             <button type="submit" class="admin-btn admin-btn-ghost" style="width:auto;">${t("Enviar")}</button>
-            <button type="button" class="admin-btn" style="width:auto;" data-confirmar-pagamento="${a.id}">${t("Confirmar pagamento recebido")}</button>
+            ${isOwner
+              ? `<button type="button" class="admin-btn" style="width:auto;" data-confirmar-pagamento="${a.id}">${t("Confirmar pagamento recebido")}</button>`
+              : `<small style="color:var(--muted);">${t("Só o dono da conta confirma o pagamento.")}</small>`}
           </form>
         </div>
       ` : ""}
@@ -449,9 +451,12 @@ document.getElementById("adesoesList").addEventListener("submit", async (e) => {
 document.getElementById("adesaoGrupoFilter").addEventListener("change", loadAdesoes);
 document.getElementById("adesaoRefresh").addEventListener("click", loadAdesoes);
 
+let isOwner = false;
+
 async function init(){
   const admin = await MES.requireAuth("promotora");
   if(!admin) return;
+  isOwner = admin.role === "owner";
   await loadGrupos();
   await loadAdesoes();
 }
