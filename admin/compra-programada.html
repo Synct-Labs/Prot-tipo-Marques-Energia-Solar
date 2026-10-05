@@ -109,7 +109,7 @@
           <button class="admin-btn admin-btn-ghost" id="adesaoRefresh" type="button">Atualizar</button>
         </div>
       </div>
-      <p class="admin-customer-picked show" style="margin-bottom:14px;">"Aguardando cliente" = o parceiro lançou a venda e o cliente ainda não confirmou (a comissão só nasce na confirmação). "Confirmada" = já vale, comissão prevista (se houver parceiro).</p>
+      <p class="admin-customer-picked show" style="margin-bottom:14px;">"Aguardando cliente" = o parceiro lançou a venda e o cliente ainda não aceitou. "Aguardando pagamento" = o cliente quer a cota: confira o PIX recebido (QR code do grupo ou link enviado) antes de clicar em "Confirmar pagamento recebido". "Confirmada" = pagamento conferido por você; a cota vale e a comissão do parceiro (se houver) fica prevista.</p>
       <div id="adesoesList"></div>
     </div>
 
@@ -386,6 +386,7 @@ function adesaoRowHTML(a){
       ` : ""}
       ${a.status === "aguardando_pagamento" ? `
         <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border-soft);">
+          <p style="margin:0 0 10px; font-size:0.85rem;">${t("Confira no seu banco o PIX deste cliente antes de confirmar. Valor da cota:")} <strong>${MES.formatBRL(a.valorCota)}</strong></p>
           ${a.paymentLink ? `<p class="admin-muted" style="word-break:break-all; margin:0 0 8px;">${t("Último link/chave enviado:")} ${esc(a.paymentLink)}</p>` : ""}
           <form class="admin-consorcio-payment-link-form" data-adesao-id="${a.id}" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
             <input type="text" name="link" placeholder="${t("Link de pagamento ou chave PIX")}" style="flex:1; min-width:220px;" required>
@@ -419,7 +420,7 @@ document.getElementById("adesoesList").addEventListener("click", async (e) => {
   }
   const confirmarBtn = e.target.closest("[data-confirmar-pagamento]");
   if(confirmarBtn){
-    if(!confirm(t("Confirmar que o pagamento dessa adesão caiu? Isso libera a cota e gera a comissão do parceiro, se houver."))) return;
+    if(!confirm(t("Você conferiu o PIX no seu banco e o pagamento dessa adesão caiu? Ao confirmar, a adesão passa a valer e a comissão do parceiro (se houver) é gerada."))) return;
     const res = await MES.apiPost(`/api/admin/consorcio/adesoes/${confirmarBtn.dataset.confirmarPagamento}/confirmar-pagamento`, {});
     if(!res.ok){ MES.showToast(res.error || t("Erro ao confirmar pagamento.")); return; }
     MES.showToast(t("Pagamento confirmado."));

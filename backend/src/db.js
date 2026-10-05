@@ -348,10 +348,12 @@ async function initSchema() {
     );
 
     -- Adesão a um grupo de Compra Programada. "origem" = 'cliente' (o
-    -- próprio cliente contratou pelo catálogo do site, já confirmada na
-    -- hora) ou 'parceiro' (o parceiro lançou a venda pro cliente, fica
-    -- 'aguardando_cliente' até o cliente entrar e confirmar — só aí a
-    -- comissão do parceiro é criada, ver confirmarAdesao em consorcio.js).
+    -- próprio cliente contratou pelo catálogo do site: nasce
+    -- 'aguardando_pagamento') ou 'parceiro' (o parceiro lançou a venda pro
+    -- cliente: fica 'aguardando_cliente' até ele entrar e confirmar, e aí
+    -- também vai pra 'aguardando_pagamento'). Em ambos, só o admin torna a
+    -- adesão 'confirmada', depois de conferir o PIX — e só então a comissão
+    -- do parceiro é criada (ver confirmarPagamento em consorcio.js).
     CREATE TABLE IF NOT EXISTS consorcio_adesoes (
       id             SERIAL PRIMARY KEY,
       grupo_id       INTEGER NOT NULL REFERENCES consorcio_grupos(id),

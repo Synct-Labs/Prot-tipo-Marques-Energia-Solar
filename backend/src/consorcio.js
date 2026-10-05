@@ -12,8 +12,12 @@
          indicação, mas a comissão só nasce quando o admin confirma o
          pagamento — ver confirmarPagamento).
      4b) Parceiro lança a venda -> adesão nasce 'aguardando_cliente'
-         (SEM comissão ainda). O cliente precisa entrar e confirmar; só
-         nesse momento a comissão do parceiro é criada.
+         (SEM comissão ainda). O cliente entra e confirma -> vira
+         'aguardando_pagamento', igual à contratação direta.
+     5) Em qualquer caminho, só o admin torna a adesão 'confirmada': ele
+        confere o PIX recebido (QR code do grupo / link) e usa
+        confirmarPagamento — é nesse momento que a comissão do parceiro
+        nasce.
    ===================================================================== */
 const { pool } = require("./db");
 const partners = require("./partners");
@@ -409,8 +413,11 @@ async function registrarComissao(adesaoId, partnerRow) {
   });
 }
 
-// Cliente confirma uma adesão que um parceiro lançou pra ele: só aqui a
-// comissão do parceiro nasce (status 'prevista').
+// Cliente aceita uma adesão que um parceiro lançou pra ele. Isso NÃO confirma
+// a adesão: ela segue o mesmo caminho da contratação direta e vira
+// 'aguardando_pagamento' — o cliente paga (QR code do grupo / link / PIX) e só
+// quando o admin conferir o PIX e chamar confirmarPagamento é que ela fica
+// 'confirmada' e a comissão do parceiro nasce.
 async function confirmarAdesao(customerId, adesaoId) {
   const { rows } = await pool.query("SELECT * FROM consorcio_adesoes WHERE id = $1", [adesaoId]);
   const row = rows[0];
@@ -418,16 +425,10 @@ async function confirmarAdesao(customerId, adesaoId) {
   if (row.customer_id != null && row.customer_id !== customerId) throw err(403, "Essa adesão não é sua.");
   if (row.status !== "aguardando_cliente") throw err(409, "Essa adesão já foi processada.");
 
-  const now = new Date().toISOString();
   await pool.query(
-    "UPDATE consorcio_adesoes SET customer_id = $1, status = 'confirmada', confirmada_em = $2, updated_at = $2 WHERE id = $3",
-    [customerId, now, adesaoId]
+    "UPDATE consorcio_adesoes SET customer_id = $1, status = 'aguardando_pagamento', updated_at = $2 WHERE id = $3",
+    [customerId, new Date().toISOString(), adesaoId]
   );
-
-  if (row.partner_id) {
-    const { rows: prows } = await pool.query("SELECT * FROM partners WHERE id = $1", [row.partner_id]);
-    if (prows[0]) await registrarComissao(adesaoId, prows[0]);
-  }
   return getAdesaoById(adesaoId);
 }
 

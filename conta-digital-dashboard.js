@@ -378,8 +378,9 @@ async function initMarquesPayRealData() {
    COMPRA PROGRAMADA: ADESÕES PENDENTES DE CONFIRMAÇÃO
    ---------------------------------------------------------------------
    Só aparece quando um parceiro lançou uma venda em nome do cliente
-   (status 'aguardando_cliente') — a comissão do parceiro só nasce depois
-   que o próprio cliente confirma aqui.
+   (status 'aguardando_cliente'). Ao aceitar aqui, a adesão vai pra
+   'aguardando_pagamento' (card "Pagamento da cota") — só vira confirmada
+   (e gera a comissão do parceiro) depois que o admin conferir o PIX.
    ====================================================================== */
 function escConsorcioPendente(v) {
   return String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

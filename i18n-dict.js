@@ -1155,8 +1155,8 @@ window.MES_I18N_DICT = {
   "Ações rápidas": "Quick actions",
   "Pagar boleto": "Pay a bill",
   "Compra Programada pendente de confirmação": "Installment Purchase Plan pending confirmation",
-  "Um parceiro lançou uma venda em seu nome. Confirme pra garantir sua cota — a comissão dele só é gerada depois dessa confirmação.":
-    "A partner entered a sale in your name. Confirm it to secure your spot — their commission is only generated after this confirmation.",
+  "Um parceiro lançou uma venda em seu nome. Aceite pra reservar sua cota e pagar — a adesão só vale depois que a Marques conferir o pagamento.":
+    "A partner entered a sale in your name. Accept it to reserve your share and pay — the enrollment is only valid after Marques verifies the payment.",
   "Próximos boletos": "Upcoming bills",
   "Ver todos →": "See all →",
   "Só os boletos dos seus empréstimos com a Marques.": "Only bills for your loans with Marques.",
@@ -1527,8 +1527,9 @@ window.MES_I18N_DICT = {
   "Regras (assembleia, sorteio, lance etc. — texto livre)": "Rules (meeting, drawing, bidding, etc. — free text)",
   "Criar grupo": "Create group",
   "Todos os grupos": "All groups",
-  '"Aguardando cliente" = o parceiro lançou a venda e o cliente ainda não confirmou (a comissão só nasce na confirmação). "Confirmada" = já vale, comissão prevista (se houver parceiro).':
-    '"Awaiting customer" = the partner entered the sale and the customer hasn\'t confirmed yet (the commission is only generated on confirmation). "Confirmed" = already valid, commission projected (if there is a partner).',
+  '"Aguardando cliente" = o parceiro lançou a venda e o cliente ainda não aceitou. "Aguardando pagamento" = o cliente quer a cota: confira o PIX recebido (QR code do grupo ou link enviado) antes de clicar em "Confirmar pagamento recebido". "Confirmada" = pagamento conferido por você; a cota vale e a comissão do parceiro (se houver) fica prevista.':
+    '"Awaiting customer" = the partner entered the sale and the customer hasn\'t accepted yet. "Awaiting payment" = the customer wants the share: check the PIX received (the group\'s QR code or the link sent) before clicking "Confirm payment received". "Confirmed" = payment verified by you; the share is valid and the partner\'s commission (if any) is projected.',
+  "Confira no seu banco o PIX deste cliente antes de confirmar. Valor da cota:": "Check this customer's PIX in your bank before confirming. Share value:",
   "cotas ocupadas (": "shares taken (",
   "vaga(s)) ·": "spot(s)) ·",
   "/cota ·": "/share ·",
@@ -1551,8 +1552,8 @@ window.MES_I18N_DICT = {
   "Cancelar essa adesão? Ela deixa de reservar a cota no grupo.": "Cancel this enrollment? It will stop reserving the share in the group.",
   "Erro ao cancelar.": "Error cancelling.",
   "Adesão cancelada.": "Enrollment cancelled.",
-  "Confirmar que o pagamento dessa adesão caiu? Isso libera a cota e gera a comissão do parceiro, se houver.":
-    "Confirm that this enrollment's payment came through? This releases the share and generates the partner's commission, if there is one.",
+  "Você conferiu o PIX no seu banco e o pagamento dessa adesão caiu? Ao confirmar, a adesão passa a valer e a comissão do parceiro (se houver) é gerada.":
+    "Did you check the PIX in your bank and the payment for this enrollment came through? Once confirmed, the enrollment becomes valid and the partner's commission (if any) is generated.",
   "Erro ao confirmar pagamento.": "Error confirming payment.",
   "Pagamento confirmado.": "Payment confirmed.",
 
