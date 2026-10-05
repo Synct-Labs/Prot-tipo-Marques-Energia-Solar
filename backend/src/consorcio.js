@@ -262,6 +262,8 @@ function rowToAdesao(row, { withPix } = {}) {
     status: row.status,
     temDocEndereco: !!row.doc_endereco_dados,
     temDocFoto: !!row.doc_foto_dados,
+    temComprovante: !!row.comprovante_dados,
+    comprovanteEm: row.comprovante_em || null,
     grupoTemQr: !!row.grupo_tem_qr,
     grupoTemPix: !!row.grupo_pix,
     ...(withPix && row.status === "aguardando_pagamento" && row.grupo_pix ? { pixCopiaCola: row.grupo_pix } : {}),
@@ -340,6 +342,39 @@ async function confirmarPagamento(id) {
     if (prows[0]) await registrarComissao(id, prows[0]);
   }
   return getAdesaoById(id);
+}
+
+/* ---------------------- COMPROVANTE DE PAGAMENTO (enviado pelo cliente) ----------------------
+   O cliente anexa o comprovante do PIX no card de pagamento; o admin vê junto
+   da adesão na hora de confirmar. Só o dono da adesão envia, e só enquanto ela
+   aguarda pagamento; pode reenviar (o último vale). */
+const COMPROVANTE_MIMES = ["image/jpeg", "image/png", "application/pdf"];
+
+async function setComprovante(adesaoId, customerId, { buffer, tipo, nome }) {
+  if (!COMPROVANTE_MIMES.includes(tipo)) throw err(400, "O comprovante deve ser JPG, PNG ou PDF.");
+  if (!buffer || !buffer.length) throw err(400, "Anexe o comprovante de pagamento.");
+  if (buffer.length > MAX_DOC_BYTES) throw err(413, "Comprovante maior que 5 MB.");
+  const { rows } = await pool.query("SELECT customer_id, status FROM consorcio_adesoes WHERE id = $1", [adesaoId]);
+  const row = rows[0];
+  if (!row) throw err(404, "Adesão não encontrada.");
+  if (row.customer_id !== customerId) throw err(403, "Essa adesão não é sua.");
+  if (row.status !== "aguardando_pagamento") throw err(409, "Essa adesão não está aguardando pagamento.");
+  const now = new Date().toISOString();
+  await pool.query(
+    "UPDATE consorcio_adesoes SET comprovante_dados = $1, comprovante_tipo = $2, comprovante_nome = $3, comprovante_em = $4, updated_at = $4 WHERE id = $5",
+    [buffer, tipo, String(nome || "comprovante").slice(0, 120), now, adesaoId]
+  );
+  return getAdesaoById(adesaoId, { withPix: true });
+}
+
+async function getComprovante(id) {
+  const { rows } = await pool.query(
+    "SELECT comprovante_dados, comprovante_tipo, comprovante_nome FROM consorcio_adesoes WHERE id = $1",
+    [id]
+  );
+  const row = rows[0];
+  if (!row || !row.comprovante_dados) return null;
+  return { data: row.comprovante_dados, tipo: row.comprovante_tipo, nome: row.comprovante_nome };
 }
 
 async function getDocEndereco(id) {
@@ -455,7 +490,7 @@ module.exports = {
   createGrupo, updateGrupo, getGrupoById, listGruposAdmin, listGruposPublicos, listGruposParceiro,
   contratarComoCliente, lancarComoParceiro, getAdesaoById, listAdesoesByCustomer,
   listAdesoesPendentesPorEmail, listAdesoesAdmin, confirmarAdesao, cancelarAdesao,
-  confirmarPagamento, getDocEndereco, getDocFoto,
+  confirmarPagamento, getDocEndereco, getDocFoto, setComprovante, getComprovante,
   getTexto, setTexto,
   deleteGrupo, setQr, clearQr, getQr, getQrForAdesao, MAX_QR_BYTES,
 };

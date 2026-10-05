@@ -162,7 +162,8 @@ async function autoDocuments(customerId) {
   const adesoes = await pool.query(
     `SELECT a.id, g.nome AS grupo_nome,
             a.doc_endereco_nome, (a.doc_endereco_dados IS NOT NULL) AS tem_doc_endereco,
-            a.doc_foto_nome, (a.doc_foto_dados IS NOT NULL) AS tem_doc_foto
+            a.doc_foto_nome, (a.doc_foto_dados IS NOT NULL) AS tem_doc_foto,
+            a.comprovante_nome, (a.comprovante_dados IS NOT NULL) AS tem_comprovante
      FROM consorcio_adesoes a JOIN consorcio_grupos g ON g.id = a.grupo_id
      WHERE a.customer_id = $1 ORDER BY a.id DESC`,
     [customerId]
@@ -171,6 +172,7 @@ async function autoDocuments(customerId) {
     const label = `Compra Programada — ${a.grupo_nome}`;
     if (a.tem_doc_endereco) docs.push({ origem: label, tipo: "Comprovante de endereço", nome: a.doc_endereco_nome, refOrigem: "consorcio_doc_endereco", refId: a.id });
     if (a.tem_doc_foto) docs.push({ origem: label, tipo: "Documento com foto", nome: a.doc_foto_nome, refOrigem: "consorcio_doc_foto", refId: a.id });
+    if (a.tem_comprovante) docs.push({ origem: label, tipo: "Comprovante de pagamento", nome: a.comprovante_nome, refOrigem: "consorcio_comprovante", refId: a.id });
   }
 
   return docs;

@@ -431,6 +431,12 @@ async function initSchema() {
     -- PIX "copia e cola" (ou link de pagamento) do grupo: o cliente copia pelo
     -- botão do card de pagamento. Mesmo acesso do QR code (só dono da adesão).
     ALTER TABLE consorcio_grupos ADD COLUMN IF NOT EXISTS pix_copia_cola TEXT;
+    -- Comprovante de pagamento da cota, anexado pelo cliente no card de
+    -- pagamento (Marques Pay) — o admin vê na hora de confirmar o PIX.
+    ALTER TABLE consorcio_adesoes ADD COLUMN IF NOT EXISTS comprovante_dados BYTEA;
+    ALTER TABLE consorcio_adesoes ADD COLUMN IF NOT EXISTS comprovante_tipo TEXT;
+    ALTER TABLE consorcio_adesoes ADD COLUMN IF NOT EXISTS comprovante_nome TEXT;
+    ALTER TABLE consorcio_adesoes ADD COLUMN IF NOT EXISTS comprovante_em TEXT;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_valor_sistema DOUBLE PRECISION;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_parcelas INTEGER;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_fgts_disponivel DOUBLE PRECISION;

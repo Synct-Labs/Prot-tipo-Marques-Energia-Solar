@@ -397,8 +397,35 @@ function mostrarQrPagamento(form, adesao){
         <div style="font-family:monospace; font-size:0.75rem; word-break:break-all; background:var(--surface-2); border-radius:10px; padding:10px 12px; max-height:90px; overflow:auto;">${escConsorcio(adesao.pixCopiaCola)}</div>
         <button type="button" class="btn btn-primary consorcio-copiar-pix" style="width:100%; justify-content:center; margin-top:10px;">${t("Copiar código PIX")}</button>
       </div>` : ""}
+      <div style="margin:20px auto 0; max-width:440px; text-align:left; border-top:1px solid var(--border); padding-top:16px;">
+        <p style="margin:0 0 4px; font-size:0.9rem;"><strong>${t("Já pagou? Anexe o comprovante")}</strong></p>
+        <p style="color:var(--muted); font-size:0.78rem; margin:0 0 10px;">${t("Ele vai junto da sua adesão pra gente conferir o pagamento mais rápido. JPG, PNG ou PDF, até 5 MB.")}</p>
+        <input type="file" class="consorcio-comprovante-file" accept="image/jpeg,image/png,application/pdf">
+        <button type="button" class="btn btn-outline consorcio-comprovante-enviar" style="width:100%; justify-content:center; margin-top:10px;">${t("Enviar comprovante")}</button>
+        <small class="consorcio-comprovante-msg" style="display:block; margin-top:8px;"></small>
+      </div>
       <div style="margin-top:14px;"><button type="button" class="btn btn-ghost consorcio-qr-fechar" style="width:auto;">${t("Fechar")}</button></div>
     </div>`;
+  const comprovanteBtn = form.querySelector(".consorcio-comprovante-enviar");
+  const comprovanteMsg = form.querySelector(".consorcio-comprovante-msg");
+  comprovanteBtn.addEventListener("click", async () => {
+    const file = form.querySelector(".consorcio-comprovante-file").files[0];
+    const aviso = (texto, ok) => { comprovanteMsg.textContent = texto; comprovanteMsg.style.color = ok ? "var(--success)" : "var(--danger)"; };
+    if(!file){ aviso(t("Escolha o arquivo do comprovante."), false); return; }
+    if(file.size > 5 * 1024 * 1024){ aviso(t("O comprovante deve ter no máximo 5 MB."), false); return; }
+    comprovanteBtn.disabled = true; comprovanteBtn.textContent = t("Enviando...");
+    try {
+      const res = await CONTA_apiPost(`/api/customers/me/consorcio-adesoes/${adesao.id}/comprovante`, {
+        comprovanteBase64: await fileToBase64Consorcio(file), comprovanteTipo: file.type, comprovanteNome: file.name,
+      });
+      if(res.ok) aviso(t("Comprovante enviado! Vamos conferir o pagamento."), true);
+      else aviso(res.error || t("Não foi possível enviar o comprovante."), false);
+    } catch(e) {
+      aviso(t("Erro de conexão. Tente novamente."), false);
+    } finally {
+      comprovanteBtn.disabled = false; comprovanteBtn.textContent = t("Enviar comprovante");
+    }
+  });
   const copiarBtn = form.querySelector(".consorcio-copiar-pix");
   if(copiarBtn){
     copiarBtn.addEventListener("click", async () => {

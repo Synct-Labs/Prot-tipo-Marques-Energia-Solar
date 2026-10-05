@@ -1409,6 +1409,25 @@ async function handleApi(req, res, pathname) {
     return sendBinary(res, 200, qr.data, qr.tipo, qr.nome, { "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store" });
   }
 
+  // Cliente anexa o comprovante do PIX no card de pagamento (reenviar substitui o anterior).
+  const consorcioComprovanteMatch = pathname.match(/^\/api\/customers\/me\/consorcio-adesoes\/(\d+)\/comprovante$/);
+  if (consorcioComprovanteMatch && req.method === "POST") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const body = await parseJSONBody(req, Math.ceil(consorcio.MAX_DOC_BYTES * 1.4) + 1024);
+    let buffer = null;
+    try { buffer = Buffer.from(String(body.comprovanteBase64 || ""), "base64"); } catch { buffer = null; }
+    if (!isAllowedFileMime(body.comprovanteTipo)) {
+      return sendJSON(res, 400, { ok: false, error: `O comprovante deve ser um de: ${ALLOWED_FILE_MIMES.join(", ")}.` });
+    }
+    return kycGuard(async () => {
+      const adesao = await consorcio.setComprovante(parseInt(consorcioComprovanteMatch[1], 10), customer.id, {
+        buffer, tipo: body.comprovanteTipo, nome: body.comprovanteNome,
+      });
+      return sendJSON(res, 200, { ok: true, adesao });
+    });
+  }
+
   const consorcioConfirmarMatch = pathname.match(/^\/api\/customers\/me\/consorcio-adesoes\/(\d+)\/confirmar$/);
   if (consorcioConfirmarMatch && req.method === "POST") {
     const customer = await requireCustomer(req, res);
@@ -1517,6 +1536,14 @@ async function handleApi(req, res, pathname) {
       const c = await consorcio.getDocFoto(parseInt(adesaoDocFotoMatch[1], 10));
       if (!c) return sendJSON(res, 404, { ok: false, error: "Documento não encontrado." });
       return sendBinary(res, 200, c.data, c.tipo, c.nome);
+    }
+
+    // Comprovante de pagamento anexado pelo cliente — o admin confere antes de confirmar.
+    const adesaoComprovanteAdminMatch = pathname.match(/^\/api\/admin\/consorcio\/adesoes\/(\d+)\/comprovante$/);
+    if (adesaoComprovanteAdminMatch && req.method === "GET") {
+      const c = await consorcio.getComprovante(parseInt(adesaoComprovanteAdminMatch[1], 10));
+      if (!c) return sendJSON(res, 404, { ok: false, error: "Esse cliente ainda não enviou o comprovante." });
+      return sendBinary(res, 200, c.data, c.tipo, c.nome, { "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store" });
     }
 
     const adesaoConfirmarPagamentoMatch = pathname.match(/^\/api\/admin\/consorcio\/adesoes\/(\d+)\/confirmar-pagamento$/);
@@ -2028,6 +2055,7 @@ async function handleApi(req, res, pathname) {
       case "profit_share_comprovante": doc = await profitShare.getPaymentComprovante(refId); break;
       case "consorcio_doc_endereco": doc = await consorcio.getDocEndereco(refId); break;
       case "consorcio_doc_foto": doc = await consorcio.getDocFoto(refId); break;
+      case "consorcio_comprovante": doc = await consorcio.getComprovante(refId); break;
       default: return sendJSON(res, 400, { ok: false, error: "Origem inválida." });
     }
     if (!doc) return sendJSON(res, 404, { ok: false, error: "Documento não encontrado." });

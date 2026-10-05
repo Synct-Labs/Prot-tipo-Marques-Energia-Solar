@@ -376,7 +376,7 @@ document.getElementById("gruposList").addEventListener("change", async (e) => {
 
 /* ---------------------- ADESÕES ---------------------- */
 function adesaoRowHTML(a){
-  const temDocs = a.temDocEndereco || a.temDocFoto;
+  const temDocs = a.temDocEndereco || a.temDocFoto || a.temComprovante;
   return `
     <div class="admin-table-wrap" style="padding:16px 20px; margin-bottom:12px;" data-adesao="${a.id}">
       <div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; justify-content:space-between;">
@@ -394,11 +394,15 @@ function adesaoRowHTML(a){
         <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
           ${a.temDocEndereco ? `<a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/consorcio/adesoes/${a.id}/doc-endereco" target="_blank" rel="noopener">${t("Comprovante de endereço")}</a>` : ""}
           ${a.temDocFoto ? `<a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/consorcio/adesoes/${a.id}/doc-foto" target="_blank" rel="noopener">${t("Documento com foto")}</a>` : ""}
+          ${a.temComprovante ? `<a class="admin-btn admin-btn-ghost" href="${API_BASE}/api/admin/consorcio/adesoes/${a.id}/comprovante" target="_blank" rel="noopener">${t("Comprovante de pagamento")}</a>` : ""}
         </div>
       ` : ""}
       ${a.status === "aguardando_pagamento" ? `
         <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border-soft);">
           <p style="margin:0 0 10px; font-size:0.85rem;">${t("Confira no seu banco o PIX deste cliente antes de confirmar. Valor da cota:")} <strong>${MES.formatBRL(a.valorCota)}</strong></p>
+          <p style="margin:0 0 10px; font-size:0.85rem;">${a.temComprovante
+            ? `✓ ${t("Comprovante enviado pelo cliente em")} ${MES.formatDate(a.comprovanteEm)} — <a href="${API_BASE}/api/admin/consorcio/adesoes/${a.id}/comprovante" target="_blank" rel="noopener" style="color:var(--orange-light); font-weight:600;">${t("Ver comprovante")}</a>`
+            : `<span style="color:var(--muted);">${t("O cliente ainda não anexou o comprovante de pagamento.")}</span>`}</p>
           ${isOwner
             ? `<button type="button" class="admin-btn" style="width:auto;" data-confirmar-pagamento="${a.id}">${t("Confirmar pagamento recebido")}</button>`
             : `<small style="color:var(--muted);">${t("Só o dono da conta confirma o pagamento.")}</small>`}

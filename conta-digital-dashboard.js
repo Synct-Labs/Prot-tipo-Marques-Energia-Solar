@@ -434,13 +434,57 @@ function consorcioPagamentoRowHTML(a) {
   const aviso = !qrHTML && !linkHTML
     ? `<p style="color:var(--muted); font-size:0.85rem; margin-top:10px;">${t("Os dados de pagamento deste grupo ainda não estão disponíveis. Fale com a gente pelo WhatsApp.")}</p>`
     : "";
+  // Comprovante do PIX: o cliente anexa aqui e o admin vê na hora de confirmar.
+  const enviadoEm = a.comprovanteEm ? new Date(a.comprovanteEm).toLocaleString(window.MES_I18N && window.MES_I18N.get() === "en" ? "en-US" : "pt-BR") : "";
+  const comprovanteHTML = `
+    <div style="margin:16px auto 0; max-width:440px; border-top:1px solid var(--border); padding-top:14px;">
+      <p style="margin:0 0 4px; font-size:0.9rem;"><strong>${t("Já pagou? Anexe o comprovante")}</strong></p>
+      ${a.temComprovante ? `<p style="color:var(--success); font-size:0.82rem; margin:0 0 8px;">✓ ${t("Comprovante enviado em")} ${escConsorcioPendente(enviadoEm)} — ${t("estamos conferindo o pagamento.")}</p>` : ""}
+      <p style="color:var(--muted); font-size:0.78rem; margin:0 0 10px;">${a.temComprovante ? t("Quer trocar? Envie outro arquivo.") : t("Ele vai junto da sua adesão pra gente conferir o pagamento mais rápido. JPG, PNG ou PDF, até 5 MB.")}</p>
+      <input type="file" data-comprovante-file="${a.id}" accept="image/jpeg,image/png,application/pdf">
+      <button type="button" class="btn btn-outline" data-enviar-comprovante="${a.id}" style="width:100%; justify-content:center; margin-top:10px;">${a.temComprovante ? t("Enviar outro comprovante") : t("Enviar comprovante")}</button>
+      <small data-comprovante-msg="${a.id}" style="display:block; margin-top:8px;"></small>
+    </div>`;
   return `
     <div class="pay-card" style="padding:14px 16px; margin-bottom:10px; background:var(--surface-2);">
       <strong>${escConsorcioPendente(a.grupoNome)}</strong>
       <p style="color:var(--muted); font-size:0.85rem; margin:4px 0 0;">${formatBRL(a.valorCota)}/${t("cota")} · ${a.prazoMeses}x</p>
-      ${qrHTML}${linkHTML}${aviso}
+      ${qrHTML}${linkHTML}${aviso}${comprovanteHTML}
     </div>`;
 }
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-enviar-comprovante]");
+  if (!btn) return;
+  const id = btn.dataset.enviarComprovante;
+  const file = document.querySelector(`[data-comprovante-file="${id}"]`).files[0];
+  const msg = document.querySelector(`[data-comprovante-msg="${id}"]`);
+  const aviso = (texto, ok) => { msg.textContent = texto; msg.style.color = ok ? "var(--success)" : "var(--danger)"; };
+  if (!file) { aviso(t("Escolha o arquivo do comprovante."), false); return; }
+  if (file.size > 5 * 1024 * 1024) { aviso(t("O comprovante deve ter no máximo 5 MB."), false); return; }
+  const rotulo = btn.textContent;
+  btn.disabled = true; btn.textContent = t("Enviando...");
+  try {
+    const res = await fetch(`${API_BASE}/api/customers/me/consorcio-adesoes/${id}/comprovante`, {
+      method: "POST", credentials: "include", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comprovanteBase64: await fileToBase64(file), comprovanteTipo: file.type, comprovanteNome: file.name }),
+    }).then((r) => r.json());
+    if (!res.ok) { aviso(res.error || t("Não foi possível enviar o comprovante."), false); btn.disabled = false; btn.textContent = rotulo; return; }
+    loadConsorcioPendentes();   // redesenha o card já com "comprovante enviado"
+  } catch (err) {
+    aviso(t("Erro de conexão. Tente novamente."), false);
+    btn.disabled = false; btn.textContent = rotulo;
+  }
+});
 
 async function loadConsorcioPendentes() {
   const res = await fetchJSON("/api/customers/me/consorcio-adesoes");
