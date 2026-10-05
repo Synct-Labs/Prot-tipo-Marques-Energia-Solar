@@ -1398,6 +1398,17 @@ async function handleApi(req, res, pathname) {
     return sendJSON(res, 200, { ok: true, adesoes: items });
   }
 
+  // QR code de pagamento do grupo da adesão — só pro próprio cliente e
+  // enquanto a adesão aguarda pagamento (não é uma imagem pública).
+  const consorcioQrMatch = pathname.match(/^\/api\/customers\/me\/consorcio-adesoes\/(\d+)\/qr$/);
+  if (consorcioQrMatch && req.method === "GET") {
+    const customer = await requireCustomer(req, res);
+    if (!customer) return;
+    const qr = await consorcio.getQrForAdesao(parseInt(consorcioQrMatch[1], 10), customer.id);
+    if (!qr) return sendJSON(res, 404, { ok: false, error: "QR code indisponível." });
+    return sendBinary(res, 200, qr.data, qr.tipo, qr.nome, { "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store" });
+  }
+
   const consorcioConfirmarMatch = pathname.match(/^\/api\/customers\/me\/consorcio-adesoes\/(\d+)\/confirmar$/);
   if (consorcioConfirmarMatch && req.method === "POST") {
     const customer = await requireCustomer(req, res);
@@ -1454,6 +1465,32 @@ async function handleApi(req, res, pathname) {
     if (grupoIdMatch && req.method === "PATCH") {
       const body = await parseJSONBody(req);
       return kycGuard(async () => sendJSON(res, 200, { ok: true, grupo: await consorcio.updateGrupo(parseInt(grupoIdMatch[1], 10), body) }));
+    }
+    if (grupoIdMatch && req.method === "DELETE") {
+      return kycGuard(async () => {
+        await consorcio.deleteGrupo(parseInt(grupoIdMatch[1], 10));
+        return sendJSON(res, 200, { ok: true });
+      });
+    }
+
+    // QR code de pagamento da cota do grupo (imagem enviada pelo admin).
+    const grupoQrMatch = pathname.match(/^\/api\/admin\/consorcio\/grupos\/(\d+)\/qr$/);
+    if (grupoQrMatch) {
+      const grupoId = parseInt(grupoQrMatch[1], 10);
+      if (req.method === "GET") {
+        const qr = await consorcio.getQr(grupoId);
+        if (!qr) return sendJSON(res, 404, { ok: false, error: "Esse grupo ainda não tem QR code." });
+        return sendBinary(res, 200, qr.data, qr.tipo, qr.nome, { "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store" });
+      }
+      if (req.method === "POST") {
+        const body = await parseJSONBody(req, Math.ceil(consorcio.MAX_QR_BYTES * 1.4) + 1024);
+        let buffer = null;
+        try { buffer = Buffer.from(String(body.qrBase64 || ""), "base64"); } catch { buffer = null; }
+        return kycGuard(async () => sendJSON(res, 200, { ok: true, grupo: await consorcio.setQr(grupoId, { buffer, mime: body.qrTipo, nome: body.qrNome }) }));
+      }
+      if (req.method === "DELETE") {
+        return kycGuard(async () => sendJSON(res, 200, { ok: true, grupo: await consorcio.clearQr(grupoId) }));
+      }
     }
     if (pathname === "/api/admin/consorcio/adesoes" && req.method === "GET") {
       const url = new URL(req.url, "http://localhost");

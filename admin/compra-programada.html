@@ -86,6 +86,10 @@
             <div class="admin-field" style="flex:1; min-width:140px;"><label>Taxa de administração (%)</label><input type="number" name="taxaAdministracaoPct" min="0" max="100" step="0.1" value="0"></div>
           </div>
           <div class="admin-field"><label>Regras (assembleia, sorteio, lance etc. — texto livre)</label><textarea name="regras" rows="3"></textarea></div>
+          <div class="admin-field">
+            <label>QR code de pagamento da cota (opcional — dá pra enviar depois, em Editar)</label>
+            <input type="file" name="qr" accept="image/png,image/jpeg,image/webp">
+          </div>
           <div style="display:flex; gap:10px; margin-top:6px;">
             <button type="submit" class="admin-btn" style="width:auto;">Criar grupo</button>
             <button type="button" class="admin-btn admin-btn-ghost" id="cancelNewGrupoBtn">Cancelar</button>
@@ -144,10 +148,126 @@ function grupoRowHTML(g){
           <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem;"><input type="checkbox" data-toggle="visivelSite" data-id="${g.id}" ${g.visivelSite ? "checked" : ""}> ${t("Visível no site")}</label>
           <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem;"><input type="checkbox" data-toggle="visivelParceiro" data-id="${g.id}" ${g.visivelParceiro ? "checked" : ""}> ${t("Visível pro parceiro")}</label>
           <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem;"><input type="checkbox" data-toggle="encerrado" data-id="${g.id}" ${g.encerrado ? "checked" : ""}> ${t("Encerrado")}</label>
+          <button type="button" class="admin-btn admin-btn-ghost" style="width:auto; padding:7px 14px;" data-edit-grupo="${g.id}">${t("Editar")}</button>
+          <button type="button" class="admin-btn admin-btn-ghost" style="width:auto; padding:7px 14px;" data-delete-grupo="${g.id}">${t("Excluir")}</button>
         </div>
       </div>
+      <div class="grupo-edit" data-edit-for="${g.id}" hidden></div>
     </div>`;
 }
+
+/* ---------------------- EDITAR / EXCLUIR GRUPO (+ QR code de pagamento) ---------------------- */
+const QR_MAX_BYTES = 2 * 1024 * 1024;
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// Envia o QR code (se o admin escolheu um arquivo). Devolve mensagem de erro ou "".
+async function uploadQr(grupoId, file){
+  if(!file) return "";
+  if(file.size > QR_MAX_BYTES) return t("A imagem do QR code deve ter no máximo 2 MB.");
+  const res = await MES.apiPost(`/api/admin/consorcio/grupos/${grupoId}/qr`, {
+    qrBase64: await fileToBase64(file), qrTipo: file.type, qrNome: file.name,
+  });
+  return res.ok ? "" : (res.error || t("Não foi possível enviar o QR code."));
+}
+
+function grupoEditHTML(g){
+  return `
+    <form class="grupo-edit-form" data-grupo-id="${g.id}" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+      <div class="admin-error grupo-edit-error"></div>
+      <div class="admin-field"><label>${t("Nome do grupo")}</label><input type="text" name="nome" value="${esc(g.nome)}" required></div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <div class="admin-field" style="flex:1; min-width:140px;"><label>${t("Quantidade de cotas")}</label><input type="number" name="cotasTotal" min="${Math.max(1, g.cotasOcupadas)}" step="1" value="${g.cotasTotal}" required></div>
+        <div class="admin-field" style="flex:1; min-width:140px;"><label>${t("Valor da cota (R$)")}</label><input type="number" name="valorCota" min="0.01" step="0.01" value="${g.valorCota}" required></div>
+        <div class="admin-field" style="flex:1; min-width:140px;"><label>${t("Prazo (meses)")}</label><input type="number" name="prazoMeses" min="1" step="1" value="${g.prazoMeses}" required></div>
+        <div class="admin-field" style="flex:1; min-width:140px;"><label>${t("Taxa de administração (%)")}</label><input type="number" name="taxaAdministracaoPct" min="0" max="100" step="0.1" value="${g.taxaAdministracaoPct}"></div>
+      </div>
+      <div class="admin-field"><label>${t("Regras (assembleia, sorteio, lance etc. — texto livre)")}</label><textarea name="regras" rows="9">${esc(g.regras)}</textarea></div>
+
+      <div class="admin-field">
+        <label>${t("QR code de pagamento da cota")}</label>
+        ${g.temQr ? `
+          <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
+            <img src="${API_BASE}/api/admin/consorcio/grupos/${g.id}/qr?t=${Date.now()}" alt="QR code" style="width:140px; height:140px; object-fit:contain; background:#fff; border-radius:10px; border:1px solid var(--border);">
+            <button type="button" class="admin-btn admin-btn-ghost" style="width:auto;" data-remove-qr="${g.id}">${t("Remover QR code")}</button>
+          </div>` : `<small style="display:block; margin-bottom:6px; color:var(--muted);">${t("Nenhum QR code enviado ainda.")}</small>`}
+        <input type="file" name="qr" accept="image/png,image/jpeg,image/webp">
+        <small style="display:block; margin-top:4px; color:var(--muted);">${g.temQr ? t("Escolha um arquivo para trocar o QR code atual. ") : ""}${t("PNG, JPG ou WEBP, até 2 MB. O cliente vê esse QR code depois de contratar a cota, enquanto aguarda o pagamento.")}</small>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button type="submit" class="admin-btn" style="width:auto;">${t("Salvar alterações")}</button>
+        <button type="button" class="admin-btn admin-btn-ghost" data-cancel-edit="${g.id}">${t("Cancelar")}</button>
+      </div>
+    </form>`;
+}
+
+document.getElementById("gruposList").addEventListener("click", async (e) => {
+  const editBtn = e.target.closest("[data-edit-grupo]");
+  const cancelBtn = e.target.closest("[data-cancel-edit]");
+  const deleteBtn = e.target.closest("[data-delete-grupo]");
+  const removeQrBtn = e.target.closest("[data-remove-qr]");
+
+  if(editBtn){
+    const g = allGrupos.find(x => x.id === Number(editBtn.dataset.editGrupo));
+    const box = document.querySelector(`.grupo-edit[data-edit-for="${editBtn.dataset.editGrupo}"]`);
+    if(!g || !box) return;
+    if(box.hidden){ box.innerHTML = grupoEditHTML(g); box.hidden = false; } else { box.hidden = true; box.innerHTML = ""; }
+    return;
+  }
+  if(cancelBtn){
+    const box = document.querySelector(`.grupo-edit[data-edit-for="${cancelBtn.dataset.cancelEdit}"]`);
+    if(box){ box.hidden = true; box.innerHTML = ""; }
+    return;
+  }
+  if(removeQrBtn){
+    if(!confirm(t("Remover o QR code deste grupo? Os clientes deixam de ver o QR code para pagar."))) return;
+    const res = await MES.apiDelete(`/api/admin/consorcio/grupos/${removeQrBtn.dataset.removeQr}/qr`);
+    if(!res.ok){ MES.showToast(res.error || t("Erro ao remover o QR code.")); return; }
+    MES.showToast(t("QR code removido."));
+    loadGrupos();
+    return;
+  }
+  if(deleteBtn){
+    const g = allGrupos.find(x => x.id === Number(deleteBtn.dataset.deleteGrupo));
+    if(!g) return;
+    if(!confirm(`${t("Excluir o grupo")} "${g.nome}"? ${t("Essa ação não pode ser desfeita.")}`)) return;
+    const res = await MES.apiDelete(`/api/admin/consorcio/grupos/${g.id}`);
+    if(!res.ok){ MES.showToast(res.error || t("Erro ao excluir o grupo.")); return; }
+    MES.showToast(t("Grupo excluído."));
+    loadGrupos();
+  }
+});
+
+document.getElementById("gruposList").addEventListener("submit", async (e) => {
+  const form = e.target.closest(".grupo-edit-form");
+  if(!form) return;
+  e.preventDefault();
+  const errorBox = form.querySelector(".grupo-edit-error");
+  errorBox.classList.remove("show");
+  const fd = new FormData(form);
+  const id = form.dataset.grupoId;
+  const res = await MES.apiPatch(`/api/admin/consorcio/grupos/${id}`, {
+    nome: fd.get("nome"),
+    cotasTotal: Number(fd.get("cotasTotal")),
+    valorCota: Number(fd.get("valorCota")),
+    prazoMeses: Number(fd.get("prazoMeses")),
+    taxaAdministracaoPct: Number(fd.get("taxaAdministracaoPct") || 0),
+    regras: fd.get("regras"),
+  });
+  if(!res.ok){ errorBox.textContent = res.error || t("Erro ao salvar o grupo."); errorBox.classList.add("show"); return; }
+  const qrError = await uploadQr(id, form.querySelector('[name="qr"]').files[0]);
+  if(qrError) MES.showToast(`${t("Grupo salvo, mas o QR code não foi enviado:")} ${qrError}`);
+  else MES.showToast(t("Grupo atualizado."));
+  loadGrupos();
+});
 
 async function loadGrupos(){
   const res = await MES.apiGet("/api/admin/consorcio/grupos");
@@ -225,9 +345,10 @@ document.getElementById("newGrupoForm").addEventListener("submit", async (e) => 
     regras: fd.get("regras"),
   });
   if(!res.ok){ box.textContent = res.error || t("Erro ao criar grupo."); box.classList.add("show"); return; }
+  const qrError = await uploadQr(res.grupo.id, e.target.querySelector('[name="qr"]').files[0]);
   document.getElementById("newGrupoCard").style.display = "none";
   e.target.reset();
-  MES.showToast(t("Grupo criado."));
+  MES.showToast(qrError ? `${t("Grupo criado, mas o QR code não foi enviado:")} ${qrError}` : t("Grupo criado."));
   loadGrupos();
 });
 

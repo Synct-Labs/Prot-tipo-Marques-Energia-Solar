@@ -396,6 +396,27 @@ function consorcioPendenteRowHTML(a) {
     </div>`;
 }
 
+// Cota aguardando pagamento: QR code do grupo (se o admin cadastrou) e/ou o
+// link/chave PIX que o admin lançou na adesão.
+function consorcioPagamentoRowHTML(a) {
+  const link = String(a.paymentLink || "");
+  const linkHTML = /^https?:\/\//i.test(link)
+    ? `<a class="btn btn-outline" href="${escConsorcioPendente(link)}" target="_blank" rel="noopener" style="width:auto;">${t("Pagar agora")}</a>`
+    : link ? `<div style="font-family:monospace; word-break:break-all; background:var(--surface); padding:10px 12px; border-radius:8px; margin-top:10px;">${escConsorcioPendente(link)}</div>` : "";
+  const qrHTML = a.grupoTemQr
+    ? `<img src="${API_BASE}/api/customers/me/consorcio-adesoes/${a.id}/qr" alt="QR code" style="width:200px; height:200px; object-fit:contain; background:#fff; border-radius:12px; padding:8px; margin-top:10px;">`
+    : "";
+  const aviso = !qrHTML && !linkHTML
+    ? `<p style="color:var(--muted); font-size:0.85rem; margin-top:10px;">${t("Você receberá o link de pagamento por e-mail assim que conferirmos seus documentos.")}</p>`
+    : "";
+  return `
+    <div class="pay-card" style="padding:14px 16px; margin-bottom:10px; background:var(--surface-2);">
+      <strong>${escConsorcioPendente(a.grupoNome)}</strong>
+      <p style="color:var(--muted); font-size:0.85rem; margin:4px 0 0;">${formatBRL(a.valorCota)}/${t("cota")} · ${a.prazoMeses}x</p>
+      ${qrHTML}${linkHTML}${aviso}
+    </div>`;
+}
+
 async function loadConsorcioPendentes() {
   const res = await fetchJSON("/api/customers/me/consorcio-adesoes");
   const card = document.getElementById("consorcioPendenteCard");
@@ -404,6 +425,14 @@ async function loadConsorcioPendentes() {
   const pendentes = res.adesoes.filter((a) => a.status === "aguardando_cliente");
   card.hidden = pendentes.length === 0;
   box.innerHTML = pendentes.map(consorcioPendenteRowHTML).join("");
+
+  const pagCard = document.getElementById("consorcioPagamentoCard");
+  const pagBox = document.getElementById("consorcioPagamentoList");
+  if (pagCard && pagBox) {
+    const aguardando = res.adesoes.filter((a) => a.status === "aguardando_pagamento");
+    pagCard.hidden = aguardando.length === 0;
+    pagBox.innerHTML = aguardando.map(consorcioPagamentoRowHTML).join("");
+  }
 }
 
 document.addEventListener("click", async (e) => {

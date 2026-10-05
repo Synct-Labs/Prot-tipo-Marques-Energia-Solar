@@ -41,6 +41,7 @@ function rowToGrupo(row) {
     visivelSite: row.visivel_site,
     visivelParceiro: row.visivel_parceiro,
     encerrado: row.encerrado,
+    temQr: !!row.tem_qr,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -48,8 +49,13 @@ function rowToGrupo(row) {
 
 // "cotas_ocupadas" conta adesões que reservam vaga (pendente ou confirmada,
 // nunca cancelada) — calculado na consulta pra nunca ficar dessincronizado.
+// Colunas listadas à mão (nada de g.*) pra não trazer o QR code (BYTEA) em
+// toda listagem — só o "tem_qr".
 const GRUPO_SELECT = `
-  SELECT g.*, COALESCE(a.ocupadas, 0) AS cotas_ocupadas
+  SELECT g.id, g.nome, g.cotas_total, g.valor_cota, g.prazo_meses, g.taxa_administracao_pct, g.regras,
+         g.visivel_site, g.visivel_parceiro, g.encerrado, g.created_at, g.updated_at,
+         (g.qr_dados IS NOT NULL) AS tem_qr,
+         COALESCE(a.ocupadas, 0) AS cotas_ocupadas
   FROM consorcio_grupos g
   LEFT JOIN (
     SELECT grupo_id, COUNT(*)::int AS ocupadas
@@ -105,6 +111,63 @@ async function updateGrupo(id, body) {
      fields.regras, fields.visivel_site, fields.visivel_parceiro, fields.encerrado, new Date().toISOString(), id]
   );
   return getGrupoById(id);
+}
+
+// Grupo que já recebeu alguma adesão (mesmo cancelada) guarda histórico de
+// documentos, pagamentos e comissões — não dá pra apagar; o caminho é
+// "Encerrado". Só some de vez grupo criado e nunca usado.
+async function deleteGrupo(id) {
+  const grupo = await getGrupoById(id);
+  if (!grupo) throw err(404, "Grupo não encontrado.");
+  const { rows } = await pool.query("SELECT COUNT(*)::int AS c FROM consorcio_adesoes WHERE grupo_id = $1", [id]);
+  if (rows[0].c > 0) {
+    throw err(409, `Esse grupo já tem ${rows[0].c} adesão(ões) e não pode ser excluído — marque como "Encerrado" pra tirar do site.`);
+  }
+  await pool.query("DELETE FROM consorcio_grupos WHERE id = $1", [id]);
+}
+
+/* ---------------------- QR CODE DE PAGAMENTO DA COTA ----------------------
+   Uma imagem por grupo, enviada pelo admin. Só quem tem adesão no grupo
+   aguardando pagamento enxerga (getQrForAdesao) — não é público. */
+const QR_MIMES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_QR_BYTES = 2 * 1024 * 1024;
+
+async function setQr(id, { buffer, mime, nome }) {
+  if (!QR_MIMES.includes(mime)) throw err(400, "Use uma imagem JPG, PNG ou WEBP.");
+  if (!buffer || !buffer.length) throw err(400, "Anexe a imagem do QR code.");
+  if (buffer.length > MAX_QR_BYTES) throw err(413, "Imagem maior que 2 MB.");
+  const result = await pool.query(
+    "UPDATE consorcio_grupos SET qr_dados = $1, qr_tipo = $2, qr_nome = $3, updated_at = $4 WHERE id = $5",
+    [buffer, mime, String(nome || "qrcode").slice(0, 120), new Date().toISOString(), id]
+  );
+  if (!result.rowCount) throw err(404, "Grupo não encontrado.");
+  return getGrupoById(id);
+}
+
+async function clearQr(id) {
+  const result = await pool.query(
+    "UPDATE consorcio_grupos SET qr_dados = NULL, qr_tipo = NULL, qr_nome = NULL, updated_at = $1 WHERE id = $2",
+    [new Date().toISOString(), id]
+  );
+  if (!result.rowCount) throw err(404, "Grupo não encontrado.");
+  return getGrupoById(id);
+}
+
+async function getQr(id) {
+  const { rows } = await pool.query("SELECT qr_dados, qr_tipo, qr_nome FROM consorcio_grupos WHERE id = $1", [id]);
+  if (!rows[0] || !rows[0].qr_dados) return null;
+  return { data: rows[0].qr_dados, tipo: rows[0].qr_tipo, nome: rows[0].qr_nome };
+}
+
+// QR do grupo da adesão, só pro dono dela e enquanto aguarda pagamento.
+async function getQrForAdesao(adesaoId, customerId) {
+  const { rows } = await pool.query(
+    "SELECT grupo_id, customer_id, status FROM consorcio_adesoes WHERE id = $1",
+    [adesaoId]
+  );
+  const ad = rows[0];
+  if (!ad || ad.customer_id !== customerId || ad.status !== "aguardando_pagamento") return null;
+  return getQr(ad.grupo_id);
 }
 
 /* ---------------------- TEXTO DE APRESENTAÇÃO (editável pelo admin) ----------------------
@@ -184,13 +247,14 @@ function rowToAdesao(row) {
     temDocEndereco: !!row.doc_endereco_dados,
     temDocFoto: !!row.doc_foto_dados,
     paymentLink: row.payment_link || null,
+    grupoTemQr: !!row.grupo_tem_qr,
     confirmadaEm: row.confirmada_em,
     createdAt: row.created_at,
   };
 }
 
 const ADESAO_SELECT = `
-  SELECT ad.*, g.nome AS grupo_nome, g.valor_cota, g.prazo_meses,
+  SELECT ad.*, g.nome AS grupo_nome, g.valor_cota, g.prazo_meses, (g.qr_dados IS NOT NULL) AS grupo_tem_qr,
          p.codigo AS parceiro_codigo, c.nome AS parceiro_nome
   FROM consorcio_adesoes ad
   JOIN consorcio_grupos g ON g.id = ad.grupo_id
@@ -387,4 +451,5 @@ module.exports = {
   listAdesoesPendentesPorEmail, listAdesoesAdmin, confirmarAdesao, cancelarAdesao,
   setPaymentLink, confirmarPagamento, getDocEndereco, getDocFoto,
   getTexto, setTexto,
+  deleteGrupo, setQr, clearQr, getQr, getQrForAdesao, MAX_QR_BYTES,
 };

@@ -412,6 +412,11 @@ async function initSchema() {
   // CREATE TABLE IF NOT EXISTS acima não altera tabelas já criadas).
   await pool.query(`
     ALTER TABLE products ADD COLUMN IF NOT EXISTS images_json TEXT;
+    -- QR code de pagamento da cota do grupo (Compra Programada): enviado pelo
+    -- admin, mostrado só pro cliente que contratou o grupo (ver consorcio.js).
+    ALTER TABLE consorcio_grupos ADD COLUMN IF NOT EXISTS qr_dados BYTEA;
+    ALTER TABLE consorcio_grupos ADD COLUMN IF NOT EXISTS qr_tipo TEXT;
+    ALTER TABLE consorcio_grupos ADD COLUMN IF NOT EXISTS qr_nome TEXT;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_valor_sistema DOUBLE PRECISION;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_parcelas INTEGER;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_fgts_disponivel DOUBLE PRECISION;

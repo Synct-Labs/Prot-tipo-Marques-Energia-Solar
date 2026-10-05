@@ -366,6 +366,27 @@ function fileToBase64Consorcio(file){
   });
 }
 
+// Troca o formulário por um painel com o QR code de pagamento da cota. A
+// imagem vem de uma rota que só entrega pro dono da adesão (cookie de sessão).
+function mostrarQrPagamento(form, adesao){
+  const qrUrl = `${API_BASE}/api/customers/me/consorcio-adesoes/${adesao.id}/qr`;
+  form.reset();
+  form.innerHTML = `
+    <div class="consorcio-qr-panel" style="text-align:center; padding:8px 0;">
+      <strong>${t("Cota reservada! Pague para garantir sua vaga")}</strong>
+      <p style="color:var(--muted); font-size:0.85rem; margin:8px 0 12px;">
+        ${t("Escaneie o QR code no app do seu banco para pagar a cota")} (${formatBRL(adesao.valorCota)}).
+        ${t("Assim que conferirmos o pagamento, sua adesão é confirmada. Você também pode receber o link de pagamento por e-mail.")}
+      </p>
+      <img src="${qrUrl}" alt="QR code" style="width:220px; height:220px; object-fit:contain; background:#fff; border-radius:12px; padding:8px;">
+      <div style="margin-top:14px;"><button type="button" class="btn btn-ghost consorcio-qr-fechar" style="width:auto;">${t("Fechar")}</button></div>
+    </div>`;
+  form.querySelector(".consorcio-qr-fechar").addEventListener("click", () => {
+    form.hidden = true;
+    loadConsorcioGrupos();
+  });
+}
+
 async function enviarContratacao(form){
   const grupoId = form.dataset.grupoId;
   const errorBox = form.querySelector(".consorcio-form-error");
@@ -404,6 +425,12 @@ async function enviarContratacao(form){
     if(!res.ok){
       errorBox.textContent = res.error || t("Não foi possível contratar esse grupo.");
       errorBox.style.display = "block";
+      return;
+    }
+    // Grupo com QR code de pagamento cadastrado: mostra o QR na hora, pro
+    // cliente já poder pagar a cota (o link por e-mail continua valendo).
+    if(res.adesao && res.adesao.grupoTemQr){
+      mostrarQrPagamento(form, res.adesao);
       return;
     }
     showToast(t("Dados recebidos! Em breve você recebe o link de pagamento por e-mail."));
