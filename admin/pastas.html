@@ -38,16 +38,31 @@
 <main class="admin-main">
   <div class="admin-container">
 
-    <!-- ========================= BUSCA ========================= -->
-    <div class="admin-toolbar">
-      <h2 style="font-size:1.15rem;">Pastas do cliente</h2>
-    </div>
+    <!-- ========================= LISTA DE PASTAS ========================= -->
+    <div id="listView">
+      <div class="admin-toolbar">
+        <h2 style="font-size:1.15rem;">Pastas do cliente</h2>
+        <div class="admin-toolbar-filters">
+          <input type="text" id="pastaSearchInput" autocomplete="off" placeholder="Buscar por nome ou CPF">
+        </div>
+      </div>
 
-    <div class="admin-table-wrap" style="padding:22px; margin-bottom:20px; position:relative;">
-      <div class="admin-field admin-customer-picker" style="margin-bottom:0;">
-        <label for="pastaSearchInput">Buscar cliente por nome ou CPF</label>
-        <input type="text" id="pastaSearchInput" autocomplete="off" placeholder="Digite pra buscar...">
-        <div class="admin-customer-results" id="pastaSearchResults"></div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>CPF</th>
+              <th>E-mail</th>
+            </tr>
+          </thead>
+          <tbody id="foldersTableBody">
+            <tr><td colspan="3" class="admin-loading">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="text-align:center; margin-top:16px;">
+        <button type="button" class="admin-btn admin-btn-ghost" id="loadMoreBtn" style="width:auto; display:none;">Carregar mais</button>
       </div>
     </div>
 
@@ -55,7 +70,7 @@
     <div id="folderView" style="display:none;">
 
       <div class="admin-table-wrap" style="padding:22px; margin-bottom:20px;">
-        <button type="button" class="admin-btn admin-btn-ghost" id="backToSearchBtn" style="width:auto; margin-bottom:16px;">← Trocar cliente</button>
+        <button type="button" class="admin-btn admin-btn-ghost" id="backToSearchBtn" style="width:auto; margin-bottom:16px;">← Voltar para a lista</button>
         <h2 id="folderNome" style="font-size:1.25rem; margin:0 0 6px;"></h2>
         <p style="margin:0; color:var(--muted);">
           <span id="folderCpf"></span> · <span id="folderEmail"></span> · <span id="folderTelefone"></span>
@@ -139,46 +154,68 @@ function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
 const API_BASE = window.MES_API_BASE || "";
 let currentCustomerId = null;
 
-/* ---------------------- BUSCA ---------------------- */
+/* ---------------------- LISTA + BUSCA ---------------------- */
+// A lista já abre mostrando todos os clientes (dá pra navegar "na mão");
+// o campo de busca só filtra por cima, por nome ou CPF.
 const searchInput = document.getElementById("pastaSearchInput");
-const resultsBox = document.getElementById("pastaSearchResults");
+const foldersBody = document.getElementById("foldersTableBody");
+const loadMoreBtn = document.getElementById("loadMoreBtn");
 let searchTimer = null;
+let listQuery = "";
+let listOffset = 0;
+let listRequestId = 0;
+
+function folderRowHTML(c){
+  return `
+    <tr class="admin-order-row" data-id="${c.id}" style="cursor:pointer;">
+      <td data-label="Cliente">${c.nome}</td>
+      <td data-label="CPF">${c.cpf ? fmtCpf(c.cpf) : "—"}</td>
+      <td data-label="E-mail">${c.email}</td>
+    </tr>`;
+}
+
+async function loadList(reset){
+  if(reset){
+    listOffset = 0;
+    foldersBody.innerHTML = `<tr><td colspan="3" class="admin-loading">${t("Carregando...")}</td></tr>`;
+    loadMoreBtn.style.display = "none";
+  }
+  const requestId = ++listRequestId;
+  const res = await MES.apiGet(`/api/admin/pastas/buscar?q=${encodeURIComponent(listQuery)}&offset=${listOffset}`);
+  if(requestId !== listRequestId) return;   // chegou resposta de uma busca mais antiga — descarta
+  if(!res.ok){
+    MES.showToast(res.error || t("Erro ao carregar as pastas."));
+    return;
+  }
+  if(reset && !res.results.length){
+    foldersBody.innerHTML = `<tr><td colspan="3" class="admin-empty">${t("Nenhum cliente encontrado.")}</td></tr>`;
+    return;
+  }
+  const html = res.results.map(folderRowHTML).join("");
+  if(reset) foldersBody.innerHTML = html; else foldersBody.insertAdjacentHTML("beforeend", html);
+  listOffset += res.results.length;
+  loadMoreBtn.style.display = res.hasMore ? "inline-block" : "none";
+}
 
 searchInput.addEventListener("input", () => {
   clearTimeout(searchTimer);
-  const q = searchInput.value.trim();
-  if(q.length < 2){ resultsBox.classList.remove("show"); return; }
-  searchTimer = setTimeout(async () => {
-    const res = await MES.apiGet(`/api/admin/pastas/buscar?q=${encodeURIComponent(q)}`);
-    if(!res.ok || !res.results.length){
-      resultsBox.innerHTML = `<div class="admin-customer-result-item" style="cursor:default;">${t("Nenhum cliente encontrado.")}</div>`;
-      resultsBox.classList.add("show");
-      return;
-    }
-    resultsBox.innerHTML = res.results.map(c => `
-      <div class="admin-customer-result-item" data-id="${c.id}">
-        ${c.nome}<span>${c.cpf ? fmtCpf(c.cpf) : c.email}</span>
-      </div>`).join("");
-    resultsBox.classList.add("show");
+  searchTimer = setTimeout(() => {
+    listQuery = searchInput.value.trim();
+    loadList(true);
   }, 300);
 });
 
-resultsBox.addEventListener("click", (e) => {
-  const item = e.target.closest(".admin-customer-result-item[data-id]");
-  if(!item) return;
-  resultsBox.classList.remove("show");
-  loadFolder(Number(item.dataset.id));
-});
+loadMoreBtn.addEventListener("click", () => loadList(false));
 
-document.addEventListener("click", (e) => {
-  if(!resultsBox.contains(e.target) && e.target !== searchInput) resultsBox.classList.remove("show");
+foldersBody.addEventListener("click", (e) => {
+  const row = e.target.closest(".admin-order-row[data-id]");
+  if(row) loadFolder(Number(row.dataset.id));
 });
 
 document.getElementById("backToSearchBtn").addEventListener("click", () => {
   currentCustomerId = null;
   document.getElementById("folderView").style.display = "none";
-  searchInput.value = "";
-  searchInput.focus();
+  document.getElementById("listView").style.display = "block";
 });
 
 /* ---------------------- CPF ---------------------- */
@@ -227,6 +264,7 @@ function renderAutoDocs(list){
 
 async function loadFolder(customerId){
   currentCustomerId = customerId;
+  document.getElementById("listView").style.display = "none";
   document.getElementById("folderView").style.display = "block";
   document.getElementById("folderNome").textContent = t("Carregando...");
   document.getElementById("folderCpf").textContent = "";
@@ -239,6 +277,7 @@ async function loadFolder(customerId){
   if(!res.ok){
     MES.showToast(res.error || t("Erro ao carregar a pasta."));
     document.getElementById("folderView").style.display = "none";
+    document.getElementById("listView").style.display = "block";
     return;
   }
   const { customer, manuais, automaticos } = res.folder;
@@ -323,7 +362,7 @@ async function init(){
     window.location.href = MES.landingPageFor(admin);
     return;
   }
-  searchInput.focus();
+  await loadList(true);
 }
 
 document.getElementById("logoutBtn").addEventListener("click", () => MES.logout());

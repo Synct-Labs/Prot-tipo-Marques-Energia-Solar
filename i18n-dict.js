@@ -1823,5 +1823,19 @@ window.MES_I18N_DICT = {
   "Documento removido.": "Document removed.",
   "CPF não informado": "CPF not provided",
   "Erro ao carregar a pasta.": "Error loading the folder.",
+  "← Voltar para a lista": "← Back to the list",
+  "Carregar mais": "Load more",
+  "Erro ao carregar as pastas.": "Error loading the folders.",
+
+  /* ---------- Catálogo: imagens do produto (upload, até 5) ---------- */
+  "Imagens do produto": "Product images",
+  "Principal": "Main",
+  "Excluir imagem": "Delete image",
+  "Adicionar imagem": "Add image",
+  "Enviar foto": "Upload photo",
+  "Trocar foto": "Change photo",
+  "Use imagem JPG, PNG ou WEBP.": "Use a JPG, PNG or WEBP image.",
+  "Não foi possível enviar a imagem.": "Couldn't upload the image.",
+  "Limite de 5 imagens por produto — as que passaram do limite foram ignoradas.": "Limit of 5 images per product — the extra ones were ignored.",
 
 };

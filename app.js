@@ -91,12 +91,29 @@ const FACET_ORDER = {
 /* ---------------------- CATÁLOGO (carregado do backend — ver GET /api/products) ---------------------- */
 let PRODUCTS = [];
 
+// Foto enviada pelo admin vem como "/api/product-images/<id>" — precisa do
+// mesmo prefixo de API que o resto das chamadas (site e API podem estar em
+// domínios diferentes). Caminhos do site ("assets/...") e URLs completas
+// ficam como estão.
+function resolveApiImage(src){
+  return typeof src === "string" && src.startsWith("/api/") ? `${API_BASE}${src}` : src;
+}
+function withResolvedImages(p){
+  const images = (p.images && p.images.length ? p.images : (p.image ? [p.image] : [])).map(resolveApiImage);
+  return {
+    ...p,
+    image: images[0] || "",
+    images,
+    bundleItems: p.bundleItems ? p.bundleItems.map(it => ({ ...it, image: resolveApiImage(it.image) })) : p.bundleItems,
+  };
+}
+
 async function loadProducts(){
   try{
     const res = await fetch(`${API_BASE}/api/products`);
     const data = await res.json();
     if(data.ok && Array.isArray(data.products)){
-      PRODUCTS = data.products;
+      PRODUCTS = data.products.map(withResolvedImages);
       return true;
     }
   } catch(err){
@@ -259,11 +276,11 @@ $("#sizingGoWizardBtn")?.addEventListener("click", () => {
   startWizard();
 });
 
-/* ---------------------- GALERIA DE IMAGENS (foto principal + itens do kit) ----------------------
-   Pra kits, a "galeria" são as fotos reais dos equipamentos que vêm dentro
-   (painel, inversor etc.), sem repetir a mesma foto duas vezes. Pra produto
-   avulso normalmente sobra só a foto principal — nesse caso não faz sentido
-   mostrar miniaturas (não tem outra imagem real pra trocar). */
+/* ---------------------- GALERIA DE IMAGENS (até 5 fotos do produto + itens do kit) ----------------------
+   A galeria mostra só as fotos que existem (até 5 enviadas no admin) e, pra
+   kits, também as fotos dos equipamentos que vêm dentro (painel, inversor
+   etc.), sem repetir a mesma foto duas vezes. Com uma imagem só, não faz
+   sentido mostrar miniaturas (não tem outra pra trocar). */
 function getGalleryImages(p){
   const seen = new Set();
   const images = [];
@@ -272,7 +289,7 @@ function getGalleryImages(p){
     seen.add(src);
     images.push({ src, alt });
   };
-  add(p.image, p.name);
+  (p.images && p.images.length ? p.images : [p.image]).forEach(src => add(src, p.name));
   (p.bundleItems || []).forEach(item => add(item.image, `${item.brand} — ${item.name}`));
   return images;
 }

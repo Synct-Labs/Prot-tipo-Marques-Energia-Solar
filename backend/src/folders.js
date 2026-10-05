@@ -21,10 +21,12 @@ const MAX_DOC_BYTES = 8 * 1024 * 1024; // 8MB — mesmo limite usado pra contrat
 function err(status, message) { return Object.assign(new Error(message), { statusCode: status }); }
 
 /* ---------------------- BUSCA (nome ou CPF) ---------------------- */
-async function searchFolders(q) {
+// Sem busca (q vazio) lista todos os clientes em ordem alfabética, pra dar
+// pra navegar pelas pastas "na mão"; com q filtra por nome/e-mail/CPF.
+// Paginado: busca uma linha a mais só pra saber se ainda tem próxima página.
+async function searchFolders(q, { limit = 50, offset = 0 } = {}) {
   const raw = String(q || "").trim();
-  if (raw.length < 2) return [];
-  const like = `%${raw}%`;
+  const like = raw ? `%${raw}%` : null;
   const digits = raw.replace(/\D/g, "");
   const cpfLike = digits ? `%${digits}%` : null;
   const { rows } = await pool.query(
@@ -42,7 +44,8 @@ async function searchFolders(q) {
        WHERE customer_id = c.id AND cpf IS NOT NULL
        ORDER BY id DESC LIMIT 1
      ) cl ON true
-     WHERE c.nome ILIKE $1
+     WHERE $1::text IS NULL
+        OR c.nome ILIKE $1
         OR c.email ILIKE $1
         OR ($2::text IS NOT NULL AND (
              regexp_replace(COALESCE(c.cpf,''), '\D', '', 'g') LIKE $2
@@ -50,10 +53,10 @@ async function searchFolders(q) {
           OR regexp_replace(COALESCE(o.cpf,''), '\D', '', 'g') LIKE $2
           OR regexp_replace(COALESCE(cl.cpf,''), '\D', '', 'g') LIKE $2
         ))
-     ORDER BY c.nome LIMIT 20`,
-    [like, cpfLike]
+     ORDER BY LOWER(c.nome), c.id LIMIT $3 OFFSET $4`,
+    [like, cpfLike, limit + 1, offset]
   );
-  return rows;
+  return { results: rows.slice(0, limit), hasMore: rows.length > limit };
 }
 
 /* ---------------------- PASTA DE UM CLIENTE ---------------------- */

@@ -385,6 +385,17 @@ async function initSchema() {
     -- pelo admin — além disso, na busca também aparecem (sem duplicar aqui)
     -- os documentos que o cliente já enviou em outras partes do sistema
     -- (KYC, pedidos, contratos), lidos direto das tabelas originais.
+    -- Fotos de produto enviadas pelo admin (aba Catálogo): ficam aqui como
+    -- BYTEA (mesmo padrão dos documentos) e o produto só guarda a URL
+    -- "/api/product-images/<id>" na lista de imagens dele (products.images_json).
+    CREATE TABLE IF NOT EXISTS product_images (
+      id         SERIAL PRIMARY KEY,
+      mime       TEXT NOT NULL,
+      nome       TEXT,
+      dados      BYTEA NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS folder_documents (
       id          SERIAL PRIMARY KEY,
       customer_id INTEGER NOT NULL REFERENCES customers(id),
@@ -400,6 +411,7 @@ async function initSchema() {
   // Colunas novas em bancos que já existiam antes desta versão (o
   // CREATE TABLE IF NOT EXISTS acima não altera tabelas já criadas).
   await pool.query(`
+    ALTER TABLE products ADD COLUMN IF NOT EXISTS images_json TEXT;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_valor_sistema DOUBLE PRECISION;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_parcelas INTEGER;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_fgts_disponivel DOUBLE PRECISION;

@@ -58,11 +58,12 @@ function getClientIP(req) {
 
 // Serve um arquivo binário (ex: comprovante de pagamento) direto do banco.
 // "inline" deixa o navegador abrir a imagem/PDF na hora em vez de baixar.
-function sendBinary(res, statusCode, buffer, contentType, filename) {
+function sendBinary(res, statusCode, buffer, contentType, filename, extraHeaders = {}) {
   res.writeHead(statusCode, {
     "Content-Type": contentType || "application/octet-stream",
     "Content-Length": buffer.length,
     "Content-Disposition": `inline; filename="${(filename || "comprovante").replace(/"/g, "")}"`,
+    ...extraHeaders,
   });
   res.end(buffer);
 }

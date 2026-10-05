@@ -123,7 +123,136 @@ function esc(v){ return String(v == null ? "" : v).replace(/"/g, "&quot;"); }
 // um nível pra resolver certo. URLs completas (http...) passam direto.
 function resolveImageUrl(src){
   if(!src) return "";
-  return /^https?:\/\//i.test(src) ? src : `../${src}`;
+  if(/^https?:\/\//i.test(src)) return src;
+  // Foto enviada pelo admin: é uma rota da API, não um arquivo do site.
+  if(src.startsWith("/api/")) return `${window.MES_API_BASE || ""}${src}`;
+  return `../${src}`;
+}
+
+/* ---------------------- UPLOAD DE IMAGENS (até 5 por produto) ---------------------- */
+const MAX_PRODUCT_IMAGES = 5;
+const UPLOAD_MAX_SIDE = 1600;
+const UPLOAD_KEEP_ORIGINAL_BELOW = 1.5 * 1024 * 1024;
+
+function blobToBase64(blob){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// Foto de celular/câmera costuma ter vários MB — reduz pra no máx. 1600px
+// antes de enviar (PNG/WEBP viram WEBP, que mantém fundo transparente).
+async function prepareImage(file){
+  if(!["image/jpeg","image/png","image/webp"].includes(file.type)){
+    throw new Error(t("Use imagem JPG, PNG ou WEBP."));
+  }
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, UPLOAD_MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+  if(scale === 1 && file.size <= UPLOAD_KEEP_ORIGINAL_BELOW){
+    return { base64: await blobToBase64(file), mime: file.type, nome: file.name };
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  const outMime = file.type === "image/jpeg" ? "image/jpeg" : "image/webp";
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, outMime, 0.88));
+  return { base64: await blobToBase64(blob), mime: blob.type, nome: file.name };
+}
+
+async function uploadProductImage(file){
+  const img = await prepareImage(file);
+  const res = await MES.apiPost("/api/admin/product-images", { imageBase64: img.base64, imageTipo: img.mime, imageNome: img.nome });
+  if(!res.ok) throw new Error(res.error || t("Não foi possível enviar a imagem."));
+  return res.url;
+}
+
+function attrJSON(v){
+  return JSON.stringify(v).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
+
+/* Galeria do produto: só mostra as imagens que existem + um botão de
+   adicionar enquanto houver vaga — os espaços vazios ficam ocultos. */
+function galleryBlockHTML(images){
+  return `
+    <div class="col-span-2 pf-gallery-block">
+      <h4 class="admin-form-section-title">${t("Imagens do produto")}</h4>
+      <div class="pf-gallery" data-images="${attrJSON(images)}"></div>
+      <div class="admin-error pf-gallery-error"></div>
+      <input type="file" class="pf-gallery-file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+    </div>`;
+}
+
+function renderGallery(gallery){
+  const list = gallery._images;
+  gallery.innerHTML = list.map((src, i) => `
+      <div class="pf-gallery-item">
+        <img src="${resolveImageUrl(src)}" alt="">
+        ${i === 0 ? `<span class="pf-gallery-main">${t("Principal")}</span>` : ""}
+        <button type="button" class="pf-gallery-remove" data-idx="${i}" title="${t("Excluir imagem")}">✕</button>
+      </div>`).join("") +
+    (list.length < MAX_PRODUCT_IMAGES
+      ? `<button type="button" class="pf-gallery-add"><span>+ ${t("Adicionar imagem")}</span><small>${list.length}/${MAX_PRODUCT_IMAGES}</small></button>`
+      : "");
+}
+
+function wireGallery(root){
+  const gallery = root.querySelector(".pf-gallery");
+  if(!gallery) return;
+  const fileInput = root.querySelector(".pf-gallery-file");
+  const errorBox = root.querySelector(".pf-gallery-error");
+  gallery._images = JSON.parse(gallery.dataset.images || "[]");
+  renderGallery(gallery);
+
+  gallery.addEventListener("click", (e) => {
+    const remove = e.target.closest(".pf-gallery-remove");
+    if(remove){
+      gallery._images.splice(Number(remove.dataset.idx), 1);
+      errorBox.classList.remove("show");
+      renderGallery(gallery);
+      return;
+    }
+    if(e.target.closest(".pf-gallery-add")) fileInput.click();
+  });
+
+  fileInput.addEventListener("change", async () => {
+    const files = Array.from(fileInput.files);
+    fileInput.value = "";
+    errorBox.classList.remove("show");
+    const room = MAX_PRODUCT_IMAGES - gallery._images.length;
+    const addBtn = gallery.querySelector(".pf-gallery-add");
+    if(addBtn){ addBtn.disabled = true; addBtn.querySelector("span").textContent = t("Enviando..."); }
+    try{
+      for(const file of files.slice(0, room)){
+        gallery._images.push(await uploadProductImage(file));
+        renderGallery(gallery);
+      }
+      if(files.length > room){
+        errorBox.textContent = t("Limite de 5 imagens por produto — as que passaram do limite foram ignoradas.");
+        errorBox.classList.add("show");
+      }
+    } catch(err){
+      errorBox.textContent = err.message;
+      errorBox.classList.add("show");
+    } finally {
+      renderGallery(gallery);
+    }
+  });
+}
+
+/* Foto de cada item do kit (1 por item): botão de enviar + miniatura. */
+function bundlePhotoHTML(image){
+  return `
+    <div class="bi-photo">
+      <input type="hidden" class="bi-image" value="${esc(image)}">
+      ${image ? `<img class="bi-thumb" src="${resolveImageUrl(image)}" alt="">` : ""}
+      <button type="button" class="admin-btn admin-btn-ghost bi-upload-btn">${image ? t("Trocar foto") : t("Enviar foto")}</button>
+      ${image ? `<button type="button" class="admin-btn admin-btn-ghost bi-clear-btn" title="${t("Excluir imagem")}">✕</button>` : ""}
+      <input type="file" class="bi-file" accept="image/jpeg,image/png,image/webp" hidden>
+    </div>`;
 }
 
 function categoryOptionsHTML(selected){
@@ -148,7 +277,7 @@ function bundleItemRowHTML(it = {}){
     <input type="text" class="bi-name" placeholder="${t("Nome do item")}" value="${esc(it.name)}">
     <input type="text" class="bi-sku" placeholder="SKU" value="${esc(it.sku)}">
     <input type="number" class="bi-qty" placeholder="${t("Qtd")}" min="1" value="${it.qty || 1}">
-    <input type="text" class="bi-image" placeholder="${t("URL da imagem")}" value="${esc(it.image)}">
+    ${bundlePhotoHTML(it.image)}
     <button type="button" class="admin-btn admin-btn-ghost remove-bundle-item-btn" title="${t("Remover item")}">✕</button>
   </div>`;
 }
@@ -187,9 +316,7 @@ function productFormHTML(p = {}){
     <label class="admin-field">${t("Faixa do filtro (facet)")}
       <select class="pf-facet">${facetOptionsHTML(cat, p.facetValue)}</select>
     </label>
-    <label class="admin-field col-span-2">${t("URL da imagem")}
-      <input type="text" class="pf-image" value="${esc(p.image)}" placeholder="${t("assets/products/arquivo.jpg ou URL completa")}">
-    </label>
+    ${galleryBlockHTML(p.images || (p.image ? [p.image] : []))}
     <label class="admin-checkbox-row col-span-2">
       <input type="checkbox" class="pf-launch" ${p.isLaunch ? "checked" : ""}> ${t('Marcar como "Lançamento"')}
     </label>
@@ -220,8 +347,28 @@ function wireProductForm(root){
   });
   root.querySelector("#pfBundleItems")?.addEventListener("click", (e) => {
     const btn = e.target.closest(".remove-bundle-item-btn");
-    if(btn) btn.closest(".admin-bundle-item-row").remove();
+    if(btn) { btn.closest(".admin-bundle-item-row").remove(); return; }
+
+    const row = e.target.closest(".admin-bundle-item-row");
+    if(!row) return;
+    if(e.target.closest(".bi-upload-btn")) row.querySelector(".bi-file").click();
+    if(e.target.closest(".bi-clear-btn")) row.querySelector(".bi-photo").outerHTML = bundlePhotoHTML("");
   });
+  root.querySelector("#pfBundleItems")?.addEventListener("change", async (e) => {
+    const fileInput = e.target.closest(".bi-file");
+    if(!fileInput || !fileInput.files[0]) return;
+    const file = fileInput.files[0];
+    const photo = fileInput.closest(".bi-photo");
+    const uploadBtn = photo.querySelector(".bi-upload-btn");
+    uploadBtn.disabled = true; uploadBtn.textContent = t("Enviando...");
+    try{
+      photo.outerHTML = bundlePhotoHTML(await uploadProductImage(file));
+    } catch(err){
+      uploadBtn.disabled = false; uploadBtn.textContent = t("Enviar foto");
+      MES.showToast(err.message);
+    }
+  });
+  wireGallery(root);
 }
 
 function readProductForm(root){
@@ -252,7 +399,7 @@ function readProductForm(root){
     embVenda: root.querySelector(".pf-emb").value.trim(),
     subcategoria: root.querySelector(".pf-subcat").value.trim(),
     facetValue: root.querySelector(".pf-facet").value,
-    image: root.querySelector(".pf-image").value.trim(),
+    images: root.querySelector(".pf-gallery")._images.slice(),
     isLaunch: root.querySelector(".pf-launch").checked,
     specs,
     bundleItems,

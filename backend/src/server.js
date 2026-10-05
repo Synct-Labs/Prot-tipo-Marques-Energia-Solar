@@ -150,6 +150,10 @@ function validateProductPayload(body) {
   }
   if (body.specs && typeof body.specs !== "object") return "Specs em formato inválido.";
   if (body.bundleItems && !Array.isArray(body.bundleItems)) return "Itens do kit em formato inválido.";
+  if (body.images !== undefined) {
+    if (!Array.isArray(body.images)) return "Imagens em formato inválido.";
+    if (body.images.length > products.MAX_IMAGES) return `Cada produto aceita no máximo ${products.MAX_IMAGES} imagens.`;
+  }
   return null;
 }
 
@@ -315,6 +319,33 @@ async function handleApi(req, res, pathname) {
   // ---- CATÁLOGO (público — mesma info que já era publicada direto no app.js) ----
   if (pathname === "/api/products" && req.method === "GET") {
     return sendJSON(res, 200, { ok: true, products: await products.listAll() });
+  }
+
+  // Foto de produto enviada pelo admin — pública (a loja precisa exibir). O
+  // id nunca é reaproveitado (foto nova = id novo), então pode cachear pra sempre.
+  const productImageMatch = pathname.match(/^\/api\/product-images\/(\d+)$/);
+  if (productImageMatch && req.method === "GET") {
+    const img = await products.getImage(parseInt(productImageMatch[1], 10));
+    if (!img) return sendJSON(res, 404, { ok: false, error: "Imagem não encontrada." });
+    return sendBinary(res, 200, img.data, img.tipo, img.nome, {
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "X-Content-Type-Options": "nosniff",
+    });
+  }
+
+  // ---- ADMIN: FOTOS DO CATÁLOGO (upload; a URL devolvida entra em images do produto) ----
+  if (pathname === "/api/admin/product-images" && req.method === "POST") {
+    const admin = await requireCompanyAccess(req, res, "energia_solar");
+    if (!admin) return;
+    const body = await parseJSONBody(req, Math.ceil(products.MAX_IMAGE_BYTES * 1.4) + 1024);
+    let buffer = null;
+    try { buffer = Buffer.from(String(body.imageBase64 || ""), "base64"); } catch { buffer = null; }
+    try {
+      const id = await products.saveImage({ buffer, mime: body.imageTipo, nome: body.imageNome });
+      return sendJSON(res, 201, { ok: true, url: `/api/product-images/${id}` });
+    } catch (e) {
+      return sendJSON(res, e.statusCode || 400, { ok: false, error: e.message });
+    }
   }
 
   // ---- ADMIN: CATÁLOGO (adicionar/remover produto, preço, promoção — só Energia Solar ou dono) ----
@@ -1928,8 +1959,9 @@ async function handleApi(req, res, pathname) {
     const admin = await requireOwner(req, res);
     if (!admin) return;
     const url = new URL(req.url, "http://localhost");
-    const results = await folders.searchFolders(url.searchParams.get("q"));
-    return sendJSON(res, 200, { ok: true, results });
+    const offset = Math.max(0, parseInt(url.searchParams.get("offset"), 10) || 0);
+    const { results, hasMore } = await folders.searchFolders(url.searchParams.get("q"), { offset });
+    return sendJSON(res, 200, { ok: true, results, hasMore });
   }
 
   // Documento "automático" (já existente em outra parte do sistema) — um
@@ -2022,6 +2054,7 @@ async function main() {
   await db.initSchema();
   await auth.ensureAdminSeeded();
   await products.seedIfEmpty();
+  products.purgeOrphanImages().catch((e) => console.error("[products] falha ao limpar fotos órfãs:", e.message));
 
   const server = http.createServer(async (req, res) => {
     try {
