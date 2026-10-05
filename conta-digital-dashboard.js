@@ -405,7 +405,7 @@ function consorcioPagamentoRowHTML(a) {
     ? `<a class="btn btn-outline" href="${escConsorcioPendente(link)}" target="_blank" rel="noopener" style="width:auto;">${t("Pagar agora")}</a>`
     : link ? `<div style="font-family:monospace; word-break:break-all; background:var(--surface); padding:10px 12px; border-radius:8px; margin-top:10px;">${escConsorcioPendente(link)}</div>` : "";
   const qrHTML = a.grupoTemQr
-    ? `<img src="${API_BASE}/api/customers/me/consorcio-adesoes/${a.id}/qr" alt="QR code" style="width:200px; height:200px; object-fit:contain; background:#fff; border-radius:12px; padding:8px; margin-top:10px;">`
+    ? `<img src="${API_BASE}/api/customers/me/consorcio-adesoes/${a.id}/qr" alt="QR code" style="display:block; margin:12px auto 0; width:min(300px, 100%); aspect-ratio:1 / 1; object-fit:contain; background:#fff; border-radius:14px; padding:10px; box-sizing:border-box;">`
     : "";
   const aviso = !qrHTML && !linkHTML
     ? `<p style="color:var(--muted); font-size:0.85rem; margin-top:10px;">${t("Você receberá o link de pagamento por e-mail assim que conferirmos seus documentos.")}</p>`

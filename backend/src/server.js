@@ -1552,6 +1552,17 @@ async function handleApi(req, res, pathname) {
       }
       return kycGuard(async () => {
         const adesao = await consorcio.confirmarPagamento(parseInt(adesaoConfirmarPagamentoMatch[1], 10));
+        // Avisa o cliente; se o e-mail falhar, a confirmação (já feita) não é desfeita.
+        if (adesao.email) {
+          try {
+            await mailer.sendEmail({
+              to: adesao.email,
+              subject: "Pagamento confirmado — Compra Programada / Payment confirmed — Compra Programada",
+              text: `Recebemos o seu pagamento e sua adesão ao grupo ${adesao.grupoNome} está confirmada.\n\nWe received your payment and your enrollment in group ${adesao.grupoNome} is confirmed.`,
+              html: mailer.adesaoConfirmadaHTML({ grupoNome: adesao.grupoNome, valorCota: adesao.valorCota }),
+            });
+          } catch (e) { console.error("[consorcio] falha ao avisar o cliente da confirmação:", e.message); }
+        }
         return sendJSON(res, 200, { ok: true, adesao });
       });
     }

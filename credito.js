@@ -378,7 +378,7 @@ function mostrarQrPagamento(form, adesao){
         ${t("Escaneie o QR code no app do seu banco para pagar a cota")} (${formatBRL(adesao.valorCota)}).
         ${t("Assim que conferirmos o pagamento, sua adesão é confirmada. Você também pode receber o link de pagamento por e-mail.")}
       </p>
-      <img src="${qrUrl}" alt="QR code" style="width:220px; height:220px; object-fit:contain; background:#fff; border-radius:12px; padding:8px;">
+      <img src="${qrUrl}" alt="QR code" style="display:block; margin:0 auto; width:min(340px, 100%); aspect-ratio:1 / 1; object-fit:contain; background:#fff; border-radius:14px; padding:10px; box-sizing:border-box;">
       <div style="margin-top:14px;"><button type="button" class="btn btn-ghost consorcio-qr-fechar" style="width:auto;">${t("Fechar")}</button></div>
     </div>`;
   form.querySelector(".consorcio-qr-fechar").addEventListener("click", () => {

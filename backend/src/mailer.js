@@ -316,6 +316,18 @@ function pagamentoLinkConsorcioHTML({ grupoNome, link }) {
   });
 }
 
+// Aviso pro cliente quando o admin confirma o PIX da adesão.
+function adesaoConfirmadaHTML({ grupoNome, valorCota }) {
+  const valor = Number(valorCota).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return simpleEmailHTML(bi("Pagamento confirmado!", "Payment confirmed!"), [
+    [
+      `Recebemos o seu pagamento e sua adesão ao grupo <strong>${escHtml(grupoNome)}</strong> está confirmada.`,
+      `We received your payment and your enrollment in group <strong>${escHtml(grupoNome)}</strong> is confirmed.`,
+    ],
+    [`Valor da cota: <strong>${valor}</strong>.`, `Share value: <strong>${valor}</strong>.`],
+  ], { ctaHref: "https://marquespromotora.com/conta-digital-dashboard.html", ctaLabel: bi("Acessar minha conta", "Access my account") });
+}
+
 function adminNovaAdesaoConsorcioHTML(adesao) {
   return simpleEmailHTML(bi("Nova adesão na Compra Programada", "New Compra Programada signup"), [
     [
@@ -351,5 +363,5 @@ module.exports = {
   pagamentoLinkParaParceiroHTML, pagamentoLinkParaClienteHTML,
   pendenciaParaParceiroHTML, pendenciaParaClienteHTML,
   adminPendenciaRespostaHTML,
-  pagamentoLinkConsorcioHTML, adminNovaAdesaoConsorcioHTML,
+  pagamentoLinkConsorcioHTML, adminNovaAdesaoConsorcioHTML, adesaoConfirmadaHTML,
 };
