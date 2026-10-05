@@ -135,6 +135,9 @@ const state = {
   // dono do código ?ref= ativo (ver checarCompraAssistida) — aí ele está
   // comprando pelo catálogo em nome de um cliente, não pra si mesmo.
   partnerAssisted: { active: false, tier: 0 },
+  // Cliente logado que é parceiro ativo (com ou sem ?ref=) — libera o botão
+  // de orçamento do produto, que o público geral não vê.
+  isPartner: false,
   compareSelection: {},  // { [categoria]: [ids] }
   configurator: {
     active: false,
@@ -775,6 +778,8 @@ function renderProductPage(){
   }
   $("#productAddCartBtn").dataset.id = p.id;
   $("#datasheetBtnLabel").textContent = p.cat === "kits" ? t("Baixar Orçamento") : t("Baixar Datasheet");
+  // Só parceiro ativo logado vê o botão de orçamento (público geral não).
+  $("#datasheetBtn").style.display = state.isPartner ? "" : "none";
 
   $("#specsHighlight").innerHTML = cat.specFields.map(([key,label]) => `
     <div class="spec-highlight-item">
@@ -821,7 +826,7 @@ $("#productAddCartBtn").addEventListener("click", (e) => {
 // Orçamento/ficha técnica do produto aberto — ver orcamento.js (busca os
 // dados atualizados no servidor a cada clique).
 $("#datasheetBtn").addEventListener("click", () => {
-  if(state.currentProductId) gerarOrcamento(state.currentProductId);
+  if(state.isPartner && state.currentProductId) gerarOrcamento(state.currentProductId);
 });
 
 /* ======================================================================
@@ -1185,13 +1190,15 @@ const ASSISTED_TIERS = { 0: 10, 5: 5, 10: 0 };
 
 async function checarCompraAssistida(customer){
   state.partnerAssisted.active = false;
+  state.isPartner = false;
   const ref = window.MES_REF ? window.MES_REF.get() : "";
-  if(!ref || !customer) return;
+  if(!customer) return;
   try{
     const res = await fetch(`${API_BASE}/api/partners/me`, { credentials: "include" });
     const data = await res.json();
     const partner = data.ok ? data.partner : null;
-    state.partnerAssisted.active = !!(partner && partner.status === "ativo" && partner.codigo === ref);
+    state.isPartner = !!(partner && partner.status === "ativo");
+    state.partnerAssisted.active = !!(state.isPartner && ref && partner.codigo === ref);
   } catch(err){
     // sem backend: segue como compra normal, sem o modo assistido.
   }
