@@ -399,16 +399,40 @@ function consorcioPendenteRowHTML(a) {
 
 // Cota aguardando pagamento: QR code do grupo (se o admin cadastrou) e/ou o
 // link/chave PIX que o admin lançou na adesão.
+// Copia pro clipboard (API moderna; cai no execCommand em navegador antigo).
+async function copiarTexto(texto) {
+  try { await navigator.clipboard.writeText(texto); return true; } catch (e) { /* plano B abaixo */ }
+  const ta = document.createElement("textarea");
+  ta.value = texto; ta.style.cssText = "position:fixed; opacity:0;";
+  document.body.appendChild(ta); ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+  ta.remove();
+  return ok;
+}
+
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-copiar-pix]");
+  if (!btn) return;
+  const ok = await copiarTexto(btn.dataset.pix);
+  btn.textContent = ok ? t("Copiado!") : t("Não foi possível copiar — selecione o código e copie manualmente.");
+  setTimeout(() => { btn.textContent = t("Copiar código PIX"); }, 2500);
+});
+
 function consorcioPagamentoRowHTML(a) {
-  const link = String(a.paymentLink || "");
-  const linkHTML = /^https?:\/\//i.test(link)
-    ? `<a class="btn btn-outline" href="${escConsorcioPendente(link)}" target="_blank" rel="noopener" style="width:auto;">${t("Pagar agora")}</a>`
-    : link ? `<div style="font-family:monospace; word-break:break-all; background:var(--surface); padding:10px 12px; border-radius:8px; margin-top:10px;">${escConsorcioPendente(link)}</div>` : "";
+  // Código PIX "copia e cola" configurado no grupo (admin) — botão copia pro clipboard.
+  const linkHTML = a.pixCopiaCola
+    ? `<div style="margin-top:12px; max-width:440px; margin-left:auto; margin-right:auto;">
+         <p style="color:var(--muted); font-size:0.8rem; margin:0 0 6px;">${t("PIX copia e cola")}</p>
+         <div style="font-family:monospace; font-size:0.75rem; word-break:break-all; background:var(--surface); padding:10px 12px; border-radius:8px; max-height:90px; overflow:auto;">${escConsorcioPendente(a.pixCopiaCola)}</div>
+         <button type="button" class="btn btn-primary" data-copiar-pix data-pix="${escConsorcioPendente(a.pixCopiaCola)}" style="width:100%; justify-content:center; margin-top:10px;">${t("Copiar código PIX")}</button>
+       </div>`
+    : "";
   const qrHTML = a.grupoTemQr
     ? `<img src="${API_BASE}/api/customers/me/consorcio-adesoes/${a.id}/qr" alt="QR code" style="display:block; margin:12px auto 0; width:min(300px, 100%); aspect-ratio:1 / 1; object-fit:contain; background:#fff; border-radius:14px; padding:10px; box-sizing:border-box;">`
     : "";
   const aviso = !qrHTML && !linkHTML
-    ? `<p style="color:var(--muted); font-size:0.85rem; margin-top:10px;">${t("Você receberá o link de pagamento por e-mail assim que conferirmos seus documentos.")}</p>`
+    ? `<p style="color:var(--muted); font-size:0.85rem; margin-top:10px;">${t("Os dados de pagamento deste grupo ainda não estão disponíveis. Fale com a gente pelo WhatsApp.")}</p>`
     : "";
   return `
     <div class="pay-card" style="padding:14px 16px; margin-bottom:10px; background:var(--surface-2);">

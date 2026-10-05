@@ -302,20 +302,6 @@ function pagamentoLinkParaClienteHTML({ orderNumber, link, pagamento }) {
   });
 }
 
-function pagamentoLinkConsorcioHTML({ grupoNome, link }) {
-  return emailShellHTML({
-    title: bi("Sua Compra Programada: pagamento liberado", "Your Compra Programada: payment released"),
-    bodyHTML: biParagraphsHTML([
-      [
-        `Recebemos seus dados e documentos pra contratar o grupo <strong>${escHtml(grupoNome)}</strong>. Segue o link (ou chave PIX) pra fechar o pagamento da primeira parcela:`,
-        `We received your details and documents to join group <strong>${escHtml(grupoNome)}</strong>. Here's the link (or PIX key) to complete the first installment payment:`,
-      ],
-    ]) + pagamentoValorHTML(link),
-    ctaHref: isHttpUrl(link) ? link : undefined,
-    ctaLabel: bi("Pagar agora", "Pay now"),
-  });
-}
-
 // Aviso pro cliente quando o admin confirma o PIX da adesão.
 function adesaoConfirmadaHTML({ grupoNome, valorCota }) {
   const valor = Number(valorCota).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -363,5 +349,5 @@ module.exports = {
   pagamentoLinkParaParceiroHTML, pagamentoLinkParaClienteHTML,
   pendenciaParaParceiroHTML, pendenciaParaClienteHTML,
   adminPendenciaRespostaHTML,
-  pagamentoLinkConsorcioHTML, adminNovaAdesaoConsorcioHTML, adesaoConfirmadaHTML,
+  adminNovaAdesaoConsorcioHTML, adesaoConfirmadaHTML,
 };

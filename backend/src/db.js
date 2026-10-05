@@ -428,6 +428,9 @@ async function initSchema() {
     ALTER TABLE consorcio_grupos ADD COLUMN IF NOT EXISTS qr_dados BYTEA;
     ALTER TABLE consorcio_grupos ADD COLUMN IF NOT EXISTS qr_tipo TEXT;
     ALTER TABLE consorcio_grupos ADD COLUMN IF NOT EXISTS qr_nome TEXT;
+    -- PIX "copia e cola" (ou link de pagamento) do grupo: o cliente copia pelo
+    -- botão do card de pagamento. Mesmo acesso do QR code (só dono da adesão).
+    ALTER TABLE consorcio_grupos ADD COLUMN IF NOT EXISTS pix_copia_cola TEXT;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_valor_sistema DOUBLE PRECISION;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_parcelas INTEGER;
     ALTER TABLE credit_leads ADD COLUMN IF NOT EXISTS sim_fgts_disponivel DOUBLE PRECISION;

@@ -1519,30 +1519,6 @@ async function handleApi(req, res, pathname) {
       return sendBinary(res, 200, c.data, c.tipo, c.nome);
     }
 
-    // Link de pagamento (ou chave PIX): salva na adesão e avisa o cliente
-    // por e-mail — aqui não tem parceiro pra repassar, é sempre o próprio
-    // cliente que contratou direto pelo catálogo.
-    const adesaoPaymentLinkMatch = pathname.match(/^\/api\/admin\/consorcio\/adesoes\/(\d+)\/payment-link$/);
-    if (adesaoPaymentLinkMatch && req.method === "POST") {
-      const id = parseInt(adesaoPaymentLinkMatch[1], 10);
-      const adesao = await consorcio.getAdesaoById(id);
-      if (!adesao) return sendJSON(res, 404, { ok: false, error: "Adesão não encontrada." });
-      const body = await parseJSONBody(req);
-      const link = String(body.link || "").trim();
-      if (!link) return sendJSON(res, 400, { ok: false, error: "Informe o link de pagamento (ou a chave PIX)." });
-      if (link.length > 1000) return sendJSON(res, 400, { ok: false, error: "Link/chave muito longo (máximo 1000 caracteres)." });
-      await consorcio.setPaymentLink(id, link);
-      if (adesao.email) {
-        await mailer.sendEmail({
-          to: adesao.email,
-          subject: `Sua Compra Programada: pagamento liberado / Your Compra Programada: payment released`,
-          text: `Segue o link (ou chave PIX) pra fechar o pagamento do grupo ${adesao.grupoNome}: ${link}\n\nHere's the link (or PIX key) to complete the payment for group ${adesao.grupoNome}: ${link}`,
-          html: mailer.pagamentoLinkConsorcioHTML({ grupoNome: adesao.grupoNome, link }),
-        });
-      }
-      return sendJSON(res, 200, { ok: true, adesao: await consorcio.getAdesaoById(id) });
-    }
-
     const adesaoConfirmarPagamentoMatch = pathname.match(/^\/api\/admin\/consorcio\/adesoes\/(\d+)\/confirmar-pagamento$/);
     if (adesaoConfirmarPagamentoMatch && req.method === "POST") {
       // Confirmar o PIX libera a cota e gera comissão: só o dono da conta

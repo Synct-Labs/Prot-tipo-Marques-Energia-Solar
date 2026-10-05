@@ -87,6 +87,10 @@
           </div>
           <div class="admin-field"><label>Regras (assembleia, sorteio, lance etc. — texto livre)</label><textarea name="regras" rows="3"></textarea></div>
           <div class="admin-field">
+            <label>PIX copia e cola (ou link de pagamento) — opcional, o cliente copia pelo botão do card de pagamento</label>
+            <textarea name="pixCopiaCola" rows="2" maxlength="1000" style="font-family:monospace; word-break:break-all;"></textarea>
+          </div>
+          <div class="admin-field">
             <label>QR code de pagamento da cota (opcional — dá pra enviar depois, em Editar)</label>
             <input type="file" name="qr" accept="image/png,image/jpeg,image/webp">
           </div>
@@ -192,6 +196,12 @@ function grupoEditHTML(g){
       <div class="admin-field"><label>${t("Regras (assembleia, sorteio, lance etc. — texto livre)")}</label><textarea name="regras" rows="9">${esc(g.regras)}</textarea></div>
 
       <div class="admin-field">
+        <label>${t("PIX copia e cola (ou link de pagamento)")}</label>
+        <textarea name="pixCopiaCola" rows="3" maxlength="1000" placeholder="${t("Cole aqui o código PIX copia e cola")}" style="font-family:monospace; word-break:break-all;">${esc(g.pixCopiaCola)}</textarea>
+        <small style="display:block; margin-top:4px; color:var(--muted);">${t("O cliente vê um botão para copiar este código, junto do QR code, no card de pagamento. Deixe em branco para não mostrar.")}</small>
+      </div>
+
+      <div class="admin-field">
         <label>${t("QR code de pagamento da cota")}</label>
         ${g.temQr ? `
           <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
@@ -261,6 +271,7 @@ document.getElementById("gruposList").addEventListener("submit", async (e) => {
     prazoMeses: Number(fd.get("prazoMeses")),
     taxaAdministracaoPct: Number(fd.get("taxaAdministracaoPct") || 0),
     regras: fd.get("regras"),
+    pixCopiaCola: fd.get("pixCopiaCola"),
   });
   if(!res.ok){ errorBox.textContent = res.error || t("Erro ao salvar o grupo."); errorBox.classList.add("show"); return; }
   const qrError = await uploadQr(id, form.querySelector('[name="qr"]').files[0]);
@@ -343,6 +354,7 @@ document.getElementById("newGrupoForm").addEventListener("submit", async (e) => 
     prazoMeses: Number(fd.get("prazoMeses")),
     taxaAdministracaoPct: Number(fd.get("taxaAdministracaoPct") || 0),
     regras: fd.get("regras"),
+    pixCopiaCola: fd.get("pixCopiaCola"),
   });
   if(!res.ok){ box.textContent = res.error || t("Erro ao criar grupo."); box.classList.add("show"); return; }
   const qrError = await uploadQr(res.grupo.id, e.target.querySelector('[name="qr"]').files[0]);
@@ -387,14 +399,9 @@ function adesaoRowHTML(a){
       ${a.status === "aguardando_pagamento" ? `
         <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border-soft);">
           <p style="margin:0 0 10px; font-size:0.85rem;">${t("Confira no seu banco o PIX deste cliente antes de confirmar. Valor da cota:")} <strong>${MES.formatBRL(a.valorCota)}</strong></p>
-          ${a.paymentLink ? `<p class="admin-muted" style="word-break:break-all; margin:0 0 8px;">${t("Último link/chave enviado:")} ${esc(a.paymentLink)}</p>` : ""}
-          <form class="admin-consorcio-payment-link-form" data-adesao-id="${a.id}" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <input type="text" name="link" placeholder="${t("Link de pagamento ou chave PIX")}" style="flex:1; min-width:220px;" required>
-            <button type="submit" class="admin-btn admin-btn-ghost" style="width:auto;">${t("Enviar")}</button>
-            ${isOwner
-              ? `<button type="button" class="admin-btn" style="width:auto;" data-confirmar-pagamento="${a.id}">${t("Confirmar pagamento recebido")}</button>`
-              : `<small style="color:var(--muted);">${t("Só o dono da conta confirma o pagamento.")}</small>`}
-          </form>
+          ${isOwner
+            ? `<button type="button" class="admin-btn" style="width:auto;" data-confirmar-pagamento="${a.id}">${t("Confirmar pagamento recebido")}</button>`
+            : `<small style="color:var(--muted);">${t("Só o dono da conta confirma o pagamento.")}</small>`}
         </div>
       ` : ""}
     </div>`;
@@ -427,24 +434,6 @@ document.getElementById("adesoesList").addEventListener("click", async (e) => {
     if(!res.ok){ MES.showToast(res.error || t("Erro ao confirmar pagamento.")); return; }
     MES.showToast(t("Pagamento confirmado."));
     loadAdesoes();
-  }
-});
-
-document.getElementById("adesoesList").addEventListener("submit", async (e) => {
-  const form = e.target.closest(".admin-consorcio-payment-link-form");
-  if(!form) return;
-  e.preventDefault();
-  const link = form.querySelector('[name="link"]').value.trim();
-  if(!link) return;
-  const btn = form.querySelector("button[type=submit]");
-  btn.disabled = true; btn.textContent = t("Enviando...");
-  try{
-    const res = await MES.apiPost(`/api/admin/consorcio/adesoes/${form.dataset.adesaoId}/payment-link`, { link });
-    if(!res.ok){ MES.showToast(res.error || t("Erro ao enviar link.")); return; }
-    MES.showToast(t("Link enviado por e-mail."));
-    loadAdesoes();
-  } finally {
-    btn.disabled = false; btn.textContent = t("Enviar");
   }
 });
 

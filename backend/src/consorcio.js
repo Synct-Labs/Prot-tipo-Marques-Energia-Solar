@@ -26,6 +26,7 @@ const ADESAO_STATUS = ["aguardando_cliente", "aguardando_pagamento", "confirmada
 // Comprovante de endereço + documento com foto: mesmo limite usado no
 // checkout da loja.
 const MAX_DOC_BYTES = 5 * 1024 * 1024;
+const MAX_PIX_CHARS = 1000;
 
 function err(status, message) { return Object.assign(new Error(message), { statusCode: status }); }
 
@@ -46,6 +47,9 @@ function rowToGrupo(row) {
     visivelParceiro: row.visivel_parceiro,
     encerrado: row.encerrado,
     temQr: !!row.tem_qr,
+    // O código em si NÃO sai daqui (essa forma vai pra listagem pública e de
+    // parceiro): só o admin (listGruposAdmin) e o dono da adesão (rowToAdesao).
+    temPix: !!row.pix_copia_cola,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -58,7 +62,7 @@ function rowToGrupo(row) {
 const GRUPO_SELECT = `
   SELECT g.id, g.nome, g.cotas_total, g.valor_cota, g.prazo_meses, g.taxa_administracao_pct, g.regras,
          g.visivel_site, g.visivel_parceiro, g.encerrado, g.created_at, g.updated_at,
-         (g.qr_dados IS NOT NULL) AS tem_qr,
+         (g.qr_dados IS NOT NULL) AS tem_qr, g.pix_copia_cola,
          COALESCE(a.ocupadas, 0) AS cotas_ocupadas
   FROM consorcio_grupos g
   LEFT JOIN (
@@ -76,15 +80,18 @@ function validateGrupoPayload(body, { partial } = {}) {
   if (body.taxaAdministracaoPct !== undefined && body.taxaAdministracaoPct !== null && body.taxaAdministracaoPct !== "") {
     need(Number(body.taxaAdministracaoPct) >= 0 && Number(body.taxaAdministracaoPct) <= 100, "Taxa de administração inválida.");
   }
+  if (body.pixCopiaCola !== undefined) {
+    need(String(body.pixCopiaCola || "").trim().length <= MAX_PIX_CHARS, `O código PIX aceita no máximo ${MAX_PIX_CHARS} caracteres.`);
+  }
 }
 
 async function createGrupo(body) {
   validateGrupoPayload(body);
   const now = new Date().toISOString();
   const insert = await pool.query(
-    `INSERT INTO consorcio_grupos (nome, cotas_total, valor_cota, prazo_meses, taxa_administracao_pct, regras, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$7) RETURNING id`,
-    [String(body.nome).trim(), Number(body.cotasTotal), Number(body.valorCota), Number(body.prazoMeses), Number(body.taxaAdministracaoPct) || 0, String(body.regras || "").trim(), now]
+    `INSERT INTO consorcio_grupos (nome, cotas_total, valor_cota, prazo_meses, taxa_administracao_pct, regras, pix_copia_cola, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8) RETURNING id`,
+    [String(body.nome).trim(), Number(body.cotasTotal), Number(body.valorCota), Number(body.prazoMeses), Number(body.taxaAdministracaoPct) || 0, String(body.regras || "").trim(), String(body.pixCopiaCola || "").trim() || null, now]
   );
   return getGrupoById(insert.rows[0].id);
 }
@@ -105,14 +112,17 @@ async function updateGrupo(id, body) {
     visivel_parceiro: body.visivelParceiro !== undefined ? !!body.visivelParceiro : current.visivelParceiro,
     encerrado: body.encerrado !== undefined ? !!body.encerrado : current.encerrado,
   };
+  // pix_copia_cola não vem em getGrupoById (não pode vazar), então lê aqui; só muda se veio no corpo.
+  const pixAtual = (await pool.query("SELECT pix_copia_cola FROM consorcio_grupos WHERE id = $1", [id])).rows[0].pix_copia_cola;
+  const pixNovo = body.pixCopiaCola !== undefined ? (String(body.pixCopiaCola || "").trim() || null) : pixAtual;
   if (fields.cotas_total < current.cotasOcupadas) {
     throw err(400, `Já existem ${current.cotasOcupadas} adesão(ões) nesse grupo — não dá pra reduzir pra menos que isso.`);
   }
   await pool.query(
     `UPDATE consorcio_grupos SET nome=$1, cotas_total=$2, valor_cota=$3, prazo_meses=$4, taxa_administracao_pct=$5,
-       regras=$6, visivel_site=$7, visivel_parceiro=$8, encerrado=$9, updated_at=$10 WHERE id=$11`,
+       regras=$6, visivel_site=$7, visivel_parceiro=$8, encerrado=$9, pix_copia_cola=$10, updated_at=$11 WHERE id=$12`,
     [fields.nome, fields.cotas_total, fields.valor_cota, fields.prazo_meses, fields.taxa_administracao_pct,
-     fields.regras, fields.visivel_site, fields.visivel_parceiro, fields.encerrado, new Date().toISOString(), id]
+     fields.regras, fields.visivel_site, fields.visivel_parceiro, fields.encerrado, pixNovo, new Date().toISOString(), id]
   );
   return getGrupoById(id);
 }
@@ -217,7 +227,7 @@ async function getGrupoById(id) {
 
 async function listGruposAdmin() {
   const { rows } = await pool.query(`${GRUPO_SELECT} ORDER BY g.id DESC`);
-  return rows.map(rowToGrupo);
+  return rows.map((r) => ({ ...rowToGrupo(r), pixCopiaCola: r.pix_copia_cola || "" }));
 }
 
 async function listGruposPublicos() {
@@ -231,7 +241,9 @@ async function listGruposParceiro() {
 }
 
 /* ---------------------- ADESÕES ---------------------- */
-function rowToAdesao(row) {
+// withPix: o código PIX do grupo só vai pro próprio cliente, e só enquanto a
+// adesão aguarda pagamento (admin/parceiro recebem só o flag grupoTemPix).
+function rowToAdesao(row, { withPix } = {}) {
   return {
     id: row.id,
     grupoId: row.grupo_id,
@@ -250,8 +262,9 @@ function rowToAdesao(row) {
     status: row.status,
     temDocEndereco: !!row.doc_endereco_dados,
     temDocFoto: !!row.doc_foto_dados,
-    paymentLink: row.payment_link || null,
     grupoTemQr: !!row.grupo_tem_qr,
+    grupoTemPix: !!row.grupo_pix,
+    ...(withPix && row.status === "aguardando_pagamento" && row.grupo_pix ? { pixCopiaCola: row.grupo_pix } : {}),
     confirmadaEm: row.confirmada_em,
     createdAt: row.created_at,
   };
@@ -259,6 +272,7 @@ function rowToAdesao(row) {
 
 const ADESAO_SELECT = `
   SELECT ad.*, g.nome AS grupo_nome, g.valor_cota, g.prazo_meses, (g.qr_dados IS NOT NULL) AS grupo_tem_qr,
+         g.pix_copia_cola AS grupo_pix,
          p.codigo AS parceiro_codigo, c.nome AS parceiro_nome
   FROM consorcio_adesoes ad
   JOIN consorcio_grupos g ON g.id = ad.grupo_id
@@ -305,16 +319,7 @@ async function contratarComoCliente(customerId, grupoId, {
       now,
     ]
   );
-  return getAdesaoById(insert.rows[0].id);
-}
-
-// Admin lança o link de pagamento (ou chave PIX) e avisa o cliente por e-mail.
-async function setPaymentLink(id, link) {
-  const result = await pool.query(
-    "UPDATE consorcio_adesoes SET payment_link = $1, updated_at = $2 WHERE id = $3",
-    [link, new Date().toISOString(), id]
-  );
-  return result.rowCount > 0;
+  return getAdesaoById(insert.rows[0].id, { withPix: true });
 }
 
 // Admin confirma que o pagamento caiu: só aqui a adesão vira 'confirmada' e,
@@ -372,14 +377,14 @@ async function lancarComoParceiro(partnerRow, grupoId, { nome, telefone, email, 
   return getAdesaoById(insert.rows[0].id);
 }
 
-async function getAdesaoById(id) {
+async function getAdesaoById(id, opts) {
   const { rows } = await pool.query(`${ADESAO_SELECT} WHERE ad.id = $1`, [id]);
-  return rows[0] ? rowToAdesao(rows[0]) : null;
+  return rows[0] ? rowToAdesao(rows[0], opts) : null;
 }
 
 async function listAdesoesByCustomer(customerId) {
   const { rows } = await pool.query(`${ADESAO_SELECT} WHERE ad.customer_id = $1 ORDER BY ad.id DESC`, [customerId]);
-  return rows.map(rowToAdesao);
+  return rows.map((r) => rowToAdesao(r, { withPix: true }));
 }
 
 // Adesões lançadas por um parceiro pra um e-mail, ainda sem customer_id
@@ -450,7 +455,7 @@ module.exports = {
   createGrupo, updateGrupo, getGrupoById, listGruposAdmin, listGruposPublicos, listGruposParceiro,
   contratarComoCliente, lancarComoParceiro, getAdesaoById, listAdesoesByCustomer,
   listAdesoesPendentesPorEmail, listAdesoesAdmin, confirmarAdesao, cancelarAdesao,
-  setPaymentLink, confirmarPagamento, getDocEndereco, getDocFoto,
+  confirmarPagamento, getDocEndereco, getDocFoto,
   getTexto, setTexto,
   deleteGrupo, setQr, clearQr, getQr, getQrForAdesao, MAX_QR_BYTES,
 };

@@ -298,7 +298,7 @@ function grupoCardHTML(g){
       ${g.regras ? `<p style="color:var(--muted); font-size:0.82rem; line-height:1.55; margin:0 0 10px; white-space:pre-line;">${escConsorcio(g.regras)}</p>` : ""}
       <button type="button" class="btn btn-primary" data-contratar-grupo="${g.id}" ${semVaga ? "disabled" : ""}>${semVaga ? t("Sem vagas") : t("Contratar")}</button>
       <form class="consorcio-contratar-form" data-grupo-id="${g.id}" hidden>
-        <p style="color:var(--muted); font-size:0.82rem; margin:0 0 12px;">${t("Preencha seus dados e anexe os documentos pra reservar a cota. Depois de conferir, mandamos o link de pagamento (ou a chave PIX) pro seu e-mail.")}</p>
+        <p style="color:var(--muted); font-size:0.82rem; margin:0 0 12px;">${t("Preencha seus dados e anexe os documentos pra reservar a cota. Em seguida você vê as informações para pagar a cota.")}</p>
         <label>${t("Nome completo")}<input type="text" name="nome" required></label>
         <label>CPF<input type="text" name="cpf" required inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label>
         <label>${t("Telefone / WhatsApp")}<input type="tel" name="telefone" required></label>
@@ -368,6 +368,18 @@ function fileToBase64Consorcio(file){
 
 // Troca o formulário por um painel com o QR code de pagamento da cota. A
 // imagem vem de uma rota que só entrega pro dono da adesão (cookie de sessão).
+// Copia pro clipboard (API moderna; cai no execCommand em navegador antigo).
+async function copiarTexto(texto){
+  try { await navigator.clipboard.writeText(texto); return true; } catch { /* tenta o plano B */ }
+  const ta = document.createElement("textarea");
+  ta.value = texto; ta.style.cssText = "position:fixed; opacity:0;";
+  document.body.appendChild(ta); ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch { ok = false; }
+  ta.remove();
+  return ok;
+}
+
 function mostrarQrPagamento(form, adesao){
   const qrUrl = `${API_BASE}/api/customers/me/consorcio-adesoes/${adesao.id}/qr`;
   form.reset();
@@ -375,12 +387,26 @@ function mostrarQrPagamento(form, adesao){
     <div class="consorcio-qr-panel" style="text-align:center; padding:8px 0;">
       <strong>${t("Cota reservada! Pague para garantir sua vaga")}</strong>
       <p style="color:var(--muted); font-size:0.85rem; margin:8px 0 12px;">
-        ${t("Escaneie o QR code no app do seu banco para pagar a cota")} (${formatBRL(adesao.valorCota)}).
-        ${t("Assim que conferirmos o pagamento, sua adesão é confirmada. Você também pode receber o link de pagamento por e-mail.")}
+        ${adesao.grupoTemQr ? t("Escaneie o QR code no app do seu banco para pagar a cota") : t("Copie o código PIX abaixo e cole no app do seu banco para pagar a cota")} (${formatBRL(adesao.valorCota)}).
+        ${t("Assim que conferirmos o pagamento, sua adesão é confirmada e você recebe um aviso por e-mail.")}
       </p>
-      <img src="${qrUrl}" alt="QR code" style="display:block; margin:0 auto; width:min(340px, 100%); aspect-ratio:1 / 1; object-fit:contain; background:#fff; border-radius:14px; padding:10px; box-sizing:border-box;">
+      ${adesao.grupoTemQr ? `<img src="${qrUrl}" alt="QR code" style="display:block; margin:0 auto; width:min(340px, 100%); aspect-ratio:1 / 1; object-fit:contain; background:#fff; border-radius:14px; padding:10px; box-sizing:border-box;">` : ""}
+      ${adesao.pixCopiaCola ? `
+      <div style="margin:18px auto 0; max-width:440px; text-align:left;">
+        <p style="color:var(--muted); font-size:0.8rem; margin:0 0 6px;">${t("PIX copia e cola")}</p>
+        <div style="font-family:monospace; font-size:0.75rem; word-break:break-all; background:var(--surface-2); border-radius:10px; padding:10px 12px; max-height:90px; overflow:auto;">${escConsorcio(adesao.pixCopiaCola)}</div>
+        <button type="button" class="btn btn-primary consorcio-copiar-pix" style="width:100%; justify-content:center; margin-top:10px;">${t("Copiar código PIX")}</button>
+      </div>` : ""}
       <div style="margin-top:14px;"><button type="button" class="btn btn-ghost consorcio-qr-fechar" style="width:auto;">${t("Fechar")}</button></div>
     </div>`;
+  const copiarBtn = form.querySelector(".consorcio-copiar-pix");
+  if(copiarBtn){
+    copiarBtn.addEventListener("click", async () => {
+      const ok = await copiarTexto(adesao.pixCopiaCola);
+      copiarBtn.textContent = ok ? t("Copiado!") : t("Não foi possível copiar — selecione o código e copie manualmente.");
+      setTimeout(() => { copiarBtn.textContent = t("Copiar código PIX"); }, 2500);
+    });
+  }
   form.querySelector(".consorcio-qr-fechar").addEventListener("click", () => {
     form.hidden = true;
     loadConsorcioGrupos();
@@ -429,11 +455,11 @@ async function enviarContratacao(form){
     }
     // Grupo com QR code de pagamento cadastrado: mostra o QR na hora, pro
     // cliente já poder pagar a cota (o link por e-mail continua valendo).
-    if(res.adesao && res.adesao.grupoTemQr){
+    if(res.adesao && (res.adesao.grupoTemQr || res.adesao.pixCopiaCola)){
       mostrarQrPagamento(form, res.adesao);
       return;
     }
-    showToast(t("Dados recebidos! Em breve você recebe o link de pagamento por e-mail."));
+    showToast(t("Dados recebidos! Sua cota está reservada — acompanhe o pagamento em Marques Pay."));
     form.reset();
     form.hidden = true;
     loadConsorcioGrupos();
