@@ -202,7 +202,7 @@ Para plugar o parceiro, tudo passa por `backend/src/payPartner.js`:
 
 A pessoa usa a conta de cliente, cadastra a chave PIX e aceita as condições (`parceiros.html`). Depois de aprovada no admin (aba **Parceiros**, só o dono), recebe um link `?ref=CODIGO` para a loja e para o crédito. `ref.js` guarda o código por 30 dias (último link vence) e o checkout e o formulário de crédito o enviam; o backend só atribui se o parceiro estiver ativo e não for o próprio comprador.
 
-Comissão: `prevista` (venda registrada) → `liberada` (pedido **entregue** ou crédito **convertido**) → `paga` (admin faz o PIX e anexa o comprovante, que o parceiro vê no painel) ou `cancelada` (pedido cancelado / crédito recusado). Padrão: 5% loja e 2% crédito (sobre `sim_valor_sistema`), editável em "Regras gerais" e por parceiro; vendas já registradas mantêm o percentual da data.
+Comissão: `prevista` (venda registrada) → `liberada` (pedido **entregue** ou crédito **pago**) → `paga` (admin faz o PIX e anexa o comprovante, que o parceiro vê no painel) ou `cancelada` (pedido cancelado / crédito recusado). Padrão: 5% loja e 2% crédito (sobre `sim_valor_sistema`), editável em "Regras gerais" e por parceiro; vendas já registradas mantêm o percentual da data.
 
 Pontos que exigem decisão/jurídico antes de abrir ao público: `parceiros-termos.html` é um texto-base (prazo de pagamento de 15 dias e demais cláusulas são sugestão); quem indica **crédito** pode precisar ser formalizado como correspondente da instituição financeira; a nomenclatura evita "franquia" de propósito (franquia tem regime legal próprio). Percentuais padrão são sugestão, não regra de negócio definida.
 

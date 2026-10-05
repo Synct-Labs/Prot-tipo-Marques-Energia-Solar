@@ -187,7 +187,9 @@ async function registerSale({ tipo, orderId, leadId, adesaoId, referencia, base,
 }
 
 const ORDER_MAP = { entregue: "liberada", cancelado: "cancelada" };
-const LEAD_MAP = { convertido: "liberada", recusado: "cancelada" };
+// Crédito só libera a comissão quando chega em "pago"; qualquer outro status
+// intermediário (aprovado, digitado, pendenciado...) mantém "prevista".
+const LEAD_MAP = { pago: "liberada", recusado: "cancelada" };
 
 // Chamado quando o pedido/lead muda de status: mantém a comissão em dia.
 async function syncStatus(kind, id, status) {

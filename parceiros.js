@@ -40,15 +40,16 @@ const ORDER_STATUS_LABELS = {
   enviado: t("Enviado"), entregue: t("Entregue"), cancelado: t("Cancelado"),
 };
 const LEAD_STATUS_LABELS = {
-  novo: t("Novo"), em_analise: t("Em análise"), contatado: t("Contatado"),
-  proposta_enviada: t("Proposta enviada"), convertido: t("Convertido"), recusado: t("Recusado"),
+  novo: t("Novo"), em_analise: t("Em análise"), aprovado: t("Aprovado"), digitado: t("Digitado"),
+  pendenciado: t("Pendenciado"), pago: t("Pago"), recusado: t("Recusado"),
 };
 const ORDER_STEPS = ["novo", "confirmado", "em_preparacao", "enviado", "entregue"];
-const LEAD_STEPS = ["novo", "em_analise", "contatado", "proposta_enviada", "convertido"];
+const LEAD_STEPS = ["novo", "em_analise", "aprovado", "digitado", "pago"];
 
 function statusTone(status) {
   if (status === "cancelado" || status === "recusado") return "danger";
-  if (status === "entregue" || status === "convertido") return "success";
+  if (status === "entregue" || status === "pago") return "success";
+  if (status === "pendenciado") return "warning";
   if (status === "novo") return "neutral";
   return "progress";
 }

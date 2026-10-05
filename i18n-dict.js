@@ -795,9 +795,9 @@ window.MES_I18N_DICT = {
   "Entregue": "Delivered",
   "Cancelado": "Cancelled",
   "Em análise": "Under review",
-  "Contatado": "Contacted",
-  "Proposta enviada": "Proposal sent",
-  "Convertido": "Converted",
+  "Aprovado": "Approved",
+  "Digitado": "Proposal submitted",
+  "Pendenciado": "Pending",
   "Recusado": "Declined",
 
   /* ---------- parceiros.html (programa de parceiros) ---------- */

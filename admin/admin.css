@@ -278,9 +278,9 @@ label.admin-field{ font-size:.82rem; color:var(--muted); }
 
 /* ---- status das solicitações de análise de crédito ---- */
 .status-em_analise{ background: rgba(93,163,255,0.15); color: #7fb2ff; }
-.status-contatado{ background: rgba(167,139,250,0.15); color: #b7a3fb; }
-.status-proposta_enviada{ background: rgba(255,193,7,0.16); color: #ffd166; }
-.status-convertido{ background: rgba(52,211,153,0.22); color: var(--success); }
+.status-aprovado{ background: rgba(52,211,153,0.15); color: var(--success); }
+.status-digitado{ background: rgba(167,139,250,0.15); color: #b7a3fb; }
+.status-pendenciado{ background: rgba(255,193,7,0.16); color: #ffd166; }
 .status-recusado{ background: rgba(240,100,90,0.15); color: var(--danger); }
 
 .admin-order-detail{ background: var(--bg-alt); }

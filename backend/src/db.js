@@ -412,6 +412,15 @@ async function initSchema() {
   // CREATE TABLE IF NOT EXISTS acima não altera tabelas já criadas).
   await pool.query(`
     ALTER TABLE products ADD COLUMN IF NOT EXISTS images_json TEXT;
+    -- Novos status da análise de crédito (novo, em_analise, aprovado, digitado,
+    -- pendenciado, pago, recusado): converte os antigos. Idempotente — depois
+    -- da 1ª vez não sobra nenhuma linha com esses valores.
+    UPDATE credit_leads SET status = CASE status
+        WHEN 'contatado' THEN 'em_analise'
+        WHEN 'proposta_enviada' THEN 'digitado'
+        WHEN 'convertido' THEN 'pago'
+      END
+      WHERE status IN ('contatado', 'proposta_enviada', 'convertido');
     -- QR code de pagamento da cota do grupo (Compra Programada): enviado pelo
     -- admin, mostrado só pro cliente que contratou o grupo (ver consorcio.js).
     ALTER TABLE consorcio_grupos ADD COLUMN IF NOT EXISTS qr_dados BYTEA;

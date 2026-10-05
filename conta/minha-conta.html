@@ -261,11 +261,12 @@ function fillPerfilForm(customer) {
 
 /* ---- trilha de status (estilo "acompanhar pedido" de loja real) ---- */
 const ORDER_STEPS = ["novo", "confirmado", "em_preparacao", "enviado", "entregue"];
-const LEAD_STEPS = ["novo", "em_analise", "contatado", "proposta_enviada", "convertido"];
+const LEAD_STEPS = ["novo", "em_analise", "aprovado", "digitado", "pago"];
 
 function statusTone(status) {
   if (status === "cancelado" || status === "recusado") return "danger";
-  if (status === "entregue" || status === "convertido") return "success";
+  if (status === "entregue" || status === "pago") return "success";
+  if (status === "pendenciado") return "warning";
   if (status === "novo") return "neutral";
   return "progress";
 }

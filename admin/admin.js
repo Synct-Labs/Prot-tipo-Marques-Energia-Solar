@@ -63,12 +63,13 @@ window.MES = (function(){
   const LEAD_STATUS_LABELS = {
     novo: t("Novo"),
     em_analise: t("Em análise"),
-    contatado: t("Contatado"),
-    proposta_enviada: t("Proposta enviada"),
-    convertido: t("Convertido"),
+    aprovado: t("Aprovado"),
+    digitado: t("Digitado"),
+    pendenciado: t("Pendenciado"),
+    pago: t("Pago"),
     recusado: t("Recusado"),
   };
-  const LEAD_STATUS_ORDER = ["novo","em_analise","contatado","proposta_enviada","convertido","recusado"];
+  const LEAD_STATUS_ORDER = ["novo","em_analise","aprovado","digitado","pendenciado","pago","recusado"];
 
   function leadStatusBadge(status){
     const label = LEAD_STATUS_LABELS[status] || status;

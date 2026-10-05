@@ -52,9 +52,10 @@ window.CONTA = (function () {
   const LEAD_STATUS_LABELS = {
     novo: t("Novo"),
     em_analise: t("Em análise"),
-    contatado: t("Contatado"),
-    proposta_enviada: t("Proposta enviada"),
-    convertido: t("Convertido"),
+    aprovado: t("Aprovado"),
+    digitado: t("Digitado"),
+    pendenciado: t("Pendenciado"),
+    pago: t("Pago"),
     recusado: t("Recusado"),
   };
 

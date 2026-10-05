@@ -239,9 +239,10 @@ function pedidoStatusHTML(order, status) {
 const LEAD_STATUS_LABELS = {
   novo: ["Recebida", "Received"],
   em_analise: ["Em análise", "Under review"],
-  contatado: ["Contato feito", "Contacted"],
-  proposta_enviada: ["Proposta enviada", "Proposal sent"],
-  convertido: ["Aprovada/Convertida", "Approved/Converted"],
+  aprovado: ["Aprovada", "Approved"],
+  digitado: ["Digitada", "Proposal submitted"],
+  pendenciado: ["Pendenciada (precisamos de algo seu)", "Pending (we need something from you)"],
+  pago: ["Paga", "Paid"],
   recusado: ["Recusada", "Declined"],
 };
 

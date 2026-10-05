@@ -3,12 +3,17 @@
    ===================================================================== */
 const { pool } = require("./db");
 
+// Ordem do fluxo de análise de crédito: Novo → Em análise → Aprovado →
+// Digitado (proposta lançada no banco) → Pago; "Pendenciado" é quando
+// falta algo do cliente e "Recusado" encerra. Os status antigos
+// (contatado, proposta_enviada, convertido) são migrados em db.js.
 const VALID_STATUSES = [
   "novo",
   "em_analise",
-  "contatado",
-  "proposta_enviada",
-  "convertido",
+  "aprovado",
+  "digitado",
+  "pendenciado",
+  "pago",
   "recusado",
 ];
 

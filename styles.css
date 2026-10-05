@@ -3007,6 +3007,7 @@ body.mobile-cart-visible.compare-bar-visible .whatsapp-fab{ bottom: 150px; }
 .account-status-badge.status-neutral{ background: var(--surface-2); color: var(--muted); border-color: var(--border); }
 .account-status-badge.status-success{ background: rgba(52,211,153,0.12); color: var(--success); border-color: rgba(52,211,153,0.35); }
 .account-status-badge.status-danger{ background: rgba(240,100,90,0.12); color: var(--danger); border-color: rgba(240,100,90,0.35); }
+.account-status-badge.status-warning{ background: rgba(255,193,7,0.14); color: #ffd166; border-color: rgba(255,193,7,0.4); }
 
 /* =====================================================================
    MINHA CONTA: layout tipo loja real (sidebar + conteúdo)
