@@ -774,6 +774,7 @@ function renderProductPage(){
     if(p.cat === "kits") installNote.innerHTML = `${ICON_CHECK} ${t("Preço já inclui instalação e mão de obra")}`;
   }
   $("#productAddCartBtn").dataset.id = p.id;
+  $("#datasheetBtnLabel").textContent = p.cat === "kits" ? t("Baixar Orçamento") : t("Baixar Datasheet");
 
   $("#specsHighlight").innerHTML = cat.specFields.map(([key,label]) => `
     <div class="spec-highlight-item">
@@ -817,8 +818,10 @@ $("#productAddCartBtn").addEventListener("click", (e) => {
   if(id) addToCart(id);
 });
 
+// Orçamento/ficha técnica do produto aberto — ver orcamento.js (busca os
+// dados atualizados no servidor a cada clique).
 $("#datasheetBtn").addEventListener("click", () => {
-  showToast(t("Datasheet será disponibilizado quando o catálogo real for integrado"));
+  if(state.currentProductId) gerarOrcamento(state.currentProductId);
 });
 
 /* ======================================================================
