@@ -87,7 +87,19 @@ function orcamentoHTML(p, agora){
   .thumb{ width:40px; height:40px; object-fit:contain; background:#fff; border:1px solid #ececec; border-radius:6px; display:block; }
   .specs td:first-child{ width:42%; color:#6b6b66; }
   p.txt{ font-size:13px; line-height:1.6; color:#3a3a38; margin:0 0 8px; }
-  footer{ margin-top:28px; padding-top:14px; border-top:1px solid #ececec; font-size:12px; color:#6b6b66; line-height:1.6; }
+  footer{ margin-top:28px; padding-top:14px; border-top:1px solid #ececec; font-size:12px; color:#6b6b66; line-height:1.6; overflow-wrap:anywhere; }
+  @media (max-width: 640px){
+    .page{ margin:0; padding:20px 16px; border-radius:0; }
+    header{ flex-direction:column; align-items:flex-start; gap:12px; }
+    .meta{ text-align:left; }
+    .hero{ flex-direction:column; align-items:stretch; }
+    .hero .photo{ width:100%; height:220px; }
+    .price{ font-size:26px; }
+    .specs td:first-child{ width:48%; }
+    th, td{ padding:8px 5px; overflow-wrap:anywhere; }
+    td.c, th.c{ width:36px; }
+    .thumb{ width:32px; height:32px; }
+  }
   @media print{
     body{ background:#fff; }
     .toolbar{ display:none; }
