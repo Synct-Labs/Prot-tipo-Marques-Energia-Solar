@@ -142,7 +142,7 @@ function grupoRowHTML(g){
           <strong>${esc(g.nome)}</strong>
           ${g.encerrado ? `<span class="status-badge status-encerrado">${t("Encerrado")}</span>` : ""}<br>
           <small>${g.cotasOcupadas}/${g.cotasTotal} ${t("cotas ocupadas (")}${g.vagasRestantes} ${t("vaga(s)) ·")} ${MES.formatBRL(g.valorCota)}${t("/cota ·")} ${g.prazoMeses}${t("x · taxa adm.")} ${String(g.taxaAdministracaoPct).replace(".", ",")}%</small>
-          ${g.regras ? `<br><small>${esc(g.regras)}</small>` : ""}
+          ${g.regras ? `<div style="white-space:pre-line; font-size:0.85rem; line-height:1.55; margin-top:8px;">${esc(g.regras)}</div>` : ""}
         </div>
         <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
           <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem;"><input type="checkbox" data-toggle="visivelSite" data-id="${g.id}" ${g.visivelSite ? "checked" : ""}> ${t("Visível no site")}</label>

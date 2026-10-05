@@ -295,7 +295,7 @@ function grupoCardHTML(g){
       <p style="color:var(--muted); font-size:0.88rem; margin:6px 0 10px;">
         ${formatBRL(g.valorCota)}/${t("cota")} · ${g.prazoMeses}x · ${t("taxa adm.")} ${String(g.taxaAdministracaoPct).replace(".", ",")}%
       </p>
-      ${g.regras ? `<p style="color:var(--muted); font-size:0.82rem; margin:0 0 10px;">${escConsorcio(g.regras)}</p>` : ""}
+      ${g.regras ? `<p style="color:var(--muted); font-size:0.82rem; line-height:1.55; margin:0 0 10px; white-space:pre-line;">${escConsorcio(g.regras)}</p>` : ""}
       <button type="button" class="btn btn-primary" data-contratar-grupo="${g.id}" ${semVaga ? "disabled" : ""}>${semVaga ? t("Sem vagas") : t("Contratar")}</button>
       <form class="consorcio-contratar-form" data-grupo-id="${g.id}" hidden>
         <p style="color:var(--muted); font-size:0.82rem; margin:0 0 12px;">${t("Preencha seus dados e anexe os documentos pra reservar a cota. Depois de conferir, mandamos o link de pagamento (ou a chave PIX) pro seu e-mail.")}</p>
