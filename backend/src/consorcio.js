@@ -107,6 +107,42 @@ async function updateGrupo(id, body) {
   return getGrupoById(id);
 }
 
+/* ---------------------- TEXTO DE APRESENTAÇÃO (editável pelo admin) ----------------------
+   Descrição que aparece no card da Compra Programada na página de crédito.
+   Vazio = o site usa o texto padrão (e a tradução automática dele). Pode ter
+   uma versão em inglês opcional; sem ela, quem usa o site em inglês vê a
+   versão em português. */
+const TEXTO_KEYS = { pt: "consorcio_texto_pt", en: "consorcio_texto_en" };
+const MAX_TEXTO_CHARS = 1500;
+
+async function getTexto() {
+  const { rows } = await pool.query("SELECT key, value FROM site_settings WHERE key = ANY($1::text[])", [Object.values(TEXTO_KEYS)]);
+  const byKey = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  return { pt: byKey[TEXTO_KEYS.pt] || "", en: byKey[TEXTO_KEYS.en] || "" };
+}
+
+async function setTexto({ pt, en }, autor) {
+  const values = { pt: String(pt || "").trim(), en: String(en || "").trim() };
+  for (const lang of ["pt", "en"]) {
+    if (values[lang].length > MAX_TEXTO_CHARS) {
+      throw err(400, `O texto aceita no máximo ${MAX_TEXTO_CHARS} caracteres.`);
+    }
+  }
+  const now = new Date().toISOString();
+  for (const lang of ["pt", "en"]) {
+    if (!values[lang]) {
+      await pool.query("DELETE FROM site_settings WHERE key = $1", [TEXTO_KEYS[lang]]);
+      continue;
+    }
+    await pool.query(
+      `INSERT INTO site_settings (key, value, updated_at, updated_by) VALUES ($1,$2,$3,$4)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = EXCLUDED.updated_at, updated_by = EXCLUDED.updated_by`,
+      [TEXTO_KEYS[lang], values[lang], now, autor]
+    );
+  }
+  return getTexto();
+}
+
 async function getGrupoById(id) {
   const { rows } = await pool.query(`${GRUPO_SELECT} WHERE g.id = $1`, [id]);
   return rows[0] ? rowToGrupo(rows[0]) : null;
@@ -350,4 +386,5 @@ module.exports = {
   contratarComoCliente, lancarComoParceiro, getAdesaoById, listAdesoesByCustomer,
   listAdesoesPendentesPorEmail, listAdesoesAdmin, confirmarAdesao, cancelarAdesao,
   setPaymentLink, confirmarPagamento, getDocEndereco, getDocFoto,
+  getTexto, setTexto,
 };

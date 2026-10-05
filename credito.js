@@ -233,7 +233,7 @@ function renderCreditSimCard(){
         <span class="credit-mode-icon credit-mode-icon-lg">${mode.icon}</span>
         <div>
           <h3>${mode.label}</h3>
-          <p>${mode.description}</p>
+          <p id="consorcioDescricao">${mode.description}</p>
         </div>
       </div>
       <div id="consorcioGruposList"><p class="pay-empty-note">${t("Carregando grupos...")}</p></div>
@@ -321,6 +321,12 @@ async function loadConsorcioGrupos(){
   try {
     const res = await fetch(`${API_BASE}/api/consorcio/grupos`).then(r => r.json());
     if(!res.ok) throw new Error(res.error || "Erro ao carregar grupos.");
+    // Texto de apresentação editado pelo admin (se houver) no lugar do padrão;
+    // em inglês usa a versão em inglês, ou a em português se não existir.
+    const texto = res.texto || {};
+    const custom = (window.MES_I18N && window.MES_I18N.get() === "en" ? texto.en : "") || texto.pt;
+    const descricao = $("#consorcioDescricao");
+    if(descricao && custom) descricao.textContent = custom;
     box.innerHTML = res.grupos.length
       ? res.grupos.map(grupoCardHTML).join("")
       : `<p class="pay-empty-note">${t("Nenhum grupo disponível no momento. Fale com a gente pelo WhatsApp pra saber quando abrir novas turmas.")}</p>`;

@@ -1339,7 +1339,7 @@ async function handleApi(req, res, pathname) {
 
   // ---- COMPRA PROGRAMADA: CATÁLOGO PÚBLICO ----
   if (pathname === "/api/consorcio/grupos" && req.method === "GET") {
-    return sendJSON(res, 200, { ok: true, grupos: await consorcio.listGruposPublicos() });
+    return sendJSON(res, 200, { ok: true, grupos: await consorcio.listGruposPublicos(), texto: await consorcio.getTexto() });
   }
 
   // ---- COMPRA PROGRAMADA: CLIENTE CONTRATA DIRETO PELO CATÁLOGO ----
@@ -1438,6 +1438,13 @@ async function handleApi(req, res, pathname) {
 
     if (pathname === "/api/admin/consorcio/grupos" && req.method === "GET") {
       return sendJSON(res, 200, { ok: true, grupos: await consorcio.listGruposAdmin() });
+    }
+    if (pathname === "/api/admin/consorcio/texto" && req.method === "GET") {
+      return sendJSON(res, 200, { ok: true, texto: await consorcio.getTexto() });
+    }
+    if (pathname === "/api/admin/consorcio/texto" && req.method === "PATCH") {
+      const body = await parseJSONBody(req);
+      return kycGuard(async () => sendJSON(res, 200, { ok: true, texto: await consorcio.setTexto(body, `admin:${admin.email}`) }));
     }
     if (pathname === "/api/admin/consorcio/grupos" && req.method === "POST") {
       const body = await parseJSONBody(req);

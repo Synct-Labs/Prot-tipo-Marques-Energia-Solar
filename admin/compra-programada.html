@@ -47,7 +47,31 @@
     <div class="admin-subpanel active" data-subpanel="grupos">
       <div class="admin-toolbar">
         <h2 style="font-size:1.15rem;">Grupos de Compra Programada</h2>
-        <button class="admin-btn admin-btn-ghost" id="newGrupoBtn" type="button">+ Novo grupo</button>
+        <div class="admin-toolbar-filters">
+          <button class="admin-btn admin-btn-ghost" id="editTextoBtn" type="button">Editar texto</button>
+          <button class="admin-btn admin-btn-ghost" id="newGrupoBtn" type="button">+ Novo grupo</button>
+        </div>
+      </div>
+
+      <div class="admin-table-wrap" id="textoCard" style="display:none; padding:22px; margin-bottom:20px;">
+        <h3 style="margin-bottom:6px;">Texto da Compra Programada</h3>
+        <p class="admin-customer-picked show" style="margin-bottom:14px;">Aparece no site, no card da Compra Programada (página de crédito), acima da lista de grupos.</p>
+        <div class="admin-error" id="textoError"></div>
+        <form id="textoForm">
+          <div class="admin-field">
+            <label for="textoPt">Texto (português)</label>
+            <textarea id="textoPt" rows="4" maxlength="1500" required></textarea>
+          </div>
+          <div class="admin-field">
+            <label for="textoEn">Texto (inglês) — opcional</label>
+            <textarea id="textoEn" rows="4" maxlength="1500" placeholder="Se ficar em branco, quem usa o site em inglês vê o texto em português."></textarea>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="submit" class="admin-btn" id="textoSaveBtn" style="width:auto;">Salvar texto</button>
+            <button type="button" class="admin-btn admin-btn-ghost" id="textoRestoreBtn">Restaurar texto padrão</button>
+            <button type="button" class="admin-btn admin-btn-ghost" id="textoCancelBtn">Cancelar</button>
+          </div>
+        </form>
       </div>
 
       <div class="admin-table-wrap" id="newGrupoCard" style="display:none; padding:22px; margin-bottom:20px;">
@@ -137,6 +161,48 @@ async function loadGrupos(){
   filter.innerHTML = `<option value="">${t("Todos os grupos")}</option>` + allGrupos.map(g => `<option value="${g.id}">${esc(g.nome)}</option>`).join("");
   filter.value = current;
 }
+
+/* ---------------------- TEXTO DA COMPRA PROGRAMADA ---------------------- */
+// Mesmo texto padrão que o site usa (credito.js) quando nada foi salvo aqui.
+const DEFAULT_TEXTO_PT = "Não é financiamento, é um grupo que se cotiza para comprar sistemas solares, sem juros. Você paga uma taxa de administração e aguarda o sorteio ou dá um lance para ser contemplado antes.";
+const textoCard = document.getElementById("textoCard");
+const textoError = document.getElementById("textoError");
+
+document.getElementById("editTextoBtn").addEventListener("click", async () => {
+  textoError.classList.remove("show");
+  const res = await MES.apiGet("/api/admin/consorcio/texto");
+  if(!res.ok){ MES.showToast(res.error || t("Erro ao carregar o texto.")); return; }
+  document.getElementById("textoPt").value = res.texto.pt || DEFAULT_TEXTO_PT;
+  document.getElementById("textoEn").value = res.texto.en;
+  textoCard.style.display = "block";
+  document.getElementById("textoPt").focus();
+});
+document.getElementById("textoCancelBtn").addEventListener("click", () => { textoCard.style.display = "none"; });
+
+async function saveTexto(pt, en, okMessage){
+  textoError.classList.remove("show");
+  const btn = document.getElementById("textoSaveBtn");
+  btn.disabled = true;
+  try{
+    const res = await MES.apiPatch("/api/admin/consorcio/texto", { pt, en });
+    if(!res.ok){ textoError.textContent = res.error || t("Não foi possível salvar o texto."); textoError.classList.add("show"); return false; }
+    MES.showToast(okMessage);
+    return true;
+  } finally { btn.disabled = false; }
+}
+
+document.getElementById("textoForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const pt = document.getElementById("textoPt").value.trim();
+  // Texto igual ao padrão não precisa ser salvo: assim o site continua usando
+  // a tradução automática do padrão em vez de mostrar português pra todo mundo.
+  const isDefault = pt === DEFAULT_TEXTO_PT;
+  if(await saveTexto(isDefault ? "" : pt, document.getElementById("textoEn").value.trim(), t("Texto salvo."))) textoCard.style.display = "none";
+});
+document.getElementById("textoRestoreBtn").addEventListener("click", async () => {
+  if(!confirm(t("Voltar ao texto padrão do site? O texto atual (português e inglês) será apagado."))) return;
+  if(await saveTexto("", "", t("Texto padrão restaurado."))) textoCard.style.display = "none";
+});
 
 document.getElementById("newGrupoBtn").addEventListener("click", () => {
   document.getElementById("newGrupoCard").style.display = "block";

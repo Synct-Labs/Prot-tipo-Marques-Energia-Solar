@@ -1827,6 +1827,21 @@ window.MES_I18N_DICT = {
   "Carregar mais": "Load more",
   "Erro ao carregar as pastas.": "Error loading the folders.",
 
+  /* ---------- Compra Programada: texto editável pelo admin ---------- */
+  "Editar texto": "Edit text",
+  "Texto da Compra Programada": "Installment Purchase Plan text",
+  "Aparece no site, no card da Compra Programada (página de crédito), acima da lista de grupos.": "Shown on the site, in the Installment Purchase Plan card (credit page), above the list of groups.",
+  "Texto (português)": "Text (Portuguese)",
+  "Texto (inglês) — opcional": "Text (English) — optional",
+  "Se ficar em branco, quem usa o site em inglês vê o texto em português.": "If left blank, visitors using the site in English see the Portuguese text.",
+  "Salvar texto": "Save text",
+  "Restaurar texto padrão": "Restore default text",
+  "Erro ao carregar o texto.": "Error loading the text.",
+  "Não foi possível salvar o texto.": "Couldn't save the text.",
+  "Texto salvo.": "Text saved.",
+  "Texto padrão restaurado.": "Default text restored.",
+  "Voltar ao texto padrão do site? O texto atual (português e inglês) será apagado.": "Go back to the site's default text? The current text (Portuguese and English) will be deleted.",
+
   /* ---------- Catálogo: imagens do produto (upload, até 5) ---------- */
   "Imagens do produto": "Product images",
   "Principal": "Main",

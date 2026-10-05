@@ -574,6 +574,15 @@ async function initSchema() {
     -- E-mails do dono/equipe que recebem aviso de evento novo (pedido,
     -- solicitação de crédito, solicitação de análise de conta Marques Pay).
     -- Configurável pelo próprio admin (aba "Notificações", só dono).
+    -- Textos do site editáveis pelo admin (hoje: descrição da Compra
+    -- Programada). Chave/valor simples; sem linha = usa o texto padrão do site.
+    CREATE TABLE IF NOT EXISTS site_settings (
+      key        TEXT PRIMARY KEY,
+      value      TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      updated_by TEXT
+    );
+
     CREATE TABLE IF NOT EXISTS notification_emails (
       id         SERIAL PRIMARY KEY,
       email      TEXT UNIQUE NOT NULL,
