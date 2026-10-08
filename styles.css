@@ -590,20 +590,94 @@ input, select{ font-family: inherit; }
   opacity: .6;
 }
 
+/* Celular 3D: .phone-mockup é o palco (perspectiva + flutuação); .phone-body gira
+   em 3D (phone3d.js) e empilha camadas para dar espessura real às laterais. */
 .phone-mockup{
   position: relative;
   width: 200px;
   height: 410px;
+  perspective: 1100px;
+  animation: floatY 6s ease-in-out infinite;
+  cursor: grab;
+  touch-action: pan-y;
+  -webkit-user-select: none; user-select: none;
+}
+.phone-mockup.is-dragging{ cursor: grabbing; }
+.phone-body{
+  position: absolute; inset: 0;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50% -9px;
+  transform: rotateX(6deg) rotateY(-20deg) rotateZ(3deg);
+  will-change: transform;
+}
+.phone-face{
+  position: absolute; inset: 0;
   background: linear-gradient(160deg, #1c1e20, #0a0b0c);
   border-radius: 36px;
-  border: 6px solid #26282a;
-  box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
-  transform: rotate(4deg);
-  animation: floatY 6s ease-in-out infinite;
+  border: 6px solid #2d3033;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+.phone-face::after{ /* reflexo que desliza conforme o giro */
+  content: ""; position: absolute; inset: 0; border-radius: 30px; pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.10) 48%, transparent 60%);
+  background-size: 250% 100%;
+  background-position: var(--sheen, 50%) 0;
+}
+.phone-layer{ /* espessura: cada camada é uma cópia do contorno, recuada em Z */
+  position: absolute; inset: 0;
+  border-radius: 36px;
+  background: linear-gradient(160deg, #3b3f43, #1b1d1f);
+  border: 1px solid #4a4e53;
+  transform: translateZ(calc(var(--i) * -2px));
+  pointer-events: none;
+}
+.phone-layer:nth-child(even){ background: linear-gradient(160deg, #34383c, #17191b); }
+.phone-back{
+  position: absolute; inset: 0;
+  border-radius: 36px;
+  background: linear-gradient(150deg, #2a2d31, #0f1011 70%);
+  border: 6px solid #2d3033;
+  transform: translateZ(-18px) rotateY(180deg);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  pointer-events: none;
+}
+.phone-camera{
+  position: absolute; top: 14px; left: 14px;
+  width: 56px; height: 56px; border-radius: 16px;
+  background: #0c0d0e; border: 2px solid #3b3f43;
+}
+.phone-camera::before, .phone-camera::after{
+  content: ""; position: absolute; width: 20px; height: 20px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #4b5bb0 0 12%, #10121a 40%, #000 70%);
+  border: 2px solid #55595e;
+}
+.phone-camera::before{ top: 6px; left: 6px; }
+.phone-camera::after{ top: 28px; left: 18px; }
+.phone-logo-back{
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 38px; height: 38px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(247,148,30,0.9), rgba(247,148,30,0.25) 70%);
+  opacity: .85;
+}
+.phone-btn{ position: absolute; width: 4px; border-radius: 2px; background: #3b3f43; } /* botões laterais */
+.phone-btn.pb-power{ right: -3px; top: 110px; height: 52px; transform: translateZ(-9px); }
+.phone-btn.pb-vol1{ left: -3px; top: 96px; height: 34px; transform: translateZ(-9px); }
+.phone-btn.pb-vol2{ left: -3px; top: 140px; height: 34px; transform: translateZ(-9px); }
+.phone-shadow{
+  position: absolute; left: 50%; bottom: -34px; width: 70%; height: 22px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(0,0,0,0.45), transparent 70%);
+  filter: blur(6px); pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce){
+  .phone-mockup{ animation: none; }
 }
 .phone-notch{
   position: absolute;
-  top: 12px;
+  top: 6px;
   left: 50%;
   transform: translateX(-50%);
   width: 56px;
@@ -614,7 +688,7 @@ input, select{ font-family: inherit; }
 }
 .phone-screen{
   position: absolute;
-  inset: 16px 10px 14px;
+  inset: 10px 4px 8px;
   background: linear-gradient(170deg, var(--surface), var(--bg));
   border-radius: 22px;
   padding: 28px 12px 14px;
