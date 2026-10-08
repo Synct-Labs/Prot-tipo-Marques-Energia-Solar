@@ -2038,5 +2038,8 @@ window.MES_I18N_DICT = {
   "A OS é gerada sozinha quando o pedido é confirmado. Use o botão para abrir ou gerar na hora.": "The service order is created automatically when the order is confirmed. Use the button to open or create it now.",
   "Abrir OS de instalação": "Open installation order",
   "Não foi possível gerar a OS.": "Couldn't create the service order.",
+  "Enviar teste de WhatsApp": "Send WhatsApp test",
+  "Mensagem de teste enviada. Confira o WhatsApp.": "Test message sent. Check WhatsApp.",
+  "Não foi possível enviar o teste.": "Couldn't send the test.",
 
 };

@@ -2068,6 +2068,21 @@ async function handleApi(req, res, pathname) {
     return sendJSON(res, 201, { ok: true, staff: await auth.findAdminById(id) });
   }
 
+  // Mensagem de teste (modelo "nova_os" com dados de exemplo) pro WhatsApp de
+  // um funcionário: serve pra validar a configuração da Meta/Evolution.
+  const staffWaTestMatch = pathname.match(/^\/api\/admin\/staff\/(\d+)\/whatsapp-teste$/);
+  if (staffWaTestMatch && req.method === "POST") {
+    const admin = await requireOwner(req, res);
+    if (!admin) return;
+    const target = await auth.findAdminById(parseInt(staffWaTestMatch[1], 10));
+    if (!target) return sendJSON(res, 404, { ok: false, error: "Funcionário não encontrado." });
+    if (!whatsapp.normalizePhone(target.phone)) return sendJSON(res, 400, { ok: false, error: "Esse funcionário não tem um WhatsApp válido cadastrado." });
+    const link = `${config.PUBLIC_URL}/admin/os.html`;
+    const r = await whatsapp.notify(target.phone, "nova_os", ["OS-TESTE", "Kit de teste", "Centro, Cuiabá/MT", link],
+      `🔧 *Nova OS de instalação OS-TESTE*\nKit de teste\n📍 Centro, Cuiabá/MT\n\nEsta é uma mensagem de teste.\n${link}`);
+    return sendJSON(res, r.ok ? 200 : 502, { ok: r.ok, provider: whatsapp.provider(), error: r.ok ? undefined : (r.skipped ? "WhatsApp ainda não configurado no servidor (.env)." : r.error) });
+  }
+
   const staffIdMatch = pathname.match(/^\/api\/admin\/staff\/(\d+)$/);
   if (staffIdMatch && (req.method === "PATCH" || req.method === "DELETE")) {
     const admin = await requireOwner(req, res);

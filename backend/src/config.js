@@ -69,7 +69,11 @@ module.exports = {
   SMTP_PASS: process.env.SMTP_PASS || "",
   MAIL_FROM: process.env.MAIL_FROM || "Marques Promotora <contato@marquespromotora.com>",
   // WhatsApp (aviso de nova OS pros técnicos — ver backend/src/whatsapp.js).
-  // Evolution API própria; sem as 3 variáveis, a mensagem só vai pro log.
+  // API oficial da Meta (META_WA_*) tem prioridade; senão Evolution API
+  // própria; sem nenhuma das duas, a mensagem só vai pro log.
+  META_WA_TOKEN: process.env.META_WA_TOKEN || "",
+  META_WA_PHONE_ID: process.env.META_WA_PHONE_ID || "",
+  META_GRAPH_VERSION: process.env.META_GRAPH_VERSION || "v23.0",
   EVOLUTION_API_URL: process.env.EVOLUTION_API_URL || "",
   EVOLUTION_API_KEY: process.env.EVOLUTION_API_KEY || "",
   EVOLUTION_INSTANCE: process.env.EVOLUTION_INSTANCE || "",

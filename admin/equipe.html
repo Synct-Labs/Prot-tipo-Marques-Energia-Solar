@@ -140,6 +140,7 @@ function staffDetailHTML(person){
         </select>
       </div>
       <button type="button" class="admin-btn save-staff-btn" style="width:auto;" data-id="${person.id}">${t("Salvar")}</button>
+      ${person.phone ? `<button type="button" class="admin-btn admin-btn-ghost test-wa-btn" data-id="${person.id}">${t("Enviar teste de WhatsApp")}</button>` : ""}
       <button type="button" class="admin-btn admin-btn-ghost delete-staff-btn" data-id="${person.id}" ${person.id === meAdmin.id ? `disabled title="${t("Você não pode remover a própria conta")}"` : ""}>${t("Remover")}</button>
     </div>
   `;
@@ -232,6 +233,15 @@ document.getElementById("newStaffForm").addEventListener("submit", async (e) => 
 document.getElementById("staffTableBody").addEventListener("click", async (e) => {
   const saveBtn = e.target.closest(".save-staff-btn");
   const deleteBtn = e.target.closest(".delete-staff-btn");
+  const testBtn = e.target.closest(".test-wa-btn");
+
+  if(testBtn){
+    testBtn.disabled = true;
+    const res = await MES.apiPost(`/api/admin/staff/${testBtn.dataset.id}/whatsapp-teste`);
+    testBtn.disabled = false;
+    MES.showToast(res.ok ? t("Mensagem de teste enviada. Confira o WhatsApp.") : (res.error || t("Não foi possível enviar o teste.")));
+    return;
+  }
 
   if(saveBtn){
     const id = saveBtn.dataset.id;

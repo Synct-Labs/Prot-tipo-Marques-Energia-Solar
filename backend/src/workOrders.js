@@ -108,28 +108,31 @@ async function notifyNewOs(os) {
   }
   const end = os.cliente.endereco || {};
   const local = [end.bairro, [end.cidade, end.estado].filter(Boolean).join("/")].filter(Boolean).join(", ");
-  const kitNome = os.kit.itens[0] ? os.kit.itens[0].nome : "Kit";
+  const kitNome = (os.kit.itens[0] ? os.kit.itens[0].nome : "Kit") +
+    (os.kit.itens.length > 1 ? ` (+${os.kit.itens.length - 1} item(ns))` : "");
+  const link = osLink(os.id);
   const text =
-    `🔧 *Nova OS de instalação ${os.osNumber}*\n` +
-    `${kitNome}${os.kit.itens.length > 1 ? ` (+${os.kit.itens.length - 1} item(ns))` : ""}\n` +
+    `🔧 *Nova OS de instalação ${os.osNumber}*\n${kitNome}\n` +
     (local ? `📍 ${local}\n` : "") +
-    `\nAbra o painel para assumir e agendar com o cliente:\n${osLink(os.id)}`;
-  const results = await Promise.all(techs.map((t) => whatsapp.sendText(t.phone, text)));
+    `\nAbra o painel para assumir e agendar com o cliente:\n${link}`;
+  const params = [os.osNumber, kitNome, local || "não informado", link];
+  const results = await Promise.all(techs.map((t) => whatsapp.notify(t.phone, "nova_os", params, text)));
   const ok = results.filter((r) => r.ok).length;
   const skipped = results.some((r) => r.skipped);
+  const firstError = results.find((r) => !r.ok && !r.skipped);
   await addEvent(
     os.id,
     "whatsapp",
     skipped
       ? "WhatsApp ainda não configurado no servidor: aviso não enviado."
-      : `Aviso por WhatsApp enviado para ${ok} de ${techs.length} técnico(s).`,
+      : `Aviso por WhatsApp enviado para ${ok} de ${techs.length} técnico(s).${firstError ? ` Falha: ${firstError.error}` : ""}`,
     null
   );
 }
 
-async function notifyTech(technicianId, text) {
+async function notifyTech(technicianId, kind, params, text) {
   const { rows } = await pool.query("SELECT phone FROM admins WHERE id = $1", [technicianId]);
-  if (rows[0] && rows[0].phone) await whatsapp.sendText(rows[0].phone, text);
+  if (rows[0] && rows[0].phone) await whatsapp.notify(rows[0].phone, kind, params, text);
 }
 
 /* ---------------------- LEITURA ---------------------- */
@@ -311,7 +314,9 @@ async function onOrderCancelled(orderId) {
   if (!os || FINAL_STATUSES.includes(os.status)) return;
   await pool.query("UPDATE work_orders SET status = 'cancelada', updated_at = $1 WHERE id = $2", [nowIso(), os.id]);
   await addEvent(os.id, "status", "OS cancelada porque o pedido foi cancelado.", null);
-  if (os.technician_id) notifyTech(os.technician_id, `❌ A ${os.os_number} foi cancelada (pedido cancelado). Não é mais necessário instalar.`).catch(() => {});
+  if (os.technician_id) {
+    notifyTech(os.technician_id, "os_cancelada", [os.os_number, "pedido cancelado"], `❌ A ${os.os_number} foi cancelada (pedido cancelado). Não é mais necessário instalar.`).catch(() => {});
+  }
 }
 
 /* ---------------------- AÇÕES ---------------------- */
@@ -343,7 +348,7 @@ async function atribuir(id, technicianId, ctx) {
   await pool.query("UPDATE work_orders SET technician_id = $1, updated_at = $2 WHERE id = $3", [technicianId, nowIso(), id]);
   const nome = rows[0].name || rows[0].email;
   await addEvent(id, "atribuida", `OS atribuída a ${nome} por ${ctx.nome}.`, ctx);
-  notifyTech(technicianId, `🔧 Você recebeu a ${row.os_number}.\nAbra o painel e agende com o cliente:\n${osLink(id)}`).catch(() => {});
+  notifyTech(technicianId, "os_atribuida", [row.os_number, osLink(id)], `🔧 Você recebeu a ${row.os_number}.\nAbra o painel e agende com o cliente:\n${osLink(id)}`).catch(() => {});
 }
 
 async function devolver(id, texto, ctx) {
@@ -418,7 +423,7 @@ async function mudarStatus(id, { acao, texto }, ctx) {
     if (!t) throw err(400, "Informe o motivo do cancelamento.");
     await pool.query("UPDATE work_orders SET status = 'cancelada', updated_at = $1 WHERE id = $2", [nowIso(), id]);
     await addEvent(id, "status", `OS cancelada: ${t}`, ctx);
-    if (row.technician_id) notifyTech(row.technician_id, `❌ A ${row.os_number} foi cancelada.\nMotivo: ${t}`).catch(() => {});
+    if (row.technician_id) notifyTech(row.technician_id, "os_cancelada", [row.os_number, t], `❌ A ${row.os_number} foi cancelada.\nMotivo: ${t}`).catch(() => {});
     return;
   }
 
