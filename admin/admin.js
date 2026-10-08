@@ -92,6 +92,20 @@ window.MES = (function(){
   const PROFIT_SHARE_STATUS_LABELS = { ativo: t("Ativo"), encerrado: t("Encerrado") };
   const PROFIT_SHARE_STATUS_ORDER = ["ativo", "encerrado"];
 
+  /* ---- status das ordens de serviço de instalação ---- */
+  const OS_STATUS_LABELS = {
+    nova: t("Nova"),
+    agendada: t("Agendada"),
+    em_andamento: t("Em andamento"),
+    pendente: t("Pendente"),
+    concluida: t("Concluída"),
+    cancelada: t("Cancelada"),
+  };
+  const OS_STATUS_ORDER = ["nova","agendada","em_andamento","pendente","concluida","cancelada"];
+  function osStatusBadge(status){
+    return `<span class="status-badge status-${status}">${OS_STATUS_LABELS[status] || status}</span>`;
+  }
+
   function showToast(msg){
     let toast = document.querySelector(".admin-toast");
     if(!toast){
@@ -110,6 +124,7 @@ window.MES = (function(){
     energia_solar: "Marques Energia Solar",
     promotora: "Marques Promotora",
     ambas: t("Marques (ambas as empresas)"),
+    instalacao: t("Equipe de instalação"),
   };
   const ROLE_LABELS = { owner: t("Dono"), funcionario: t("Funcionário") };
 
@@ -119,6 +134,7 @@ window.MES = (function(){
 
   // Página de destino padrão pra cada perfil (evita cair numa tela sem acesso).
   function landingPageFor(admin){
+    if(admin.company === "instalacao") return "os.html";
     if(admin.company === "promotora") return "credit-leads.html";
     return "dashboard.html";
   }
@@ -126,6 +142,28 @@ window.MES = (function(){
   // Mostra/esconde os links do menu de acordo com a empresa e o cargo do
   // funcionário logado, e preenche o rótulo com nome + empresa + cargo.
   function applyCompanyNav(admin){
+    // Link das Ordens de Serviço: injetado aqui (em vez de editar o menu de
+    // cada página). Aparece pra técnico, Energia Solar e dono; não pra Promotora.
+    const navEl = document.querySelector(".admin-nav");
+    let osLink = document.querySelector('.admin-nav-link[href="os.html"]');
+    if(navEl && !osLink){
+      osLink = document.createElement("a");
+      osLink.href = "os.html";
+      osLink.className = "admin-nav-link";
+      osLink.textContent = t("Ordens de Serviço");
+      const after = document.querySelector('.admin-nav-link[href="dashboard.html"]');
+      if(after && after.nextSibling) navEl.insertBefore(osLink, after.nextSibling); else navEl.appendChild(osLink);
+    }
+    if(osLink) osLink.style.display = (admin.company === "promotora") ? "none" : "";
+    // Técnico de instalação: só enxerga as OS (o resto do menu some).
+    if(admin.company === "instalacao"){
+      document.querySelectorAll(".admin-nav-link").forEach(a => {
+        if(a.getAttribute("href") !== "os.html") a.style.display = "none";
+      });
+      const label = document.getElementById("adminUserLabel");
+      if(label) label.textContent = `${admin.name || admin.email} · ${COMPANY_LABELS.instalacao}`;
+      return;
+    }
     const ordersLink = document.querySelector('.admin-nav-link[href="dashboard.html"]');
     const leadsLink  = document.querySelector('.admin-nav-link[href="credit-leads.html"]');
     const payLink    = document.querySelector('.admin-nav-link[href="marques-pay.html"]');
@@ -179,6 +217,7 @@ window.MES = (function(){
     statusBadge, statusSelectHTML,
     LEAD_STATUS_LABELS, LEAD_STATUS_ORDER,
     leadStatusBadge, leadStatusSelectHTML,
+    OS_STATUS_LABELS, OS_STATUS_ORDER, osStatusBadge,
     LOAN_CONTRACT_STATUS_LABELS, LOAN_CONTRACT_STATUS_ORDER, LOAN_INSTALLMENT_STATUS_LABELS,
     PROFIT_SHARE_STATUS_LABELS, PROFIT_SHARE_STATUS_ORDER,
     COMPANY_LABELS, ROLE_LABELS, hasCompanyAccess, landingPageFor, applyCompanyNav,

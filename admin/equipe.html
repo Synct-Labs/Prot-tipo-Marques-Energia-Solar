@@ -64,7 +64,12 @@
             <option value="energia_solar">Marques Energia Solar (só pedidos)</option>
             <option value="promotora">Marques Promotora (só crédito)</option>
             <option value="ambas">Ambas (dono/admin geral)</option>
+            <option value="instalacao">Equipe de instalação (só Ordens de Serviço)</option>
           </select>
+        </div>
+        <div class="admin-field" id="nsPhoneWrap" style="display:none;">
+          <label for="nsPhone">WhatsApp do técnico (recebe o aviso de nova OS)</label>
+          <input type="tel" id="nsPhone" placeholder="(65) 99999-1234" autocomplete="off">
         </div>
         <div class="admin-field">
           <label for="nsRole">Cargo</label>
@@ -120,7 +125,12 @@ function staffDetailHTML(person){
           <option value="energia_solar" ${person.company === "energia_solar" ? "selected" : ""}>Marques Energia Solar</option>
           <option value="promotora" ${person.company === "promotora" ? "selected" : ""}>Marques Promotora</option>
           <option value="ambas" ${person.company === "ambas" ? "selected" : ""}>${t("Ambas")}</option>
+          <option value="instalacao" ${person.company === "instalacao" ? "selected" : ""}>${t("Equipe de instalação")}</option>
         </select>
+      </div>
+      <div class="admin-field" style="margin-bottom:0; min-width:180px;">
+        <label>${t("WhatsApp")}</label>
+        <input type="tel" class="edit-phone" value="${person.phone || ""}" placeholder="(65) 99999-1234">
       </div>
       <div class="admin-field" style="margin-bottom:0; min-width:180px;">
         <label>${t("Cargo")}</label>
@@ -146,7 +156,7 @@ function renderStaff(list){
       <td data-label="Nome">${person.name || "-"}</td>
       <td data-label="E-mail">${person.email}</td>
       <td data-label="Empresa">${MES.COMPANY_LABELS[person.company] || person.company}</td>
-      <td data-label="Cargo">${MES.ROLE_LABELS[person.role] || person.role}</td>
+      <td data-label="Cargo">${MES.ROLE_LABELS[person.role] || person.role}${person.phone ? `<br><small style="color:var(--muted)">${person.phone}</small>` : ""}</td>
       <td data-label="Criado em">${MES.formatDate(person.created_at)}</td>
     </tr>
     <tr class="admin-order-detail" data-detail-for="${person.id}">
@@ -166,6 +176,18 @@ async function loadStaff(){
   allStaff = res.staff;
   renderStaff(allStaff);
 }
+
+// Técnico de instalação: pede o WhatsApp e não tem cargo de dono.
+function syncTechFields(){
+  const tech = document.getElementById("nsCompany").value === "instalacao";
+  document.getElementById("nsPhoneWrap").style.display = tech ? "" : "none";
+  document.getElementById("nsPhone").required = tech;
+  const role = document.getElementById("nsRole");
+  if(tech) role.value = "funcionario";
+  role.disabled = tech;
+}
+document.getElementById("nsCompany").addEventListener("change", syncTechFields);
+document.getElementById("newStaffForm").addEventListener("reset", () => setTimeout(syncTechFields, 0));
 
 document.getElementById("newStaffBtn").addEventListener("click", () => {
   document.getElementById("newStaffCard").style.display = "block";
@@ -189,7 +211,8 @@ document.getElementById("newStaffForm").addEventListener("submit", async (e) => 
       email: document.getElementById("nsEmail").value.trim(),
       password: document.getElementById("nsPassword").value,
       company: document.getElementById("nsCompany").value,
-      role: document.getElementById("nsRole").value,
+      role: document.getElementById("nsCompany").value === "instalacao" ? "funcionario" : document.getElementById("nsRole").value,
+      phone: document.getElementById("nsPhone").value.trim(),
     });
     if(!res.ok){
       errorBox.textContent = res.error || t("Não foi possível criar o funcionário.");
@@ -216,7 +239,8 @@ document.getElementById("staffTableBody").addEventListener("click", async (e) =>
     const res = await MES.apiPatch(`/api/admin/staff/${id}`, {
       name: block.querySelector(".edit-name").value.trim(),
       company: block.querySelector(".edit-company").value,
-      role: block.querySelector(".edit-role").value,
+      role: block.querySelector(".edit-company").value === "instalacao" ? "funcionario" : block.querySelector(".edit-role").value,
+      phone: block.querySelector(".edit-phone").value.trim(),
     });
     if(!res.ok){
       MES.showToast(res.error || t("Erro ao salvar."));

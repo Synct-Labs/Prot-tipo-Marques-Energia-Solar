@@ -180,6 +180,12 @@ function orderDetailHTML(order){
         </form>
       `}
     </div>
+    ${order.status === "cancelado" ? "" : `
+    <div class="admin-detail-block">
+      <h4>${t("Instalação")}</h4>
+      <p class="admin-muted">${t("A OS é gerada sozinha quando o pedido é confirmado. Use o botão para abrir ou gerar na hora.")}</p>
+      <button type="button" class="admin-btn admin-btn-ghost admin-open-os-btn" data-order-id="${order.id}" style="margin-top:8px;">${t("Abrir OS de instalação")}</button>
+    </div>`}
   `;
 }
 
@@ -276,7 +282,16 @@ document.getElementById("ordersTableBody").addEventListener("submit", async (e) 
   }
 });
 
-document.getElementById("ordersTableBody").addEventListener("click", (e) => {
+document.getElementById("ordersTableBody").addEventListener("click", async (e) => {
+  const osBtn = e.target.closest(".admin-open-os-btn");
+  if(osBtn){
+    osBtn.disabled = true;
+    const res = await MES.apiPost(`/api/admin/os/from-order/${osBtn.dataset.orderId}`);
+    osBtn.disabled = false;
+    if(!res.ok || !res.id){ MES.showToast(res.error || t("Não foi possível gerar a OS.")); return; }
+    window.location.href = `os.html?id=${res.id}`;
+    return;
+  }
   // clique numa linha (fora do <select>) abre/fecha o detalhe
   if(e.target.closest("select")) return;
   const row = e.target.closest(".admin-order-row");

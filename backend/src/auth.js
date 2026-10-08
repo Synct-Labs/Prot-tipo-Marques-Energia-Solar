@@ -141,7 +141,7 @@ async function getAdminBySession(token) {
   if (!token) return null;
   const { rows } = await pool.query(
     `SELECT admins.id as id, admins.email as email, admins.name as name,
-            admins.company as company, admins.role as role,
+            admins.company as company, admins.role as role, admins.phone as phone,
             sessions.expires_at as expires_at, sessions.last_seen_at as last_seen_at,
             sessions.created_at as created_at
      FROM sessions JOIN admins ON admins.id = sessions.admin_id
@@ -162,7 +162,7 @@ async function getAdminBySession(token) {
   }
   // Não bloqueia a resposta por causa disso — só marca "visto agora".
   pool.query("UPDATE sessions SET last_seen_at = $1 WHERE token = $2", [new Date(now).toISOString(), token]).catch(() => {});
-  return { id: row.id, email: row.email, name: row.name, company: row.company, role: row.role };
+  return { id: row.id, email: row.email, name: row.name, company: row.company, role: row.role, phone: row.phone || "" };
 }
 
 async function findAdminByEmail(email) {
@@ -227,19 +227,21 @@ async function destroyAllAdminSessions(adminId) {
 }
 
 /* ---------------------- GESTÃO DE EQUIPE (só "owner") ---------------------- */
-const VALID_COMPANIES = ["energia_solar", "promotora", "ambas"];
+// "instalacao" = técnico de instalação: só enxerga as Ordens de Serviço
+// (ver workOrders.js), nenhuma outra área do painel.
+const VALID_COMPANIES = ["energia_solar", "promotora", "ambas", "instalacao"];
 const VALID_ROLES = ["owner", "funcionario"];
 
 async function listAdmins() {
   const { rows } = await pool.query(
-    "SELECT id, email, name, company, role, created_at FROM admins ORDER BY id ASC"
+    "SELECT id, email, name, company, role, phone, created_at FROM admins ORDER BY id ASC"
   );
   return rows;
 }
 
 async function findAdminById(id) {
   const { rows } = await pool.query(
-    "SELECT id, email, name, company, role, created_at FROM admins WHERE id = $1",
+    "SELECT id, email, name, company, role, phone, created_at FROM admins WHERE id = $1",
     [id]
   );
   return rows[0] || null;
@@ -250,20 +252,20 @@ async function countOwners() {
   return rows[0].c;
 }
 
-async function createAdmin({ email, password, name, company, role }) {
+async function createAdmin({ email, password, name, company, role, phone }) {
   const created_at = new Date().toISOString();
   const insert = await pool.query(
-    `INSERT INTO admins (email, password_hash, name, company, role, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-    [String(email).toLowerCase().trim(), hashPassword(password), name, company, role, created_at]
+    `INSERT INTO admins (email, password_hash, name, company, role, phone, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+    [String(email).toLowerCase().trim(), hashPassword(password), name, company, role, phone || null, created_at]
   );
   return insert.rows[0].id;
 }
 
-async function updateAdmin(id, { name, company, role }) {
+async function updateAdmin(id, { name, company, role, phone }) {
   const result = await pool.query(
-    "UPDATE admins SET name = $1, company = $2, role = $3 WHERE id = $4",
-    [name, company, role, id]
+    "UPDATE admins SET name = $1, company = $2, role = $3, phone = $4 WHERE id = $5",
+    [name, company, role, phone || null, id]
   );
   return result.rowCount > 0;
 }

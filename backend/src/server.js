@@ -28,6 +28,8 @@ const folders = require("./folders");
 const notifications = require("./notifications");
 const mailer = require("./mailer");
 const payPartner = require("./payPartner");
+const workOrders = require("./workOrders");
+const whatsapp = require("./whatsapp");
 const { parseJSONBody, sendJSON, sendBinary, getClientIP, isAllowedFileMime, ALLOWED_FILE_MIMES } = require("./http-utils");
 const { serveStatic } = require("./static");
 
@@ -590,6 +592,13 @@ async function handleApi(req, res, pathname) {
       const changed = await orders.updateOrderStatus(id, body.status);
       if (!changed) return sendJSON(res, 404, { ok: false, error: "Pedido não encontrado." });
       await partners.syncStatus("order", id, body.status);
+      // Venda confirmada gera a OS de instalação sozinha (idempotente: uma
+      // por pedido); pedido cancelado cancela a OS ainda aberta. Falha aqui
+      // não desfaz a mudança de status do pedido.
+      try {
+        if (body.status === "confirmado") await workOrders.createFromOrder(id, { autor: { id: admin.id, nome: admin.name || admin.email } });
+        if (body.status === "cancelado") await workOrders.onOrderCancelled(id);
+      } catch (e) { console.error("[os] falha ao gerar/cancelar OS do pedido " + id + ":", e.message); }
       const order = await orders.getOrderById(id);
       try {
         await mailer.sendEmail({
@@ -1935,6 +1944,83 @@ async function handleApi(req, res, pathname) {
     return sendBinary(res, 200, comprovante.data, comprovante.tipo, comprovante.nome);
   }
 
+  // ---- ADMIN: ORDENS DE SERVIÇO DE INSTALAÇÃO ----
+  // Acesso: gestor (dono / Energia Solar) opera tudo; técnico (empresa
+  // "instalacao") só vê as OS disponíveis e as dele (regras em workOrders.js).
+  if (pathname === "/api/admin/os" || pathname.startsWith("/api/admin/os/")) {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+    if (!["instalacao", "ambas", "energia_solar"].includes(admin.company)) {
+      return sendJSON(res, 403, { ok: false, error: "Sua conta não tem acesso a essa área." });
+    }
+    const ctx = workOrders.ctxOf(admin);
+    const url = new URL(req.url, "http://localhost");
+    try {
+      if (pathname === "/api/admin/os" && req.method === "GET") {
+        const filtros = {
+          status: url.searchParams.get("status") || undefined,
+          q: url.searchParams.get("q") || undefined,
+          escopo: url.searchParams.get("escopo") || undefined,
+          tecnico: url.searchParams.get("tecnico") || undefined,
+        };
+        return sendJSON(res, 200, { ok: true, items: await workOrders.list(ctx, filtros), counts: await workOrders.counts(ctx) });
+      }
+
+      if (pathname === "/api/admin/os/tecnicos" && req.method === "GET") {
+        if (!ctx.isManager) return sendJSON(res, 403, { ok: false, error: "Apenas gestores." });
+        return sendJSON(res, 200, { ok: true, items: await workOrders.listTechnicians() });
+      }
+
+      const fromOrder = pathname.match(/^\/api\/admin\/os\/from-order\/(\d+)$/);
+      if (fromOrder && req.method === "POST") {
+        if (!ctx.isManager) return sendJSON(res, 403, { ok: false, error: "Apenas gestores." });
+        const r = await workOrders.createFromOrder(parseInt(fromOrder[1], 10), { autor: ctx, force: true });
+        return sendJSON(res, r.created ? 201 : 200, { ok: true, ...r });
+      }
+
+      const fotoMatch = pathname.match(/^\/api\/admin\/os\/fotos\/(\d+)$/);
+      if (fotoMatch) {
+        const photoId = parseInt(fotoMatch[1], 10);
+        if (req.method === "GET") {
+          const f = await workOrders.getPhoto(photoId, ctx);
+          if (!f) return sendJSON(res, 404, { ok: false, error: "Foto não encontrada." });
+          return sendBinary(res, 200, f.data, f.tipo, f.nome, { "Cache-Control": "private, max-age=3600", "X-Content-Type-Options": "nosniff" });
+        }
+        if (req.method === "DELETE") {
+          await workOrders.deletePhoto(photoId, ctx);
+          return sendJSON(res, 200, { ok: true });
+        }
+      }
+
+      const osMatch = pathname.match(/^\/api\/admin\/os\/(\d+)(?:\/([a-z]+))?$/);
+      if (osMatch) {
+        const id = parseInt(osMatch[1], 10);
+        const acao = osMatch[2];
+        if (!acao && req.method === "GET") {
+          return sendJSON(res, 200, { ok: true, os: await workOrders.get(id, ctx) });
+        }
+        if (acao && req.method === "POST") {
+          const body = await parseJSONBody(req, acao === "fotos" ? Math.ceil(workOrders.MAX_PHOTO_BYTES * 1.4) + 4096 : undefined);
+          if (acao === "assumir") await workOrders.assumir(id, ctx);
+          else if (acao === "atribuir") await workOrders.atribuir(id, parseInt(body.technicianId, 10), ctx);
+          else if (acao === "devolver") await workOrders.devolver(id, body.texto, ctx);
+          else if (acao === "agendar") await workOrders.agendar(id, body, ctx);
+          else if (acao === "status") await workOrders.mudarStatus(id, body, ctx);
+          else if (acao === "obs") await workOrders.addObs(id, body.texto, ctx);
+          else if (acao === "fotos") {
+            let buffer = null;
+            try { buffer = Buffer.from(String(body.imageBase64 || ""), "base64"); } catch { buffer = null; }
+            await workOrders.addPhoto(id, { buffer, mime: body.imageTipo, nome: body.imageNome, categoria: body.categoria, legenda: body.legenda }, ctx);
+          } else return sendJSON(res, 404, { ok: false, error: "Rota não encontrada." });
+          return sendJSON(res, 200, { ok: true, os: await workOrders.get(id, ctx) });
+        }
+      }
+    } catch (e) {
+      if (e.statusCode && e.statusCode < 500) return sendJSON(res, e.statusCode, { ok: false, error: e.message });
+      throw e;
+    }
+  }
+
   // ---- ADMIN: GESTÃO DE EQUIPE (só "owner") ----
   if (pathname === "/api/admin/staff" && req.method === "GET") {
     const admin = await requireOwner(req, res);
@@ -1968,7 +2054,17 @@ async function handleApi(req, res, pathname) {
     const existing = await auth.findAdminByEmail(email);
     if (existing) return sendJSON(res, 409, { ok: false, error: "Já existe uma conta com esse e-mail." });
 
-    const id = await auth.createAdmin({ email, password, name, company, role });
+    if (company === "instalacao" && role === "owner") {
+      return sendJSON(res, 400, { ok: false, error: "Técnico de instalação não pode ser dono da conta." });
+    }
+    const phone = String(body.phone || "").trim();
+    if (phone && !whatsapp.normalizePhone(phone)) {
+      return sendJSON(res, 400, { ok: false, error: "Telefone inválido. Use DDD + número, ex: (65) 99999-1234." });
+    }
+    if (company === "instalacao" && !phone) {
+      return sendJSON(res, 400, { ok: false, error: "Informe o WhatsApp do técnico para ele receber o aviso das OS." });
+    }
+    const id = await auth.createAdmin({ email, password, name, company, role, phone });
     return sendJSON(res, 201, { ok: true, staff: await auth.findAdminById(id) });
   }
 
@@ -1998,7 +2094,17 @@ async function handleApi(req, res, pathname) {
           return sendJSON(res, 400, { ok: false, error: "Precisa existir ao menos um dono da conta. Promova outra pessoa antes." });
         }
       }
-      await auth.updateAdmin(id, { name, company, role });
+      if (company === "instalacao" && role === "owner") {
+        return sendJSON(res, 400, { ok: false, error: "Técnico de instalação não pode ser dono da conta." });
+      }
+      const phone = body.phone === undefined ? (target.phone || "") : String(body.phone || "").trim();
+      if (phone && !whatsapp.normalizePhone(phone)) {
+        return sendJSON(res, 400, { ok: false, error: "Telefone inválido. Use DDD + número, ex: (65) 99999-1234." });
+      }
+      if (company === "instalacao" && !phone) {
+        return sendJSON(res, 400, { ok: false, error: "Informe o WhatsApp do técnico para ele receber o aviso das OS." });
+      }
+      await auth.updateAdmin(id, { name, company, role, phone });
       return sendJSON(res, 200, { ok: true, staff: await auth.findAdminById(id) });
     }
 

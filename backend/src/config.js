@@ -68,4 +68,11 @@ module.exports = {
   SMTP_USER: process.env.SMTP_USER || "",
   SMTP_PASS: process.env.SMTP_PASS || "",
   MAIL_FROM: process.env.MAIL_FROM || "Marques Promotora <contato@marquespromotora.com>",
+  // WhatsApp (aviso de nova OS pros técnicos — ver backend/src/whatsapp.js).
+  // Evolution API própria; sem as 3 variáveis, a mensagem só vai pro log.
+  EVOLUTION_API_URL: process.env.EVOLUTION_API_URL || "",
+  EVOLUTION_API_KEY: process.env.EVOLUTION_API_KEY || "",
+  EVOLUTION_INSTANCE: process.env.EVOLUTION_INSTANCE || "",
+  // Endereço público do site, usado nos links das mensagens de WhatsApp.
+  PUBLIC_URL: (process.env.PUBLIC_URL || "https://marquespromotora.com").replace(/\/+$/, ""),
 };

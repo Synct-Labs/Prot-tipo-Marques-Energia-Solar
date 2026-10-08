@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Ordens de Serviço | Painel de Administrador | Marques</title>
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="admin.css">
+<script src="../theme-toggle.js"></script>
+<script src="../i18n-dict.js"></script>
+<script src="../i18n.js"></script>
+</head>
+<body class="admin-body">
+
+<header class="admin-topbar">
+  <div class="admin-brand">
+    <img src="../logo-mark-128.png" alt="Marques">
+    <span>Painel de Administrador</span>
+  </div>
+  <nav class="admin-nav">
+    <a href="dashboard.html" class="admin-nav-link">Pedidos</a>
+    <a href="os.html" class="admin-nav-link active">Ordens de Serviço</a>
+    <a href="credit-leads.html" class="admin-nav-link">Solicitações de Crédito</a>
+    <a href="marques-pay.html" class="admin-nav-link">Marques Pay</a>
+    <a href="catalogo.html" class="admin-nav-link">Catálogo</a>
+    <a href="parceiros.html" class="admin-nav-link">Parceiros</a>
+    <a href="compra-programada.html" class="admin-nav-link">Compra Programada</a>
+    <a href="pastas.html" class="admin-nav-link">Pastas</a>
+    <a href="equipe.html" class="admin-nav-link">Equipe</a>
+    <a href="notificacoes.html" class="admin-nav-link">Notificações</a>
+  </nav>
+  <div class="admin-topbar-right">
+    <span class="admin-user" id="adminUserLabel"></span>
+    <button class="admin-btn admin-btn-ghost" id="logoutBtn">Sair</button>
+  </div>
+</header>
+
+<main class="admin-main">
+  <div class="admin-container">
+
+    <!-- ============ LISTA ============ -->
+    <section id="listView">
+      <div class="admin-toolbar">
+        <h2 style="font-size:1.15rem;">Ordens de Serviço</h2>
+        <div class="admin-toolbar-filters">
+          <input type="search" id="osSearch" placeholder="Buscar por OS, cliente ou cidade">
+          <select id="osTech" style="display:none;"></select>
+        </div>
+      </div>
+      <div class="os-chips" id="osChips"></div>
+      <div class="os-grid" id="osGrid"><div class="admin-loading">Carregando ordens de serviço...</div></div>
+    </section>
+
+    <!-- ============ DETALHE ============ -->
+    <section id="detailView" style="display:none;">
+      <button type="button" class="admin-btn admin-btn-ghost os-back" id="backBtn">← Voltar para a lista</button>
+      <div id="detailBody"></div>
+    </section>
+
+  </div>
+</main>
+
+<dialog class="os-dialog" id="askDlg">
+  <form method="dialog" id="askForm">
+    <h3 id="askTitle"></h3>
+    <label for="askText" id="askLabel" style="display:block; font-size:.82rem; color:var(--muted); margin-bottom:6px;"></label>
+    <textarea id="askText" maxlength="2000"></textarea>
+    <div class="admin-error" id="askError" style="margin:10px 0 0;"></div>
+    <div class="os-dialog-actions">
+      <button type="button" class="admin-btn admin-btn-ghost" id="askCancel">Cancelar</button>
+      <button type="submit" class="admin-btn" id="askOk">Confirmar</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="../api-config.js"></script>
+<script src="admin.js"></script>
+<script>
+function t(text){ return window.MES_I18N ? window.MES_I18N.t(text) : text; }
+function esc(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+}
+
+let me = null;
+let isManager = false;
+let allOS = [];
+let counts = {};
+let techs = [];
+let current = null;          // OS aberta no detalhe
+const view = { chip: "todas", q: "", tecnico: "" };
+
+/* ---------------- formatação ---------------- */
+function fmtWhen(iso){
+  if(!iso) return "";
+  return new Date(iso).toLocaleString("pt-BR", { weekday:"short", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
+}
+function fmtDateTime(iso){ return iso ? new Date(iso).toLocaleString("pt-BR", { dateStyle:"short", timeStyle:"short" }) : ""; }
+function toLocalInput(d){
+  const p = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function phoneDigits(raw){
+  let d = String(raw || "").replace(/\D/g, "");
+  if(d.length === 10 || d.length === 11) d = "55" + d;
+  return d;
+}
+const CAT_LABELS = { antes: t("Antes"), durante: t("Durante"), depois: t("Depois"), problema: t("Problema") };
+const SPEC_LABELS = {
+  potencia: t("Potência"), modulos: t("Módulos"), inversor: t("Inversor"), entradaMax: t("Entrada máx."),
+  saidaMax: t("Saída máx."), consumoAlvo: t("Consumo atendido"),
+};
+
+/* ---------------- diálogo de texto ---------------- */
+function ask({ title, label, confirmText, required = true }){
+  return new Promise(resolve => {
+    const dlg = document.getElementById("askDlg");
+    const ta = document.getElementById("askText");
+    const errBox = document.getElementById("askError");
+    document.getElementById("askTitle").textContent = title;
+    document.getElementById("askLabel").textContent = label || "";
+    document.getElementById("askOk").textContent = confirmText || t("Confirmar");
+    ta.value = ""; errBox.classList.remove("show");
+    let done = false;
+    const finish = v => { if(done) return; done = true; cleanup(); dlg.close(); resolve(v); };
+    const onSubmit = e => {
+      e.preventDefault();
+      const v = ta.value.trim();
+      if(required && !v){ errBox.textContent = t("Preencha este campo."); errBox.classList.add("show"); return; }
+      finish(v);
+    };
+    const onCancel = () => finish(null);
+    function cleanup(){
+      document.getElementById("askForm").removeEventListener("submit", onSubmit);
+      document.getElementById("askCancel").removeEventListener("click", onCancel);
+      dlg.removeEventListener("cancel", onCancel);
+    }
+    document.getElementById("askForm").addEventListener("submit", onSubmit);
+    document.getElementById("askCancel").addEventListener("click", onCancel);
+    dlg.addEventListener("cancel", onCancel);
+    dlg.showModal();
+    ta.focus();
+  });
+}
+
+/* ---------------- LISTA ---------------- */
+function chipDefs(){
+  const c = counts;
+  const mine = allOS.filter(o => o.minha).length;
+  const defs = [{ key:"todas", label:t("Todas"), n: allOS.length }];
+  defs.push({ key:"disponiveis", label:t("Disponíveis"), n: c.disponiveis || 0 });
+  if(!isManager) defs.push({ key:"minhas", label:t("Minhas"), n: mine });
+  const statuses = isManager ? ["nova","agendada","em_andamento","pendente","concluida","cancelada"] : ["agendada","em_andamento","pendente","concluida"];
+  statuses.forEach(s => defs.push({ key: s, label: MES.OS_STATUS_LABELS[s], n: c[s] || 0 }));
+  return defs;
+}
+
+function matchesView(o){
+  if(view.chip === "disponiveis" && !o.disponivel) return false;
+  if(view.chip === "minhas" && !o.minha) return false;
+  if(MES.OS_STATUS_ORDER.includes(view.chip) && o.status !== view.chip) return false;
+  if(view.tecnico === "sem" && o.technician) return false;
+  if(view.tecnico && view.tecnico !== "sem" && (!o.technician || String(o.technician.id) !== view.tecnico)) return false;
+  if(view.q){
+    const q = view.q.toLowerCase();
+    const hay = [o.osNumber, o.orderNumber, o.clienteNome, o.cidade, o.bairro].join(" ").toLowerCase();
+    if(!hay.includes(q)) return false;
+  }
+  return true;
+}
+
+function renderList(){
+  document.getElementById("osChips").innerHTML = chipDefs().map(d =>
+    `<button type="button" class="os-chip ${view.chip === d.key ? "active" : ""}" data-chip="${d.key}">${esc(d.label)} <b>${d.n}</b></button>`
+  ).join("");
+
+  const items = allOS.filter(matchesView);
+  const grid = document.getElementById("osGrid");
+  if(!items.length){
+    grid.innerHTML = `<div class="admin-empty" style="grid-column:1/-1;">${t("Nenhuma ordem de serviço encontrada.")}</div>`;
+    return;
+  }
+  grid.innerHTML = items.map(o => `
+    <article class="os-card" data-open="${o.id}">
+      <div class="os-card-head">
+        <span class="os-card-num">${esc(o.osNumber)}</span>
+        ${o.disponivel ? `<span class="os-tag-free">${t("Disponível")}</span>` : MES.osStatusBadge(o.status)}
+      </div>
+      ${o.disponivel ? `<div>${MES.osStatusBadge(o.status)}</div>` : ""}
+      <div class="os-card-line"><strong>${esc(o.clienteNome)}</strong></div>
+      <div class="os-card-line">📍 ${esc([o.bairro, o.cidade].filter(Boolean).join(", "))}</div>
+      <div class="os-card-line">${esc(o.kitResumo)}${o.potenciaKw ? ` · ${String(o.potenciaKw).replace(".", ",")} kWp` : ""}</div>
+      ${o.agendadaPara ? `<div class="os-when">🗓 ${esc(fmtWhen(o.agendadaPara))}${o.reagendamentos ? ` <span style="color:var(--muted); font-weight:400;">(${t("reagendada")} ${o.reagendamentos}x)</span>` : ""}</div>` : ""}
+      ${isManager ? `<div class="os-card-line">${o.technician ? "🔧 " + esc(o.technician.nome) : t("Sem técnico")}</div>` : ""}
+    </article>`).join("");
+}
+
+async function loadList(){
+  const res = await MES.apiGet("/api/admin/os");
+  if(!res.ok){ MES.showToast(res.error || t("Erro ao carregar as OS.")); return; }
+  allOS = res.items; counts = res.counts;
+  renderList();
+}
+
+/* ---------------- DETALHE ---------------- */
+function kitHTML(os){
+  const k = os.kit;
+  const itens = k.itens.map(i => {
+    const specs = Object.entries(i.specs || {}).map(([key, v]) =>
+      `<div><span>${esc(SPEC_LABELS[key] || key)}</span>${esc(v)}</div>`).join("");
+    const comps = (i.componentes || []).length
+      ? `<ul class="os-kit-comp">${i.componentes.map(c =>
+          `<li><span>${esc(c.nome)}${c.marca ? ` <small style="color:var(--muted)">· ${esc(c.marca)}</small>` : ""}${c.sku ? `<br><small style="color:var(--muted)">SKU ${esc(c.sku)}</small>` : ""}</span><span>${c.qty}x</span></li>`).join("")}</ul>`
+      : "";
+    return `
+      <div class="os-kit-item">
+        <div class="os-kit-name">${i.qty}x ${esc(i.nome)}</div>
+        <div class="os-kit-meta">${[i.marca, i.sku && "SKU " + i.sku, i.embVenda].filter(Boolean).map(esc).join(" · ")}${isManager && i.preco != null ? ` · ${MES.formatBRL(i.preco)}` : ""}</div>
+        ${comps}
+        ${specs ? `<div class="os-specs">${specs}</div>` : ""}
+      </div>`;
+  }).join("");
+  return `
+    <div class="os-box">
+      <h3>${t("Kit a instalar")}</h3>
+      ${itens}
+      ${k.potenciaKw ? `<div class="os-power">${t("Potência total")}: ${String(k.potenciaKw).replace(".", ",")} kWp</div>` : ""}
+      ${isManager && k.total != null ? `<div class="os-row" style="margin-top:8px;"><span>${t("Valor do pedido")}</span><span>${MES.formatBRL(k.total)}</span></div>` : ""}
+    </div>`;
+}
+
+function clientHTML(os){
+  const c = os.cliente;
+  const wa = phoneDigits(c.telefone);
+  const msg = `Olá ${c.nome.split(" ")[0]}, tudo bem? Aqui é da Marques Energia Solar. Sou o responsável pela instalação do seu kit solar (pedido ${os.orderNumber}). Podemos combinar o melhor dia e horário para a visita?`;
+  return `
+    <div class="os-box">
+      <h3>${t("Cliente")}</h3>
+      <div class="os-row"><span>${t("Nome")}</span><span>${esc(c.nome)}</span></div>
+      <div class="os-row"><span>${t("Telefone")}</span><span>${esc(c.telefone)}</span></div>
+      ${c.email ? `<div class="os-row"><span>E-mail</span><span>${esc(c.email)}</span></div>` : ""}
+      ${c.cpf ? `<div class="os-row"><span>CPF</span><span>${esc(c.cpf)}</span></div>` : ""}
+      <div class="os-row"><span>${t("Endereço")}</span><span>${esc(c.enderecoTexto)}</span></div>
+      <div class="os-links">
+        <a class="os-link-btn" href="tel:+${wa}">📞 ${t("Ligar")}</a>
+        <a class="os-link-btn" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(msg)}">💬 ${t("Chamar no WhatsApp")}</a>
+        ${c.mapsUrl ? `<a class="os-link-btn" target="_blank" rel="noopener" href="${esc(c.mapsUrl)}">🗺 ${t("Abrir no mapa")}</a>` : ""}
+      </div>
+    </div>`;
+}
+
+function scheduleHTML(os){
+  const p = os.permissoes;
+  let body;
+  if(!os.technician){
+    body = `<div class="os-warn">${isManager ? t("Atribua um técnico para poder agendar.") : t("Assuma a OS para agendar a visita com o cliente.")}</div>`;
+  } else if(!p.podeOperar){
+    body = "";
+  } else {
+    const reag = !!os.agendadaPara;
+    const base = os.agendadaPara ? new Date(os.agendadaPara) : new Date(Date.now() + 24 * 3600 * 1000);
+    base.setMinutes(0, 0, 0);
+    body = `
+      <div class="os-inline">
+        <div class="admin-field"><label>${reag ? t("Nova data e hora") : t("Data e hora da visita")}</label>
+          <input type="datetime-local" id="schedDate" value="${toLocalInput(base)}" min="${toLocalInput(new Date())}"></div>
+        ${reag ? `<div class="admin-field" style="flex-basis:100%;"><label>${t("Motivo do reagendamento")} *</label>
+          <input type="text" id="schedMotivo" maxlength="500" placeholder="${esc(t("Ex: cliente pediu outro dia"))}"></div>` : ""}
+        <div class="admin-field" style="flex-basis:100%;"><label>${t("Observação (opcional)")}</label>
+          <input type="text" id="schedObs" maxlength="500" placeholder="${esc(t("Ex: combinado por WhatsApp, cliente estará em casa"))}"></div>
+        <button type="button" class="admin-btn" data-act="agendar" style="width:auto;">${reag ? t("Reagendar") : t("Agendar visita")}</button>
+      </div>`;
+  }
+  return `
+    <div class="os-box">
+      <h3>${t("Agendamento")}</h3>
+      ${os.agendadaPara
+        ? `<div class="os-row"><span>${t("Visita marcada para")}</span><span style="color:var(--orange-light); font-weight:700;">${esc(fmtWhen(os.agendadaPara))}</span></div>
+           <div class="os-row"><span>${t("Reagendamentos")}</span><span>${os.reagendamentos}</span></div>`
+        : `<div class="os-row"><span>${t("Visita")}</span><span>${t("Ainda não agendada")}</span></div>`}
+      ${body}
+    </div>`;
+}
+
+function actionsHTML(os){
+  const p = os.permissoes;
+  const open = !["concluida", "cancelada"].includes(os.status);
+  const btns = [];
+  if(p.podeAssumir) btns.push(`<button type="button" class="admin-btn" data-act="assumir">${t("Assumir esta OS")}</button>`);
+  if(os.technician && p.podeOperar){
+    if(os.status !== "em_andamento") btns.push(`<button type="button" class="admin-btn" data-act="iniciar">${t("Iniciar instalação")}</button>`);
+    if(["agendada", "em_andamento", "pendente"].includes(os.status)) btns.push(`<button type="button" class="admin-btn" data-act="concluir">${t("Concluir instalação")}</button>`);
+    btns.push(`<button type="button" class="admin-btn admin-btn-ghost" data-act="pendenciar">${t("Registrar pendência")}</button>`);
+    btns.push(`<button type="button" class="admin-btn admin-btn-ghost" data-act="devolver">${t("Devolver OS")}</button>`);
+  }
+  if(isManager && open) btns.push(`<button type="button" class="admin-btn admin-btn-ghost os-btn-danger" data-act="cancelar">${t("Cancelar OS")}</button>`);
+  if(isManager && !open) btns.push(`<button type="button" class="admin-btn admin-btn-ghost" data-act="reabrir">${t("Reabrir OS")}</button>`);
+
+  let assign = "";
+  if(isManager && open){
+    const opts = techs.map(x => `<option value="${x.id}" ${os.technician && os.technician.id === x.id ? "selected" : ""}>${esc(x.nome)}${x.telefone ? "" : " (" + t("sem telefone") + ")"}</option>`).join("");
+    assign = techs.length
+      ? `<div class="os-inline"><div class="admin-field"><label>${os.technician ? t("Reatribuir para") : t("Atribuir a um técnico")}</label><select id="assignTech">${opts}</select></div>
+          <button type="button" class="admin-btn admin-btn-ghost" data-act="atribuir">${t("Atribuir")}</button></div>`
+      : `<div class="os-warn">${t("Nenhum técnico cadastrado. Cadastre em Equipe → Equipe de instalação.")}</div>`;
+  }
+  return `
+    <div class="os-box">
+      <h3>${t("Ações")}</h3>
+      ${os.technician ? `<div class="os-row"><span>${t("Técnico")}</span><span>${esc(os.technician.nome)}${isManager && os.technician.telefone ? ` · ${esc(os.technician.telefone)}` : ""}</span></div>` : `<div class="os-row"><span>${t("Técnico")}</span><span>${t("Ninguém assumiu ainda")}</span></div>`}
+      ${btns.length ? `<div class="os-actions" style="margin-top:10px;">${btns.join("")}</div>` : ""}
+      ${assign}
+    </div>`;
+}
+
+function photosHTML(os){
+  const p = os.permissoes;
+  const upload = p.podeOperar ? `
+    <div class="os-photo-bar">
+      <div class="admin-field"><label>${t("Tipo")}</label>
+        <select id="photoCat">${Object.entries(CAT_LABELS).map(([k, v]) => `<option value="${k}" ${k === "durante" ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></div>
+      <div class="admin-field" style="flex:1; min-width:150px;"><label>${t("Legenda (opcional)")}</label>
+        <input type="text" id="photoLegenda" maxlength="200"></div>
+      <label class="admin-btn" style="width:auto; cursor:pointer; margin:0;">📷 ${t("Adicionar fotos")}
+        <input type="file" id="photoInput" accept="image/*" multiple style="display:none;"></label>
+    </div>` : "";
+  const grid = os.photos.length
+    ? `<div class="os-photos">${os.photos.map(f => `
+        <figure class="os-photo">
+          <a href="${f.url}" target="_blank" rel="noopener"><img src="${f.url}" alt="${esc(f.legenda || CAT_LABELS[f.categoria])}" loading="lazy"></a>
+          <span class="os-photo-cat">${esc(CAT_LABELS[f.categoria] || f.categoria)}</span>
+          ${(f.minha || isManager) && (p.podeOperar || isManager) ? `<button type="button" class="os-photo-del" data-del-photo="${f.id}" title="${esc(t("Remover foto"))}">×</button>` : ""}
+          <figcaption>${esc(f.legenda || "")}<br>${esc(f.autor || "")} · ${esc(fmtDateTime(f.createdAt))}</figcaption>
+        </figure>`).join("")}</div>`
+    : `<p class="admin-muted" style="color:var(--muted); font-size:.88rem;">${t("Nenhuma foto ainda.")}</p>`;
+  return `<div class="os-box"><h3>${t("Fotos da instalação")} (${os.photos.length})</h3>${upload}${grid}</div>`;
+}
+
+function timelineHTML(os){
+  const canNote = os.permissoes.ehGestor || os.permissoes.podeOperar;
+  const note = canNote ? `
+    <div class="os-inline" style="margin:0 0 16px;">
+      <div class="admin-field" style="flex-basis:100%;"><label>${t("Nova observação")}</label>
+        <textarea id="obsText" rows="3" maxlength="2000" placeholder="${esc(t("Ex: portão de acesso lateral, cliente pediu atenção ao telhado..."))}"></textarea></div>
+      <button type="button" class="admin-btn admin-btn-ghost" data-act="obs">${t("Salvar observação")}</button>
+    </div>` : "";
+  const items = os.events.map(e => {
+    const dates = (e.de || e.para) ? `<div class="os-ev-meta">${e.de ? t("De") + " " + esc(fmtDateTime(e.de)) + " " : ""}${e.para ? t("para") + " " + esc(fmtDateTime(e.para)) : ""}</div>` : "";
+    return `<li class="t-${esc(e.tipo)}"><div class="os-ev-text">${esc(e.texto || "")}</div>${dates}<div class="os-ev-meta">${esc(e.autor || "")} · ${esc(fmtDateTime(e.createdAt))}</div></li>`;
+  }).join("");
+  return `<div class="os-box"><h3>${t("Observações e histórico")}</h3>${note}<ul class="os-timeline">${items}</ul></div>`;
+}
+
+function renderDetail(os){
+  current = os;
+  const closing = os.conclusaoObs && os.status === "concluida"
+    ? `<div class="os-box"><h3>${t("Relatório de conclusão")}</h3><p style="font-size:.9rem; white-space:pre-wrap;">${esc(os.conclusaoObs)}</p><p class="os-ev-meta">${t("Concluída em")} ${esc(fmtDateTime(os.concluidaEm))}</p></div>` : "";
+  document.getElementById("detailBody").innerHTML = `
+    <div class="os-head"><h2>${esc(os.osNumber)}</h2>${MES.osStatusBadge(os.status)}${os.disponivel ? `<span class="os-tag-free">${t("Disponível")}</span>` : ""}</div>
+    <div class="os-sub">${t("Pedido")} ${esc(os.orderNumber)} · ${t("gerada em")} ${esc(fmtDateTime(os.createdAt))}</div>
+    <div class="os-layout">
+      <div class="os-col">${clientHTML(os)}${kitHTML(os)}${closing}</div>
+      <div class="os-col">${actionsHTML(os)}${scheduleHTML(os)}${photosHTML(os)}${timelineHTML(os)}</div>
+    </div>`;
+}
+
+async function openOS(id, push = true){
+  const res = await MES.apiGet(`/api/admin/os/${id}`);
+  if(!res.ok){ MES.showToast(res.error || t("OS não encontrada.")); showList(false); return; }
+  if(isManager && !techs.length){
+    const tr = await MES.apiGet("/api/admin/os/tecnicos");
+    if(tr.ok) techs = tr.items;
+  }
+  document.getElementById("listView").style.display = "none";
+  document.getElementById("detailView").style.display = "";
+  if(push) history.pushState({ os: id }, "", `os.html?id=${id}`);
+  renderDetail(res.os);
+  window.scrollTo(0, 0);
+}
+
+function showList(push = true){
+  current = null;
+  document.getElementById("detailView").style.display = "none";
+  document.getElementById("listView").style.display = "";
+  if(push) history.pushState({}, "", "os.html");
+  loadList();
+}
+
+/* ---------------- ações ---------------- */
+async function act(path, body, okMsg){
+  const res = await MES.apiPost(`/api/admin/os/${current.id}/${path}`, body || {});
+  if(!res.ok){ MES.showToast(res.error || t("Não foi possível concluir a ação.")); return false; }
+  renderDetail(res.os);
+  if(okMsg) MES.showToast(okMsg);
+  return true;
+}
+
+// Reduz a foto no navegador (lado maior 1600px, JPEG) antes de enviar.
+async function resizeImage(file, maxDim = 1600, quality = 0.82){
+  let bmp;
+  try { bmp = await createImageBitmap(file); }
+  catch(e){
+    bmp = await new Promise((resolve, reject) => {
+      const img = new Image(); const url = URL.createObjectURL(file);
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("decode")); };
+      img.src = url;
+    });
+  }
+  const w = bmp.width, h = bmp.height, k = Math.min(1, maxDim / Math.max(w, h));
+  const c = document.createElement("canvas");
+  c.width = Math.round(w * k); c.height = Math.round(h * k);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  const blob = await new Promise(r => c.toBlob(r, "image/jpeg", quality));
+  if(!blob) throw new Error("encode");
+  const dataUrl = await new Promise((resolve, reject) => {
+    const fr = new FileReader(); fr.onload = () => resolve(fr.result); fr.onerror = reject; fr.readAsDataURL(blob);
+  });
+  return dataUrl.split(",")[1];
+}
+
+async function uploadPhotos(files){
+  const cat = document.getElementById("photoCat").value;
+  const legenda = document.getElementById("photoLegenda").value.trim();
+  let ok = 0;
+  for(let i = 0; i < files.length; i++){
+    MES.showToast(`${t("Enviando foto")} ${i + 1}/${files.length}...`);
+    try {
+      const b64 = await resizeImage(files[i]);
+      const res = await MES.apiPost(`/api/admin/os/${current.id}/fotos`, {
+        imageBase64: b64, imageTipo: "image/jpeg", imageNome: (files[i].name || "foto").replace(/\.[^.]+$/, "") + ".jpg", categoria: cat, legenda,
+      });
+      if(!res.ok){ MES.showToast(res.error || t("Erro ao enviar a foto.")); continue; }
+      ok++; current = res.os;
+    } catch(e){
+      MES.showToast(t("Não foi possível ler essa foto. Tente outra."));
+    }
+  }
+  if(ok){ renderDetail(current); MES.showToast(ok === 1 ? t("Foto adicionada.") : `${ok} ${t("fotos adicionadas.")}`); }
+}
+
+document.getElementById("detailBody").addEventListener("click", async (e) => {
+  const del = e.target.closest("[data-del-photo]");
+  if(del){
+    if(!confirm(t("Remover esta foto?"))) return;
+    const res = await MES.apiDelete(`/api/admin/os/fotos/${del.dataset.delPhoto}`);
+    if(!res.ok){ MES.showToast(res.error || t("Erro ao remover.")); return; }
+    openOS(current.id, false);
+    return;
+  }
+  const btn = e.target.closest("[data-act]");
+  if(!btn || btn.disabled) return;
+  const a = btn.dataset.act;
+  btn.disabled = true;
+  try {
+    if(a === "assumir") await act("assumir", {}, t("Você assumiu a OS. Agora agende a visita com o cliente."));
+    else if(a === "iniciar") await act("status", { acao: "iniciar" }, t("Instalação iniciada."));
+    else if(a === "reabrir") {
+      const txt = await ask({ title: t("Reabrir OS"), label: t("Motivo (opcional)"), required: false });
+      if(txt !== null) await act("status", { acao: "reabrir", texto: txt }, t("OS reaberta."));
+    }
+    else if(a === "pendenciar"){
+      const txt = await ask({ title: t("Registrar pendência"), label: t("O que está impedindo a instalação?") });
+      if(txt) await act("status", { acao: "pendenciar", texto: txt }, t("Pendência registrada."));
+    }
+    else if(a === "concluir"){
+      if(!current.photos.length){ MES.showToast(t("Adicione ao menos uma foto da instalação antes de concluir.")); return; }
+      const txt = await ask({ title: t("Concluir instalação"), label: t("Relatório da instalação (o que foi feito, testes, observações)"), confirmText: t("Concluir") });
+      if(txt) await act("status", { acao: "concluir", texto: txt }, t("Instalação concluída!"));
+    }
+    else if(a === "cancelar"){
+      const txt = await ask({ title: t("Cancelar OS"), label: t("Motivo do cancelamento"), confirmText: t("Cancelar OS") });
+      if(txt) await act("status", { acao: "cancelar", texto: txt }, t("OS cancelada."));
+    }
+    else if(a === "devolver"){
+      const txt = await ask({ title: t("Devolver OS"), label: t("Por que você está devolvendo? Os outros técnicos serão avisados."), confirmText: t("Devolver") });
+      if(txt) await act("devolver", { texto: txt }, t("OS devolvida."));
+    }
+    else if(a === "atribuir"){
+      const sel = document.getElementById("assignTech");
+      if(sel && sel.value) await act("atribuir", { technicianId: parseInt(sel.value, 10) }, t("Técnico atribuído."));
+    }
+    else if(a === "agendar"){
+      const raw = document.getElementById("schedDate").value;
+      if(!raw){ MES.showToast(t("Escolha a data e a hora.")); return; }
+      const motivoEl = document.getElementById("schedMotivo");
+      if(motivoEl && !motivoEl.value.trim()){ MES.showToast(t("Informe o motivo do reagendamento.")); motivoEl.focus(); return; }
+      await act("agendar", {
+        data: new Date(raw).toISOString(),
+        motivo: motivoEl ? motivoEl.value.trim() : "",
+        obs: document.getElementById("schedObs").value.trim(),
+      }, motivoEl ? t("Visita reagendada.") : t("Visita agendada."));
+    }
+    else if(a === "obs"){
+      const ta = document.getElementById("obsText");
+      if(!ta.value.trim()){ MES.showToast(t("Escreva a observação.")); return; }
+      await act("obs", { texto: ta.value.trim() }, t("Observação salva."));
+    }
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById("detailBody").addEventListener("change", (e) => {
+  if(e.target.id === "photoInput" && e.target.files.length){
+    const files = Array.from(e.target.files);
+    e.target.value = "";
+    uploadPhotos(files);
+  }
+});
+
+/* ---------------- eventos da lista / navegação ---------------- */
+document.getElementById("osChips").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-chip]");
+  if(!b) return;
+  view.chip = b.dataset.chip;
+  renderList();
+});
+document.getElementById("osGrid").addEventListener("click", (e) => {
+  const c = e.target.closest("[data-open]");
+  if(c) openOS(c.dataset.open);
+});
+document.getElementById("osSearch").addEventListener("input", (e) => { view.q = e.target.value.trim(); renderList(); });
+document.getElementById("osTech").addEventListener("change", (e) => { view.tecnico = e.target.value; renderList(); });
+document.getElementById("backBtn").addEventListener("click", () => showList(true));
+window.addEventListener("popstate", () => {
+  const id = new URLSearchParams(location.search).get("id");
+  if(id) openOS(id, false); else showList(false);
+});
+document.getElementById("logoutBtn").addEventListener("click", () => MES.logout());
+
+/* ---------------- init ---------------- */
+async function init(){
+  me = await MES.requireAuth();
+  if(!me) return;
+  if(me.company === "promotora"){ window.location.href = MES.landingPageFor(me); return; }
+  isManager = me.company !== "instalacao";
+  if(isManager){
+    const tr = await MES.apiGet("/api/admin/os/tecnicos");
+    if(tr.ok){
+      techs = tr.items;
+      const sel = document.getElementById("osTech");
+      sel.innerHTML = `<option value="">${t("Todos os técnicos")}</option><option value="sem">${t("Sem técnico")}</option>` +
+        techs.map(x => `<option value="${x.id}">${esc(x.nome)}</option>`).join("");
+      sel.style.display = "";
+    }
+  }
+  await loadList();
+  const id = new URLSearchParams(location.search).get("id");
+  if(id) openOS(id, false);
+  // Novas OS aparecem sozinhas enquanto a lista está aberta.
+  setInterval(() => { if(!document.hidden && !current) loadList(); }, 60000);
+}
+init();
+</script>
+</body>
+</html>

@@ -107,6 +107,15 @@ Sem isso configurado, o 2FA por e-mail continua funcionando em **modo de teste**
    - `MAIL_FROM` — quem aparece como remetente, normalmente o mesmo e-mail de `SMTP_USER` (ex: `Marques <contato@marquespromotora.com>`).
 4. Reinicie o backend pra carregar as variáveis novas (ver "Deploy em produção" abaixo).
 
+### Ordens de Serviço de instalação (`admin/os.html`)
+
+- **Geração automática:** quando o admin muda um pedido para **Confirmado**, o servidor cria a OS (`workOrders.createFromOrder`, uma por pedido, nunca duplica). Só pedidos com equipamento (kit, painel, inversor, bateria, controlador) geram sozinhos; para os demais há o botão "Abrir OS de instalação" no detalhe do pedido. Pedido **cancelado** cancela a OS ainda aberta.
+- **O que vem na OS:** foto do pedido no momento da geração (não muda se o catálogo mudar): cliente (nome, telefone, endereço com atalhos de ligar/WhatsApp/mapa) e todo o kit (itens, SKUs, componentes, quantidades, specs e potência). Gestores veem também CPF, e-mail e valores; o **técnico não vê CPF, e-mail nem preços**.
+- **Técnicos:** em *Equipe* → empresa **Equipe de instalação** (exige o WhatsApp). Esse perfil só enxerga a aba Ordens de Serviço: as OS **disponíveis** (sem técnico) e as dele. O primeiro que clica em "Assumir" fica com a OS (atômico no banco); também dá para o gestor atribuir, e o técnico pode devolver (com motivo) para os outros assumirem.
+- **Fluxo:** assumir → agendar a visita com o cliente (data/hora) → reagendar quantas vezes precisar (**motivo obrigatório**, histórico guarda data anterior e nova) → iniciar → pendência (com descrição) → concluir (exige **relatório + ao menos 1 foto**). Fotos (antes/durante/depois/problema, com legenda) são reduzidas no navegador (1600px) e guardadas no Postgres. Observações livres e linha do tempo completa em cada OS. Gestor cancela e reabre.
+- **WhatsApp:** `backend/src/whatsapp.js` chama a **Evolution API v2** (`POST {EVOLUTION_API_URL}/message/sendText/{EVOLUTION_INSTANCE}`, header `apikey`). Avisa todos os técnicos com telefone quando nasce uma OS (ou é devolvida), e o técnico específico quando o gestor atribui ou cancela. Configure `EVOLUTION_API_URL`, `EVOLUTION_API_KEY` e `EVOLUTION_INSTANCE` no `backend/.env` da VPS e reinicie; sem isso a mensagem só vai pro log e o histórico da OS registra "WhatsApp ainda não configurado". Conclusão de OS também manda e-mail para a lista de Notificações.
+- **Tabelas:** `work_orders`, `work_order_events`, `work_order_photos` e `admins.phone` (criadas sozinhas no `initSchema`).
+
 ## Deploy em produção (VPS próprio)
 
 Site e backend rodam juntos, no mesmo processo Node, servidos pelo mesmo domínio (`marquespromotora.com`). O `server.js` já serve os arquivos estáticos do site (via `backend/src/static.js`) além de responder `/api/*` — é o mesmo modo usado em "Como rodar (local)" acima, só que num VPS com domínio e HTTPS de verdade (Nginx fazendo proxy reverso + TLS na frente do processo Node) em vez de `localhost`.

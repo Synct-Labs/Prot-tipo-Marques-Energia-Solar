@@ -625,6 +625,61 @@ async function initSchema() {
       expires_at TEXT NOT NULL,
       used_at    TEXT
     );
+
+    -- Telefone do funcionário (WhatsApp do técnico de instalação).
+    ALTER TABLE admins ADD COLUMN IF NOT EXISTS phone TEXT;
+
+    -- ORDENS DE SERVIÇO (instalação). Uma OS por pedido (order_id UNIQUE), gerada
+    -- quando a venda é confirmada. kit_json e os dados do cliente/endereço são
+    -- uma FOTO do pedido no momento da geração: a OS não muda se o catálogo mudar.
+    -- status: nova | agendada | em_andamento | pendente | concluida | cancelada
+    -- technician_id vazio = OS disponível (qualquer técnico pode assumir).
+    CREATE TABLE IF NOT EXISTS work_orders (
+      id              SERIAL PRIMARY KEY,
+      os_number       TEXT UNIQUE NOT NULL,
+      order_id        INTEGER UNIQUE NOT NULL REFERENCES orders(id),
+      status          TEXT NOT NULL DEFAULT 'nova',
+      technician_id   INTEGER REFERENCES admins(id) ON DELETE SET NULL,
+      cliente_json    TEXT NOT NULL,
+      kit_json        TEXT NOT NULL,
+      agendada_para   TEXT,
+      reagendamentos  INTEGER NOT NULL DEFAULT 0,
+      conclusao_obs   TEXT,
+      iniciada_em     TEXT,
+      concluida_em    TEXT,
+      created_at      TEXT NOT NULL,
+      updated_at      TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_work_orders_tech ON work_orders(technician_id);
+
+    -- Linha do tempo da OS: criação, assunção, agendamento/reagendamento (com
+    -- motivo e datas), mudança de status, observações e fotos.
+    CREATE TABLE IF NOT EXISTS work_order_events (
+      id            SERIAL PRIMARY KEY,
+      work_order_id INTEGER NOT NULL REFERENCES work_orders(id) ON DELETE CASCADE,
+      tipo          TEXT NOT NULL,
+      texto         TEXT,
+      de_data       TEXT,
+      para_data     TEXT,
+      autor_id      INTEGER,
+      autor_nome    TEXT,
+      created_at    TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_work_order_events_os ON work_order_events(work_order_id);
+
+    CREATE TABLE IF NOT EXISTS work_order_photos (
+      id            SERIAL PRIMARY KEY,
+      work_order_id INTEGER NOT NULL REFERENCES work_orders(id) ON DELETE CASCADE,
+      categoria     TEXT NOT NULL DEFAULT 'durante', -- antes | durante | depois | problema
+      legenda       TEXT,
+      dados         BYTEA NOT NULL,
+      tipo          TEXT NOT NULL,
+      nome          TEXT,
+      autor_id      INTEGER,
+      autor_nome    TEXT,
+      created_at    TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_work_order_photos_os ON work_order_photos(work_order_id);
   `);
 
   // Garante que sempre exista pelo menos um "owner" (dono/admin geral que
